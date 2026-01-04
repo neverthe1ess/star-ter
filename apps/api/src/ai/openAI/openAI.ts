@@ -83,10 +83,9 @@ export function toolCallAi(
 
 export function analyzeResults(intput: ResponseInput) {
   return OpenAIClient.getClient().responses.create({
-    model: 'gpt-4o-2024-08-06', // text.format 지원 모델
+    model: 'gpt-4.1-mini', // text.format 지원 모델
     input: intput,
     temperature: 0.1,
-    // Structured Outputs: text.format으로 JSON Schema 강제
     text: {
       format: {
         type: 'json_schema',
@@ -112,8 +111,27 @@ export function analyzeResults(intput: ResponseInput) {
                   },
                   payload: {
                     type: 'object',
-                    additionalProperties: true,
-                    description: '액션에 필요한 파라미터',
+                    description:
+                      '액션에 필요한 파라미터 (사용하지 않는 값은 null)',
+                    properties: {
+                      lat: { type: ['number', 'null'] },
+                      lng: { type: ['number', 'null'] },
+                      zoom: { type: ['number', 'null'] },
+                      panelType: { type: ['string', 'null'] },
+                      areaCode: { type: ['string', 'null'] },
+                      areaName: { type: ['string', 'null'] },
+                      color: { type: ['string', 'null'] },
+                    },
+                    required: [
+                      'lat',
+                      'lng',
+                      'zoom',
+                      'panelType',
+                      'areaCode',
+                      'areaName',
+                      'color',
+                    ],
+                    additionalProperties: false,
                   },
                 },
                 required: ['type', 'payload'],

@@ -1,4 +1,5 @@
 import LoginButton from '../auth/LoginButton';
+import AIChatSidebar from '../features/chat/AIChatSidebar';
 
 type GlobalHeaderProps = {
   leftContent?: React.ReactNode;
@@ -27,7 +28,7 @@ export default function GlobalHeader({
 
       {/* Right Section */}
       <div className="flex items-center pointer-events-auto">
-        {rightContent || <LoginButton />}
+        {rightContent || <AIChatSidebar />}
       </div>
     </header>
   );

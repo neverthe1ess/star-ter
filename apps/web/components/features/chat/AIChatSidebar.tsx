@@ -30,8 +30,16 @@ export default function AIChatSidebar() {
   useEffect(() => {
     if (state.messages && state.messages.length > chatMessages.length) {
       setChatMessages(state.messages);
+
+      // ActionExecutor 연동: 마지막 메시지에 actions가 있으면 실행
+      const lastMessage = state.messages[state.messages.length - 1];
+      if (lastMessage.role === 'assistant' && lastMessage.actions) {
+        import('@/services/action-executor').then(({ ActionExecutor }) => {
+          ActionExecutor.execute(lastMessage.actions!);
+        });
+      }
     }
-  }, [state.messages]);
+  }, [state.messages, chatMessages.length]);
   
   const { openComparison } = useComparisonStore();
   const { moveToLocation, moveToLocations } = useMapStore();
