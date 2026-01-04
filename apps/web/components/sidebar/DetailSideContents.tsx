@@ -65,6 +65,11 @@ export default function DetailContents({ data }: DetailContentsProps) {
           stores={analysisData.stores}
           onShowMore={() => setView('list')}
         />
+        {analysisData.sales.industryBreakdown && (
+          <IndustryRevenueSection
+            breakdown={analysisData.sales.industryBreakdown}
+          />
+        )}
         {hasSalesData && (
           <SalesAnalysisSection salesData={analysisData.sales} />
         )}
@@ -74,11 +79,6 @@ export default function DetailContents({ data }: DetailContentsProps) {
           openingRate={analysisData.openingRate}
           closureRate={analysisData.closureRate}
         />
-        {analysisData.sales.industryBreakdown && (
-          <IndustryRevenueSection
-            breakdown={analysisData.sales.industryBreakdown}
-          />
-        )}
       </>
     </div>
   );
