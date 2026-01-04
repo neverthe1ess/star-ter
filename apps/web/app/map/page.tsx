@@ -9,6 +9,7 @@ import ComparisonOverlay from '@/components/comparison/ComparisonOverlay';
 import { useComparisonStore } from '@/stores/useComparisonStore';
 import ReportOverlay from '@/components/report-overlay/ReportOverlay';
 import { IndustryCategory, CompareRequest, ReportRequest } from '@/types/bottom-menu-types';
+import AIChatSidebar from '@/components/features/chat/AIChatSidebar';
 
 export default function MapPage() {
   const {
@@ -151,6 +152,9 @@ export default function MapPage() {
           isReportOpen={isReportOpen}
           onToggleReport={setIsReportOpen}
         />
+      </div>
+      <div>
+         <AIChatSidebar />
       </div>
     </div>
   );

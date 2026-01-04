@@ -1,5 +1,4 @@
 import { MdMenuBook } from 'react-icons/md'; // 교육
-// import { MdSupportAgent } from 'react-icons/md'; // 시설관리 (Unused)
 import { FaHospital } from 'react-icons/fa'; // 보건
 import { GiForkKnifeSpoon } from 'react-icons/gi';
 import { IoBag } from 'react-icons/io5';

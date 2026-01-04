@@ -1,5 +1,8 @@
 import { useState } from 'react';
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+
 export interface RentData {
   region: string;
   size: number; // m2
@@ -42,7 +45,7 @@ export const useRentCalculator = () => {
     setIsLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:4000/rent/info?gu=${data.region}&floor=${data.floor}`,
+        `${API_BASE_URL}/rent/info?gu=${data.region}&floor=${data.floor}`,
       );
       if (!response.ok) throw new Error('Failed to fetch rent info');
       const apiData = await response.json();

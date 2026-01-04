@@ -13,6 +13,24 @@
           "appProtocol": "http"
         }
       ],
+      "secrets": [
+        {
+          "name": "PORT",
+          "valueFrom": "${AWS_ARN_PORT}"
+        },
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "${AWS_ARN_DATABASE_URL}"
+        },
+        {
+          "name": "ALLOW_ORIGIN",
+          "valueFrom": "${AWS_ARN_ALLOW_ORIGIN}"
+        },
+        {
+          "name": "OPENAI_API_KEY",
+          "valueFrom": "${AWS_ARN_OPENAI_API_KEY}"
+        }
+      ],
       "essential": true,
       "environment": [],
       "environmentFiles": [],
