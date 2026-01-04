@@ -23,7 +23,8 @@ type ActiveType =
   | 'industry'
   | 'compare'
   | 'report'
-  | 'calculateRent';
+  | 'calculateRent'
+  | 'vacancy';
 
 import { usePopulationVisual } from '../../hooks/usePopulationVisual';
 interface BottomMenuProps {
@@ -97,6 +98,7 @@ export default function BottomMenuBox({
     { label: '비교', value: 'compare' },
     { label: '보고서', value: 'report' },
     { label: '임대료 계산', value: 'calculateRent' },
+    { label: '입점 가능 상가', value: 'vacancy' },
     { label: '초기화', value: 'none' },
   ];
 

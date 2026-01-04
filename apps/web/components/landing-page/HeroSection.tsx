@@ -24,10 +24,15 @@ export default function HeroSection() {
             실시간 유동인구, 매출 데이터, 경쟁업체 정보를 한눈에 확인하세요.
           </p>
         </div>
-        <div className="pt-8 animate-fade-in-up animation-delay-300">
+        <div className="pt-8 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up animation-delay-300">
           <Link href={'/map'}>
-            <button className="cursor-pointer px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold rounded-full shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
+            <button className="w-full sm:w-auto cursor-pointer px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold rounded-full shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
               상권 분석하러 가기 →
+            </button>
+          </Link>
+          <Link href={'/estate-regi'}>
+            <button className="w-full sm:w-auto cursor-pointer px-8 py-4 bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50 text-lg font-bold rounded-full shadow-md hover:shadow-lg transition-all transform hover:-translate-y-1">
+              공실 등록하러 가기 +
             </button>
           </Link>
         </div>
