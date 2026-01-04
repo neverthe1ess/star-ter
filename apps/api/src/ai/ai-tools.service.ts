@@ -6,7 +6,7 @@ import { QueryParams } from './dto/query-dto';
 export class AiToolsService {
   constructor(private readonly toolsRepository: ToolsRepository) {}
 
-  async run(toolName: string, argsJson: string): Promise<any> {
+  async run(toolName: string, argsJson: string): Promise<unknown> {
     const args: QueryParams = this.parseArgs(argsJson);
     args.stdrYyquCd = args.stdrYyquCd || '20253';
     switch (toolName) {
@@ -28,6 +28,12 @@ export class AiToolsService {
         return this.toolsRepository.getCommercialChangeSummary(args);
       case 'compare_commercial_areas':
         return this.toolsRepository.compareCommercialAreas(args);
+      case 'get_industry_commercial_summary':
+        return this.toolsRepository.getIndustryCommercialSummary(args);
+      case 'recommend_commercial_by_industry':
+        return this.toolsRepository.recommendCommercialByIndustry(args);
+      case 'compare_commercial_by_industry':
+        return this.toolsRepository.compareCommercialByIndustry(args);
       default:
         return undefined;
     }
