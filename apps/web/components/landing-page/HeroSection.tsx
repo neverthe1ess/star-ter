@@ -18,10 +18,13 @@ export default function HeroSection() {
             상권분석 서비스 Star-ter
           </span>
         </h2>
-        <div className="text-xl text-gray-600 max-w-2xl mx-auto space-y-2 animate-fade-in-up animation-delay-200">
+        <div className="text-xl text-blue-600 max-w-2xl mx-auto space-y-2 animate-fade-in-up animation-delay-200">
           <p>빅데이터와 AI 기술로 최적의 창업 입지를 찾아드립니다.</p>
           <p>
             실시간 유동인구, 매출 데이터, 경쟁업체 정보를 한눈에 확인하세요.
+          </p>
+          <p className="text-purple-600 font-medium pt-2">
+            건물주라면? 공실을 등록하고 예비 창업자를 만나보세요.
           </p>
         </div>
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up animation-delay-300">
