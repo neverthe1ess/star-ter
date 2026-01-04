@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import { AreaVectorDto, BusinessCategoryVectorDto } from '../dto/column-vector';
 import { ResponseInput, Tool } from 'openai/resources/responses/responses.js';
 import { tools } from './tools';
+import { FINAL_RESPONSE_SCHEMA_FOR_ACTION } from './schemas';
 
 // Singleton OpenAI client
 class OpenAIClient {
@@ -81,68 +82,13 @@ export function toolCallAi(
   });
 }
 
-export function analyzeResults(intput: ResponseInput) {
+export function analyzeResults(input: ResponseInput) {
   return OpenAIClient.getClient().responses.create({
-    model: 'gpt-4.1-mini', // text.format 지원 모델
-    input: intput,
+    model: 'gpt-4.1-mini',
+    input: input,
     temperature: 0.1,
     text: {
-      format: {
-        type: 'json_schema',
-        name: 'final_response',
-        strict: true,
-        schema: {
-          type: 'object',
-          properties: {
-            reply: {
-              type: 'string',
-              description: '사용자에게 보여줄 답변 (Markdown 형식)',
-            },
-            actions: {
-              type: 'array',
-              description: 'UI 제어 명령 배열',
-              items: {
-                type: 'object',
-                properties: {
-                  type: {
-                    type: 'string',
-                    enum: ['map.pan_to', 'ui.open_panel', 'map.highlight'],
-                    description: '실행할 액션 유형',
-                  },
-                  payload: {
-                    type: 'object',
-                    description:
-                      '액션에 필요한 파라미터 (사용하지 않는 값은 null)',
-                    properties: {
-                      lat: { type: ['number', 'null'] },
-                      lng: { type: ['number', 'null'] },
-                      zoom: { type: ['number', 'null'] },
-                      panelType: { type: ['string', 'null'] },
-                      areaCode: { type: ['string', 'null'] },
-                      areaName: { type: ['string', 'null'] },
-                      color: { type: ['string', 'null'] },
-                    },
-                    required: [
-                      'lat',
-                      'lng',
-                      'zoom',
-                      'panelType',
-                      'areaCode',
-                      'areaName',
-                      'color',
-                    ],
-                    additionalProperties: false,
-                  },
-                },
-                required: ['type', 'payload'],
-                additionalProperties: false,
-              },
-            },
-          },
-          required: ['reply', 'actions'],
-          additionalProperties: false,
-        },
-      },
+      format: FINAL_RESPONSE_SCHEMA_FOR_ACTION,
     },
     instructions: `
             사용자의 질의에 맞게 응답을 생성해 주세요.
@@ -150,7 +96,7 @@ export function analyzeResults(intput: ResponseInput) {
 
             [Action 가이드]
             - 특정 지역을 언급하면 'actions' 배열에 'map.pan_to' 액션을 추가하세요.
-              예: { "type": "map.pan_to", "payload": { "lat": 37.5, "lng": 127.0, "zoom": 15 } }
+              예: { "type": "map.pan_to", "payload": { "lat": 37.5, "lng": 127.0, "zoom": 3 } }
             - 분석 결과를 보여줄 때는 'ui.open_panel' 액션을 추가하세요.
               예: { "type": "ui.open_panel", "payload": { "panelType": "summary" } }
             - 액션이 필요없는 경우 빈 배열 []을 반환하세요.

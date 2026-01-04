@@ -310,6 +310,7 @@ export default function AIChatSidebar() {
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
+                    if (e.nativeEvent.isComposing) return;
                     e.preventDefault();
                     (e.currentTarget.form as HTMLFormElement).requestSubmit();
                   }
