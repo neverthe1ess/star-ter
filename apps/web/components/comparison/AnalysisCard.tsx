@@ -8,6 +8,8 @@ import StoreTabContent from './StoreTabContent';
 import AnimatedNumber from '../common/AnimatedNumber';
 import { AnalysisData, AnalysisCardProps } from '../../types/analysis-types';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+
 export default function AnalysisCard({
   title,
   address,
@@ -34,7 +36,7 @@ export default function AnalysisCard({
         if (!queryParam) return;
         setLoading(true);
         try {
-            const res = await fetch(`http://localhost:4000/analysis/${encodeURIComponent(queryParam)}?_t=${Date.now()}`);
+            const res = await fetch(`${API_BASE_URL}/${encodeURIComponent(queryParam)}?_t=${Date.now()}`);
             const json = await res.json();
             if (json.sales) {
                 if (json.store && json.store.categories) {

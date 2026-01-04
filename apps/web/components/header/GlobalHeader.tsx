@@ -1,4 +1,3 @@
-import LoginButton from '../auth/LoginButton';
 
 type GlobalHeaderProps = {
   leftContent?: React.ReactNode;
@@ -27,7 +26,7 @@ export default function GlobalHeader({
 
       {/* Right Section */}
       <div className="flex items-center pointer-events-auto">
-        {rightContent || <LoginButton />}
+        {rightContent}
       </div>
     </header>
   );

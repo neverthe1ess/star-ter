@@ -49,6 +49,7 @@ export class AiService {
 
     const analyzeResult = await analyzeResults(input);
 
+    // Structured Outputs: output_text에 JSON 문자열 ({ reply, actions }) 반환
     return getText(analyzeResult);
   }
 

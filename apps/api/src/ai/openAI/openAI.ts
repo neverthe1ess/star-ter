@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import { AreaVectorDto, BusinessCategoryVectorDto } from '../dto/column-vector';
 import { ResponseInput, Tool } from 'openai/resources/responses/responses.js';
 import { tools } from './tools';
+import { FINAL_RESPONSE_SCHEMA_FOR_ACTION } from './schemas';
 
 // Singleton OpenAI client
 class OpenAIClient {
@@ -82,16 +83,25 @@ export function toolCallAi(
   });
 }
 
-export function analyzeResults(intput: ResponseInput) {
+export function analyzeResults(input: ResponseInput) {
   return OpenAIClient.getClient().responses.create({
     model: 'gpt-4.1-mini',
-    input: intput,
+    input: input,
     temperature: 0.1,
+    text: {
+      format: FINAL_RESPONSE_SCHEMA_FOR_ACTION,
+    },
     instructions: `
             당신은 상권분석 전문가 입니다.
             사용자의 질의에 맞게 응답을 생성해 주세요.
             도구 호출 결과를 참고하여 최종 응답을 생성해 주세요.
-            데이터가 없을 경우, 솔직하게 데이터가 없다고 답변해 주세요.
+
+            [Action 가이드]
+            - 특정 지역을 언급하면 'actions' 배열에 'map.pan_to' 액션을 추가하세요.
+              예: { "type": "map.pan_to", "payload": { "lat": 37.5, "lng": 127.0, "zoom": 3 } }
+            - 분석 결과를 보여줄 때는 'ui.open_panel' 액션을 추가하세요.
+              예: { "type": "ui.open_panel", "payload": { "panelType": "summary" } }
+            - 액션이 필요없는 경우 빈 배열 []을 반환하세요.
             `,
   });
 }
