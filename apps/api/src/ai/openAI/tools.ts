@@ -142,13 +142,73 @@ export const tools = [
     parameters: {
       type: 'object',
       properties: {
-        areaCdList: {
+        areaCodes: {
           type: 'array',
           items: { type: 'string' },
           description: '비교할 상권의 areaCd 목록입니다.',
         },
       },
-      required: ['areaCdList'],
+      required: ['areaCodes'],
+      additionalProperties: false,
+    },
+    strict: true,
+  },
+  {
+    type: 'function',
+    name: 'get_industry_commercial_summary',
+    description: '특정 상권에서 특정 업종의 매출/점포/인구 요약을 조회합니다.',
+    parameters: {
+      type: 'object',
+      properties: {
+        areaCd: {
+          type: 'string',
+          description: '조회할 상권의 areaCd입니다.',
+        },
+        categoryCode: {
+          type: 'string',
+          description: '조회할 업종 코드(svc_induty_cd)입니다.',
+        },
+      },
+      required: ['areaCd', 'categoryCode'],
+      additionalProperties: false,
+    },
+    strict: true,
+  },
+  {
+    type: 'function',
+    name: 'recommend_commercial_by_industry',
+    description: '특정 업종의 매출 상위 상권을 추천합니다.',
+    parameters: {
+      type: 'object',
+      properties: {
+        categoryCode: {
+          type: 'string',
+          description: '추천할 업종 코드(svc_induty_cd)입니다.',
+        },
+      },
+      required: ['categoryCode'],
+      additionalProperties: false,
+    },
+    strict: true,
+  },
+  {
+    type: 'function',
+    name: 'compare_commercial_by_industry',
+    description: '특정 업종 기준으로 여러 상권을 비교합니다.',
+    parameters: {
+      type: 'object',
+      properties: {
+        areaCodes: {
+          type: 'array',
+          items: { type: 'string' },
+          description: '비교할 상권의 areaCd 목록입니다.',
+        },
+        categoryCode: {
+          type: 'string',
+          description: '비교할 업종 코드(svc_induty_cd)입니다.',
+        },
+      },
+      required: ['areaCodes', 'categoryCode'],
       additionalProperties: false,
     },
     strict: true,
