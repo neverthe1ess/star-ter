@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useState } from 'react';
 import { Info } from 'lucide-react';
 import { IndustryCategoryBreakdown } from '../../types/market-types';
@@ -21,10 +20,15 @@ export default function IndustryRevenueSection({
   );
 
   const formatRevenue = (amount: number) => {
-    return `${(amount / 100000000).toFixed(1)}억`;
+    const billions = amount / 100000000;
+    if (billions >= 1) {
+      return `${billions.toLocaleString('ko-KR', { maximumFractionDigits: 1 })}억`;
+    }
+    const manwon = amount / 10000;
+    return `${manwon.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}만`;
   };
 
-  // Find max category for caption
+  // 최대 카테고리 찾기
   const maxCategory = breakdown.reduce((prev, current) =>
     prev.totalRevenue > current.totalRevenue ? prev : current,
   );
