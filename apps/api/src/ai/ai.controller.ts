@@ -10,14 +10,8 @@ export class AiController {
   async chatAI(@Query('message') message: string) {
     const startTime = Date.now();
     this.logger.log(`Received message: ${message}`);
-
     const response = await this.aiService.getAIMessage(message);
-
-    const endTime = Date.now();
-    this.logger.log(
-      `Response time: ${endTime - startTime} ms, Response: ${response}`,
-    );
-
+    this.logger.log(`Response time: ${Date.now() - startTime} ms`);
     return response;
   }
 }

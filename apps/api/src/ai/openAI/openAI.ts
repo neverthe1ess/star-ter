@@ -68,6 +68,7 @@ export function toolCallAi(
     input: message,
     tools: tools as Array<Tool>,
     instructions: `
+            당신은 상권분석 전문가 입니다.
             사용자의 질의에 맞게 도구를 호출해 주세요.
             필요한 경우에만 도구를 호출하고, 도구를 호출하지 않아도 되는 경우에는 호출하지 마세요.
             도구를 호출할 때는 반드시 업종 코드(svc_induty_cd)와 지역 코드(area_cd)를 참고하여 호출해 주세요.
@@ -87,8 +88,10 @@ export function analyzeResults(intput: ResponseInput) {
     input: intput,
     temperature: 0.1,
     instructions: `
+            당신은 상권분석 전문가 입니다.
             사용자의 질의에 맞게 응답을 생성해 주세요.
             도구 호출 결과를 참고하여 최종 응답을 생성해 주세요.
+            데이터가 없을 경우, 솔직하게 데이터가 없다고 답변해 주세요.
             `,
   });
 }

@@ -35,7 +35,7 @@ export class AiService {
         toolCall.name,
         toolCall.arguments,
       );
-      
+
       if (toolResult === undefined) {
         continue;
       }
@@ -82,7 +82,7 @@ export class AiService {
       const categoryVector = await embedText(category);
       const categoryResults = await this.aiRepository.categorySearchByVector(
         categoryVector.data[0].embedding,
-        5,
+        3,
       );
       categoryList = categoryList.concat(categoryResults);
     }
