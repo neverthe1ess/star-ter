@@ -30,7 +30,7 @@ interface UseRevenueRankingReturn {
   isLoading: boolean;
   error: string | null;
   isMoving: boolean;
-  handleSelect: (name: string) => Promise<void>;
+  handleSelect: (name: string, code?: string, type?: 'gu' | 'dong') => Promise<void>;
   formatAmount: (amount: number) => string;
 }
 
@@ -40,7 +40,7 @@ export const useRevenueRanking = ({
   industryCode,
   industryCodes,
 }: UseRevenueRankingProps): UseRevenueRankingReturn => {
-  const { moveToLocation } = useMapStore();
+  const { selectArea } = useMapStore();
   const [isMoving, setIsMoving] = useState(false);
   const [items, setItems] = useState<RankItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -86,17 +86,19 @@ export const useRevenueRanking = ({
     return () => controller.abort();
   }, [level, parentGuCode, industryCode, industryCodes]);
 
-  const handleSelect = async (name: string) => {
+  const handleSelect = async (name: string, code?: string, type?: 'gu' | 'dong') => {
     if (isMoving) return;
     setIsMoving(true);
     try {
       const result = await geocodeAddress(`서울특별시 ${name}`);
       if (result) {
-        moveToLocation(
-          { lat: result.lat, lng: result.lng },
-          result.address || name,
-          level === 'dong' ? 5 : 7,
-        );
+        const targetType = type || level;
+        selectArea({
+          name: result.address || name,
+          coords: { lat: result.lat, lng: result.lng },
+          type: targetType,
+          code: code,
+        });
       }
     } finally {
       setIsMoving(false);

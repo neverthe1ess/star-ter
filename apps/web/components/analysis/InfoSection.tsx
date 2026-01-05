@@ -13,7 +13,7 @@ import { SummaryReportResponse } from '../../types/api-responses';
 
 export default function InfoSection() {
   const [activeTab, setActiveTab] = React.useState('population');
-  const { selectedArea } = useMapStore();
+  const { selectedArea, hasHydrated } = useMapStore();
   const [data, setData] = React.useState<SummaryReportResponse | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -50,6 +50,27 @@ export default function InfoSection() {
 
     fetchData();
   }, [selectedArea?.code, selectedArea?.name]);
+
+  if (!hasHydrated) {
+    return (
+      <div className="relative h-full flex flex-col p-6 bg-white">
+        <div className="relative flex-1 rounded-2xl overflow-hidden border-4 border-gray-100 shadow-inner flex flex-col bg-white">
+          <div className="h-24 animate-pulse bg-gray-50 border-b border-gray-100" />
+          <div className="h-12 animate-pulse bg-gray-50 border-b border-gray-100" />
+          <div className="flex-1 overflow-y-auto bg-gray-50/30 p-6 space-y-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="h-28 bg-gray-100 rounded-2xl animate-pulse"></div>
+              <div className="h-28 bg-gray-100 rounded-2xl animate-pulse"></div>
+              <div className="h-28 bg-gray-100 rounded-2xl animate-pulse"></div>
+              <div className="h-28 bg-gray-100 rounded-2xl animate-pulse"></div>
+            </div>
+            <div className="h-64 bg-gray-100 rounded-2xl animate-pulse"></div>
+            <div className="h-48 bg-gray-100 rounded-2xl animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative h-full flex flex-col p-6 bg-white">
@@ -153,7 +174,9 @@ export default function InfoSection() {
               <div className="p-4 bg-gray-100/50 rounded-full opacity-50">
                 <Users size={32} />
               </div>
-              <p className="font-medium">{selectedArea?.code ? '조회된 데이터가 없습니다.' : '지역을 선택하여 분석을 시작하세요.'}</p>
+              <p className="font-medium">
+                {!hasHydrated ? '데이터를 불러오는 중...' : (selectedArea?.code ? '조회된 데이터가 없습니다.' : '지역을 선택하여 분석을 시작하세요.')}
+              </p>
             </div>
           )}
         </div>

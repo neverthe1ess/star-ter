@@ -83,7 +83,7 @@ export default function AgeGenderRadarChart({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 relative">
         <ResponsiveContainer width="100%" height="100%" debounce={0}>
           <RadarChart cx="50%" cy="52%" outerRadius="80%" data={chartData}>
             <PolarGrid stroke="#e5e7eb" />

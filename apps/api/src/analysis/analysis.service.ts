@@ -30,35 +30,33 @@ export class AnalysisService {
     }
 
     const latestQuarter = quarters[quarters.length - 1];
-    const [salesAgg, storeAgg, popAgg, workingPopAgg, storeGroups, trendGroups] =
-      await Promise.all([
-        this.repository.aggregateSales(
-          region.type,
-          region.codes,
-          latestQuarter,
-        ),
-        this.repository.aggregateStores(
-          region.type,
-          region.codes,
-          latestQuarter,
-        ),
-        this.repository.aggregatePopulation(
-          region.type,
-          region.codes,
-          latestQuarter,
-        ),
-        this.repository.aggregateWorkingPopulation(
-          region.type,
-          region.codes,
-          latestQuarter,
-        ),
-        this.repository.getStoreCategoryBreakdown(
-          region.type,
-          region.codes,
-          latestQuarter,
-        ),
-        this.repository.getSalesTrend(region.type, region.codes, quarters),
-      ]);
+    const [
+      salesAgg,
+      storeAgg,
+      popAgg,
+      workingPopAgg,
+      storeGroups,
+      trendGroups,
+    ] = await Promise.all([
+      this.repository.aggregateSales(region.type, region.codes, latestQuarter),
+      this.repository.aggregateStores(region.type, region.codes, latestQuarter),
+      this.repository.aggregatePopulation(
+        region.type,
+        region.codes,
+        latestQuarter,
+      ),
+      this.repository.aggregateWorkingPopulation(
+        region.type,
+        region.codes,
+        latestQuarter,
+      ),
+      this.repository.getStoreCategoryBreakdown(
+        region.type,
+        region.codes,
+        latestQuarter,
+      ),
+      this.repository.getSalesTrend(region.type, region.codes, quarters),
+    ]);
 
     return AnalysisMapper.toAnalysisResponse(
       salesAgg,

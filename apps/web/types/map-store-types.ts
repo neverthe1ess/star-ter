@@ -36,6 +36,7 @@ export interface MapStore {
   
   // 신규: 선별된 지역 정보
   selectedArea: SelectedArea | null;
+  hasHydrated: boolean;
 
   // 액션
   setCenter: (coords: MapCoordinates) => void;
@@ -46,6 +47,7 @@ export interface MapStore {
   setOverlayMode: (mode: OverlayMode) => void;
   setSelectedIndustryCodes: (codes: string[] | null) => void;
   setHighlightedAreaName: (name: string | null) => void;
+  setHasHydrated: (state: boolean) => void;
 
   // 상권/행정구역 선택 (줌 레벨 자동 설정)
   selectArea: (area: SelectedArea) => void;

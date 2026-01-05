@@ -6,19 +6,25 @@ import { useMapStore } from '../../stores/useMapStore';
 
 
 export default function AnalysisHeader() {
-  const { selectedArea } = useMapStore();
+  const { selectedArea, hasHydrated } = useMapStore();
+  
+  if (!hasHydrated) return <div className="h-24 animate-pulse bg-gray-50 border-b border-gray-100" />;
   
   // 동적 브레드크럼 생성
   const getBreadcrumb = () => {
-    if (!selectedArea) return '서울시 > 강남구 > 역삼1동';
-    
-    const { name, type } = selectedArea; 
-    if (type === 'gu') return `서울시 > ${name}`;
-    if (type === 'dong') return `서울시 > 강남구 > ${name}`; // 실제 구 정보가 있으면 더 좋겠지만 현재는 강남구 고정 또는 단순 추정
-    return `서울시 > 강남구 > 역삼1동 > ${name}`;
+    if (!selectedArea) return '지역을 선택해주세요';
+
+    const { name } = selectedArea;
+    // '서울 중구 을지로동' -> '서울 > 중구 > 을지로동'
+    if (name.includes(' ')) {
+      return name.split(' ').join(' > ');
+    }
+
+    // 이름이 단일 명칭인 경우 (예: '강남구')
+    return `서울특별시 > ${name}`;
   };
 
-  const areaName = selectedArea?.name || '역삼1동';
+  const areaName = selectedArea?.name || '미선택 지역';
   const breadcrumb = getBreadcrumb();
 
   return ( 

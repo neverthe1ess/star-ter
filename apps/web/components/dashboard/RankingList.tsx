@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { RankingItem } from './mock-data';
 import RankNavItem from '../rank-nav/RankNavItem';
 import { useRevenueRanking, RankItem } from '@/hooks/useRevenueRanking';
@@ -12,6 +13,7 @@ interface RankingListProps {
 }
 
 export default function RankingList({ onSelect, activeTab }: RankingListProps) {
+  const router = useRouter();
   const [viewType, setViewType] = React.useState<'GU' | 'DONG'>('GU');
   const [selectedGuId, setSelectedGuId] = React.useState<string | null>(null);
   const [visibleCount, setVisibleCount] = React.useState(10);
@@ -62,11 +64,19 @@ export default function RankingList({ onSelect, activeTab }: RankingListProps) {
       stores: item.count,
       isFavorite: false,
       code: item.code,
+      summary: '', // Required by interface
     };
 
     // Always select item for detail view, no drill-down
     onSelect(rankingItem);
-    await handleSelect(item.name);
+    
+    // Update global store
+    await handleSelect(item.name, item.code, viewType === 'GU' ? 'gu' : 'dong');
+    
+    // Navigate to analysis page if it's a DONG
+    if (viewType === 'DONG') {
+      router.push('/analysis');
+    }
   };
 
   const handleViewTypeChange = (type: 'GU' | 'DONG') => {

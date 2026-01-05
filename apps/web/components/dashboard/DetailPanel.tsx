@@ -97,8 +97,8 @@ export default function DetailPanel({ item }: DetailPanelProps) {
            </div>
         </div>
 
-        <div className="h-64 w-full bg-white rounded-2xl border border-gray-100 p-4">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="h-64 w-full bg-white rounded-2xl border border-gray-100 p-4 relative">
+          <ResponsiveContainer width="100%" height="100%" debounce={0}>
             {chartMetric === '잘나가는 업종' ? (
                 <BarChart layout="vertical" data={METRIC_DATA.sectors} margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e5e7eb" />

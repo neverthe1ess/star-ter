@@ -15,7 +15,7 @@ export default function DashboardLayout() {
   const [isResizing, setIsResizing] = useState(false);
 
   return (
-    <div className="flex flex-col bg-white">
+    <div className="flex flex-col h-screen bg-white">
       {/* 1. Global Header */}
       <header className="flex h-16 items-center justify-between border-b border-gray-200 px-6">
         <div className="flex items-center gap-8">

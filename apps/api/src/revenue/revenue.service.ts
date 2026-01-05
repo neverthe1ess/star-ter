@@ -19,6 +19,28 @@ type ModelConfig = {
     | 'salesCommercial';
 };
 
+interface RevenueRow {
+  stdr_yyqu_cd: string;
+  svc_induty_cd: string;
+  svc_induty_cd_nm: string;
+  thsmon_selng_amt: number | bigint;
+  thsmon_selng_co: number | bigint;
+}
+
+interface RevenueRankingRow {
+  [key: string]: any;
+  _sum: {
+    thsmon_selng_amt: number | bigint;
+    thsmon_selng_co: number | bigint;
+  };
+}
+
+interface PrismaModel {
+  findMany(args: any): Promise<any>;
+  findFirst(args: any): Promise<any>;
+  groupBy(args: any): Promise<any>;
+}
+
 @Injectable()
 export class RevenueService {
   private readonly logger = new Logger(RevenueService.name);
@@ -60,7 +82,10 @@ export class RevenueService {
       throw new BadRequestException(`지원하지 않는 레벨: ${level}`);
     }
 
-    const client = (this.prisma as any)[modelConfig.modelName];
+    const modelName = modelConfig.modelName;
+    const client = (this.prisma as unknown as Record<string, PrismaModel>)[
+      modelName
+    ];
     if (!client) {
       throw new BadRequestException('Prisma 모델을 찾을 수 없습니다.');
     }
@@ -79,7 +104,7 @@ export class RevenueService {
       where.svc_induty_cd = industryCode;
     }
 
-    const rows = await client.findMany({
+    const rows = (await client.findMany({
       where,
       select: {
         stdr_yyqu_cd: true,
@@ -88,7 +113,7 @@ export class RevenueService {
         thsmon_selng_amt: true,
         thsmon_selng_co: true,
       },
-    });
+    })) as unknown as RevenueRow[];
 
     if (!rows.length) {
       return {
@@ -100,7 +125,7 @@ export class RevenueService {
       };
     }
 
-    const items = rows.map((row: any) => ({
+    const items = rows.map((row) => ({
       industryCode: row.svc_induty_cd,
       industryName: row.svc_induty_cd_nm,
       amount: Number(row.thsmon_selng_amt || 0),
@@ -128,7 +153,10 @@ export class RevenueService {
       throw new BadRequestException(`지원하지 않는 레벨: ${level}`);
     }
 
-    const client = (this.prisma as any)[modelConfig.modelName];
+    const modelName = modelConfig.modelName;
+    const client = (this.prisma as unknown as Record<string, PrismaModel>)[
+      modelName
+    ];
     if (!client) {
       throw new BadRequestException('Prisma 모델을 찾을 수 없습니다.');
     }
@@ -150,7 +178,7 @@ export class RevenueService {
       where.adstrd_cd = { startsWith: parentGuCode };
     }
 
-    const groupByArgs: any = {
+    const groupByArgs = {
       by: [modelConfig.codeField, modelConfig.nameField],
       where,
       _sum: {
@@ -162,11 +190,13 @@ export class RevenueService {
       },
     };
 
-    const rows = await client.groupBy(groupByArgs);
+    const rows = (await client.groupBy(
+      groupByArgs,
+    )) as unknown as RevenueRankingRow[];
 
-    const items = rows.map((row: any) => ({
-      code: row[modelConfig.codeField],
-      name: row[modelConfig.nameField],
+    const items = rows.map((row) => ({
+      code: String(row[modelConfig.codeField]),
+      name: String(row[modelConfig.nameField]),
       amount: Number(row._sum.thsmon_selng_amt || 0),
       count: Number(row._sum.thsmon_selng_co || 0),
       changeType: undefined as string | undefined,
@@ -275,19 +305,19 @@ export class RevenueService {
   }
 
   private async getLatestQuarter(
-    client: any,
+    client: PrismaModel,
     modelName: string,
   ): Promise<string> {
-    const latest = await client.findFirst({
+    const latest = (await client.findFirst({
       select: { stdr_yyqu_cd: true },
       orderBy: { stdr_yyqu_cd: 'desc' },
-    });
+    })) as { stdr_yyqu_cd: string } | null;
 
     if (!latest?.stdr_yyqu_cd) {
       this.logger.warn(`[${modelName}] 기준 분기 데이터가 없습니다.`);
       throw new BadRequestException('매출 데이터가 없습니다.');
     }
 
-    return latest.stdr_yyqu_cd as string;
+    return latest.stdr_yyqu_cd;
   }
 }

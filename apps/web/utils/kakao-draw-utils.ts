@@ -418,7 +418,7 @@ export function drawPolygons(
         hoverStyle = { ...normalStyle }; // 호버 시에도 유지
       }
 
-      // 특정 행정동 강조 처리 (역삼1동 등)
+      // 선택된 행정동/상권 강조 처리
       if (highlightedAreaName && getShortName(feature) === highlightedAreaName) {
         normalStyle = {
           ...normalStyle,
