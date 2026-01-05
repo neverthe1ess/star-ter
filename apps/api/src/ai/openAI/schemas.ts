@@ -28,6 +28,10 @@ export const FINAL_RESPONSE_SCHEMA_FOR_ACTION = {
                 lng: { type: ['number', 'null'] },
                 zoom: { type: ['number', 'null'] },
                 panelType: { type: ['string', 'null'] },
+                level: {
+                  type: ['string', 'null'],
+                  enum: ['gu', 'dong', 'commercial', null],
+                },
                 areaCode: { type: ['string', 'null'] },
                 areaName: { type: ['string', 'null'] },
                 color: { type: ['string', 'null'] },
@@ -37,6 +41,7 @@ export const FINAL_RESPONSE_SCHEMA_FOR_ACTION = {
                 'lng',
                 'zoom',
                 'panelType',
+                'level',
                 'areaCode',
                 'areaName',
                 'color',

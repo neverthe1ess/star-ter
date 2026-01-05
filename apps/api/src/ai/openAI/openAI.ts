@@ -98,9 +98,11 @@ export function analyzeResults(input: ResponseInput) {
 
             [Action 가이드]
             - 특정 지역을 언급하면 'actions' 배열에 'map.pan_to' 액션을 추가하세요.
+              줌 레벨은 무조건 3로 하세요.
               예: { "type": "map.pan_to", "payload": { "lat": 37.5, "lng": 127.0, "zoom": 3 } }
             - 분석 결과를 보여줄 때는 'ui.open_panel' 액션을 추가하세요.
-              예: { "type": "ui.open_panel", "payload": { "panelType": "summary" } }
+              이때 'level' (gu, dong, commercial 중 하나), 'lat', 'lng', 'areaName'을 반드시 포함하세요.
+              예: { "type": "ui.open_panel", "payload": { "panelType": "summary", "level": "gu", "lat": 37.5, "lng": 127.0, "areaName": "강남구" } }
             - 액션이 필요없는 경우 빈 배열 []을 반환하세요.
             `,
   });
