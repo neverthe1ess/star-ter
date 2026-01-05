@@ -29,8 +29,7 @@ const options: ChatKitOptions = {
       console.log('🔥 [ChatKit] Executing move_map:', toolCall.params);
 
       const store = useMapStore.getState();
-      const params = toolCall.params as any;
-      const { lat, lng, zoom } = params;
+      const { lat, lng, zoom } = toolCall.params;
 
       const targetName = '목적지';
       const targetZoom = typeof zoom === 'number' ? zoom : 3;

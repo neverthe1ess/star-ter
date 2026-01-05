@@ -5,7 +5,7 @@ export type ActionType = 'map.pan_to' | 'ui.open_panel' | 'map.highlight';
 // 기본 액션 인터페이스
 export interface BaseAction {
   type: ActionType;
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
 }
 
 // 지도 이동 액션
