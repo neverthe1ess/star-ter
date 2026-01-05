@@ -6,4 +6,5 @@ export const API_ENDPOINTS = {
   POLYGON_ADMIN: `${API_BASE_URL}/polygon/admin`,
   POLYGON_BUILDING: `${API_BASE_URL}/polygon/building`,
   POLYGON_COMMERCIAL: `${API_BASE_URL}/polygon/commercial`,
+  REAL_ESTATE: `${API_BASE_URL}/real-estate`,
 } as const;
