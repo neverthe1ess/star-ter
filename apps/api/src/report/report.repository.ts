@@ -6,85 +6,93 @@ export class ReportRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async getLatestSales(regionCode: string, industryCode: string) {
-    const type = await this.getAreaType(regionCode);
-    if (type === 'dong') {
+    const area = await this.resolveArea(regionCode);
+    if (!area) return null;
+
+    if (area.type === 'dong') {
       return this.prisma.salesDong.findFirst({
-        where: { adstrd_cd: regionCode, svc_induty_cd: industryCode },
+        where: { adstrd_cd: area.code, svc_induty_cd: industryCode },
         orderBy: { stdr_yyqu_cd: 'desc' },
       });
-    } else if (type === 'commercial') {
+    } else if (area.type === 'commercial') {
       return this.prisma.salesCommercial.findFirst({
-        where: { trdar_cd: regionCode, svc_induty_cd: industryCode },
+        where: { trdar_cd: area.code, svc_induty_cd: industryCode },
         orderBy: { stdr_yyqu_cd: 'desc' },
       });
     } else {
       return this.prisma.salesBackarea.findFirst({
-        where: { trdar_cd: regionCode, svc_induty_cd: industryCode },
+        where: { trdar_cd: area.code, svc_induty_cd: industryCode },
         orderBy: { stdr_yyqu_cd: 'desc' },
       });
     }
   }
 
   async getLatestFootTraffic(regionCode: string) {
-    const type = await this.getAreaType(regionCode);
-    if (type === 'dong') {
+    const area = await this.resolveArea(regionCode);
+    if (!area) return null;
+
+    if (area.type === 'dong') {
       return this.prisma.footTrafficDong.findFirst({
-        where: { adstrd_cd: regionCode },
+        where: { adstrd_cd: area.code },
         orderBy: { stdr_yyqu_cd: 'desc' },
       });
-    } else if (type === 'commercial') {
+    } else if (area.type === 'commercial') {
       return this.prisma.footTrafficCommercial.findFirst({
-        where: { trdar_cd: regionCode },
+        where: { trdar_cd: area.code },
         orderBy: { stdr_yyqu_cd: 'desc' },
       });
     } else {
       return this.prisma.footTrafficBackarea.findFirst({
-        where: { trdar_cd: regionCode },
+        where: { trdar_cd: area.code },
         orderBy: { stdr_yyqu_cd: 'desc' },
       });
     }
   }
 
   async getStoreDensity(regionCode: string, industryCode: string) {
-    const type = await this.getAreaType(regionCode);
-    if (type === 'dong') {
+    const area = await this.resolveArea(regionCode);
+    if (!area) return null;
+
+    if (area.type === 'dong') {
       return this.prisma.storeDong.findFirst({
-        where: { adstrd_cd: regionCode, svc_induty_cd: industryCode },
+        where: { adstrd_cd: area.code, svc_induty_cd: industryCode },
         orderBy: { stdr_yyqu_cd: 'desc' },
       });
-    } else if (type === 'commercial') {
+    } else if (area.type === 'commercial') {
       return this.prisma.storeCommercial.findFirst({
-        where: { trdar_cd: regionCode, svc_induty_cd: industryCode },
+        where: { trdar_cd: area.code, svc_induty_cd: industryCode },
         orderBy: { stdr_yyqu_cd: 'desc' },
       });
     } else {
       return this.prisma.storeBackarea.findFirst({
-        where: { trdar_cd: regionCode, svc_induty_cd: industryCode },
+        where: { trdar_cd: area.code, svc_induty_cd: industryCode },
         orderBy: { stdr_yyqu_cd: 'desc' },
       });
     }
   }
 
   async getAreaName(regionCode: string) {
-    const type = await this.getAreaType(regionCode);
-    if (type === 'dong') {
-      const area = await this.prisma.areaDong.findUnique({
-        where: { adstrd_cd: regionCode },
+    const area = await this.resolveArea(regionCode);
+    if (!area) return null;
+
+    if (area.type === 'dong') {
+      const data = await this.prisma.areaDong.findUnique({
+        where: { adstrd_cd: area.code },
         select: { adstrd_nm: true },
       });
-      return area ? { adstrd_nm: area.adstrd_nm } : null;
-    } else if (type === 'commercial') {
-      const area = await this.prisma.areaCommercial.findUnique({
-        where: { trdar_cd: regionCode },
+      return data ? { adstrd_nm: data.adstrd_nm } : null;
+    } else if (area.type === 'commercial') {
+      const data = await this.prisma.areaCommercial.findUnique({
+        where: { trdar_cd: area.code },
         select: { trdar_cd_nm: true },
       });
-      return area ? { adstrd_nm: area.trdar_cd_nm } : null;
+      return data ? { adstrd_nm: data.trdar_cd_nm } : null;
     } else {
-      const area = await this.prisma.areaBackarea.findUnique({
-        where: { alley_trdar_cd: regionCode },
+      const data = await this.prisma.areaBackarea.findUnique({
+        where: { alley_trdar_cd: area.code },
         select: { alley_trdar_nm: true },
       });
-      return area ? { adstrd_nm: area.alley_trdar_nm } : null;
+      return data ? { adstrd_nm: data.alley_trdar_nm } : null;
     }
   }
 
@@ -97,65 +105,88 @@ export class ReportRepository {
   }
 
   async getLatestIncome(regionCode: string) {
-    const type = await this.getAreaType(regionCode);
-    if (type === 'dong') {
+    const area = await this.resolveArea(regionCode);
+    if (!area) return null;
+
+    if (area.type === 'dong') {
       return this.prisma.incomeConsumptionDong.findFirst({
-        where: { adstrd_cd: regionCode },
+        where: { adstrd_cd: area.code },
         orderBy: { stdr_yyqu_cd: 'desc' },
       });
-    } else if (type === 'commercial') {
+    } else if (area.type === 'commercial') {
       return this.prisma.incomeConsumptionCommercial.findFirst({
-        where: { trdar_cd: regionCode },
+        where: { trdar_cd: area.code },
         orderBy: { stdr_yyqu_cd: 'desc' },
       });
     } else {
       return this.prisma.incomeConsumptionBackarea.findFirst({
-        where: { trdar_cd: regionCode },
+        where: { trdar_cd: area.code },
         orderBy: { stdr_yyqu_cd: 'desc' },
       });
     }
   }
 
   async getTopIndustriesInArea(regionCode: string) {
-    const type = await this.getAreaType(regionCode);
-    if (type === 'dong') {
+    const area = await this.resolveArea(regionCode);
+    if (!area) return [];
+
+    if (area.type === 'dong') {
       return this.prisma.storeDong.findMany({
-        where: { adstrd_cd: regionCode },
+        where: { adstrd_cd: area.code },
         orderBy: [{ stdr_yyqu_cd: 'desc' }, { stor_co: 'desc' }],
         take: 10,
       });
-    } else if (type === 'commercial') {
+    } else if (area.type === 'commercial') {
       return this.prisma.storeCommercial.findMany({
-        where: { trdar_cd: regionCode },
+        where: { trdar_cd: area.code },
         orderBy: [{ stdr_yyqu_cd: 'desc' }, { stor_co: 'desc' }],
         take: 10,
       });
     } else {
       return this.prisma.storeBackarea.findMany({
-        where: { trdar_cd: regionCode },
+        where: { trdar_cd: area.code },
         orderBy: [{ stdr_yyqu_cd: 'desc' }, { stor_co: 'desc' }],
         take: 10,
       });
     }
   }
 
-  private async getAreaType(
-    code: string,
-  ): Promise<'dong' | 'commercial' | 'backarea'> {
-    // 행정동 테이블에서 먼저 조회 (8자리 코드 대응)
-    const dong = await this.prisma.areaDong.findUnique({
-      where: { adstrd_cd: code },
-      select: { adstrd_cd: true },
-    });
-    if (dong) return 'dong';
+  private async resolveArea(code: string): Promise<{
+    type: 'dong' | 'commercial' | 'backarea';
+    code: string;
+  } | null> {
+    const variants = [code];
+    if (code.length === 8) variants.push(code + '00');
+    if (code.length === 10 && code.endsWith('00'))
+      variants.push(code.substring(0, 8));
 
-    // 상권 테이블 조회
-    const comm = await this.prisma.areaCommercial.findUnique({
-      where: { trdar_cd: code },
-      select: { trdar_cd: true },
-    });
-    if (comm) return 'commercial';
+    // 1. 행정동 조회
+    for (const v of variants) {
+      const dong = await this.prisma.areaDong.findUnique({
+        where: { adstrd_cd: v },
+        select: { adstrd_cd: true },
+      });
+      if (dong) return { type: 'dong', code: v };
+    }
 
-    return 'backarea';
+    // 2. 상권 조회
+    for (const v of variants) {
+      const comm = await this.prisma.areaCommercial.findUnique({
+        where: { trdar_cd: v },
+        select: { trdar_cd: true },
+      });
+      if (comm) return { type: 'commercial', code: v };
+    }
+
+    // 3. 골목상권 조회
+    for (const v of variants) {
+      const back = await this.prisma.areaBackarea.findUnique({
+        where: { alley_trdar_cd: v },
+        select: { alley_trdar_cd: true },
+      });
+      if (back) return { type: 'backarea', code: v };
+    }
+
+    return null;
   }
 }

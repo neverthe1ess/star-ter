@@ -19,6 +19,7 @@ export interface SelectedArea {
   name: string;
   coords: MapCoordinates;
   type: AreaType;
+  code?: string; // 행정동 코드(adstrd_cd) 또는 상권 코드(trdar_cd)
 }
 
 export interface MapStore {

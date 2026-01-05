@@ -8,7 +8,6 @@ import {
   Building2,
   DollarSign,
   AlertTriangle,
-  Sparkles,
 } from 'lucide-react';
 
 interface Tab {
@@ -24,7 +23,6 @@ const tabs: Tab[] = [
   { id: 'industry', label: '업종 분석', icon: <Building2 size={14} /> },
   { id: 'cost', label: '창업 비용·손익', icon: <DollarSign size={14} /> },
   { id: 'risk', label: '경쟁·리스크 분석', icon: <AlertTriangle size={14} /> },
-  { id: 'trend', label: '트렌드·외부 신호', icon: <Sparkles size={14} /> },
 ];
 
 interface CategoryTabsProps {
@@ -37,7 +35,7 @@ export default function CategoryTabs({
   onTabChange,
 }: CategoryTabsProps) {
   return (
-    <div className="flex flex-wrap gap-2 px-6 py-4 bg-white border-b border-gray-100">
+    <div className="flex flex-wrap gap-1.5 px-8 py-3 bg-white border-b border-gray-100 sticky top-0 z-20 overflow-x-auto no-scrollbar">
       {tabs.map((tab) => {
         const isActive = tab.id === activeTab;
         return (
@@ -45,15 +43,15 @@ export default function CategoryTabs({
             key={tab.id}
             onClick={() => onTabChange?.(tab.id)}
             className={`
-              flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all
+              flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-bold transition-all whitespace-nowrap active:scale-95
               ${
                 isActive
-                  ? 'bg-purple-100 text-purple-700 border border-purple-300'
-                  : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-100 border border-blue-600'
+                  : 'bg-gray-50 text-gray-500 border border-gray-100 hover:bg-gray-100 hover:text-gray-700'
               }
             `}
           >
-            {tab.icon}
+            <span className={isActive ? 'text-white' : 'text-gray-400'}>{tab.icon}</span>
             <span>{tab.label}</span>
           </button>
         );

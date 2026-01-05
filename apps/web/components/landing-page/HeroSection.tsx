@@ -13,6 +13,7 @@ export default function HeroSection() {
       name: '역삼1동',
       coords: { lat: 37.4995, lng: 127.0365 },
       type: 'dong',
+      code: '11680640',
     });
     router.push('/analysis');
   };

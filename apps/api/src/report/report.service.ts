@@ -30,9 +30,11 @@ export class ReportService {
       this.repository.getTopIndustriesInArea(regionCode),
     ]);
 
-    if (!area) {
+    // 지역 또는 산업 정보가 완전히 없는 경우에만 에러를 던지고,
+    // 최소한의 정보(fallbackName 등)가 있으면 분석을 최대한 진행합니다.
+    if (!area && !fallbackRegionName && !sales && !footTraffic) {
       throw new NotFoundException(
-        `선택하신 지역(코드: ${regionCode})의 기본 정보를 찾을 수 없습니다.`,
+        `선택하신 지역(코드: ${regionCode})에 대한 정보를 찾을 수 없습니다.`,
       );
     }
 
@@ -62,14 +64,16 @@ export class ReportService {
     };
 
     const activeSales = sales || defaultSales;
-    const areaName = area?.adstrd_nm || fallbackRegionName || '데이터 부족';
+    const areaName =
+      area?.adstrd_nm || fallbackRegionName || `지역(${regionCode})`;
 
     // 업종명 결정: service_industry 테이블 -> 매출 데이터 -> 프론트엔드 전달값 -> 코드값
+    const salesWithIndustryName = sales as { svc_induty_cd_nm: string } | null;
     const industryName =
       industry?.service_industry_nm ||
-      (sales as { svc_induty_cd_nm: string } | null)?.svc_induty_cd_nm ||
+      salesWithIndustryName?.svc_induty_cd_nm ||
       fallbackIndustryName ||
-      industryCode;
+      `업종(${industryCode})`;
 
     // 1) 핵심 지표 계산
     const totalRevenue = Number(activeSales.thsmon_selng_amt);
