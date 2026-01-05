@@ -1,12 +1,12 @@
 model user_info {
-  id                   String                 @id @default(uuid()) @db.Uuid
-  email                String                 @unique
-  password             String
-  nickname             String
-  createdAt            DateTime               @default(now())
-  updatedAt            DateTime               @updatedAt
-  bookmark             bookmark[]
-  real_estate_register real_estate_register[]
+  id               String             @id @default(uuid()) @db.Uuid
+  email            String             @unique
+  password         String
+  nickname         String
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  bookmark         bookmark[]
+  real_estate_info real_estate_info[]
 }
 
 model bookmark {

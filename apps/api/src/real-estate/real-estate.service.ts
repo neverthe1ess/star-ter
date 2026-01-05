@@ -11,24 +11,52 @@ import { RealEstateResponseDto } from './dto/real-estate-response.dto';
 export class RealEstateService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: CreateRealEstateDto) {
+  async create(data: CreateRealEstateDto): Promise<RealEstateResponseDto> {
     const toBigInt = (val?: number) => (val ? BigInt(val) : null);
 
     if (!data.user_id) {
       throw new Error('User ID is required');
     }
 
-    const result = await this.prisma.real_estate_register.create({
+    const result = await this.prisma.real_estate_info.create({
       data: {
-        ...data,
-        user_id: data.user_id,
         id: randomUUID(),
+        user_id: data.user_id,
+        name: data.name ?? null,
+        address: data.address ?? null,
+        roadaddress: data.roadaddress ?? null,
+        centerlatitude: data.centerlatitude
+          ? new Prisma.Decimal(data.centerlatitude)
+          : null,
+        centerlongitude: data.centerlongitude
+          ? new Prisma.Decimal(data.centerlongitude)
+          : null,
+        title: data.title ?? null,
         deposit: toBigInt(data.deposit),
-        monthly_rent: toBigInt(data.monthly_rent),
-        maintenance_fee: toBigInt(data.maintenance_fee),
+        monthlyrent: toBigInt(data.monthlyrent),
+        maintenancefee: toBigInt(data.maintenancefee),
         premium: toBigInt(data.premium),
-        price_per_pyeong: toBigInt(data.price_per_pyeong),
-        area: data.area ? new Prisma.Decimal(data.area) : null,
+        // areaprice 자동 계산: (월세 + 관리비) / 면적(평)
+        // size는 m² 단위이므로 평으로 변환 (÷ 3.3058)
+        areaprice:
+          data.monthlyrent && data.size
+            ? toBigInt(
+                Math.round(
+                  ((data.monthlyrent || 0) + (data.maintenancefee || 0)) /
+                    (data.size / 3.3058),
+                ),
+              )
+            : null,
+        size: data.size ? new Prisma.Decimal(data.size) : null,
+        floor: data.floor ?? null,
+        groundfloor: data.groundfloor ?? null,
+        businesslargecodename: data.businesslargecodename ?? null,
+        businessmiddlecodename: data.businessmiddlecodename ?? null,
+        nearsubwaystation: data.nearsubwaystation ?? null,
+        ismoveindate: data.ismoveindate ?? null,
+        previewphotourl: data.previewphotourl ?? null,
+        createddateutc: new Date(),
+        moveindate: data.moveindate ? new Date(data.moveindate) : null,
       },
     });
 
@@ -40,22 +68,29 @@ export class RealEstateService {
   ): Promise<RealEstateResponseDto[]> {
     const where = this.buildBBoxFilter(query);
 
-    const results = await this.prisma.real_estate_register.findMany({
+    const results = await this.prisma.real_estate_info.findMany({
       where,
       select: {
         id: true,
-        address_name: true,
-        address_road_name: true,
-        address_x: true,
-        address_y: true,
+        name: true,
+        address: true,
+        roadaddress: true,
+        centerlatitude: true,
+        centerlongitude: true,
+        title: true,
         deposit: true,
-        monthly_rent: true,
-        maintenance_fee: true,
+        monthlyrent: true,
+        maintenancefee: true,
         premium: true,
-        price_per_pyeong: true,
-        area: true,
-        floor_info: true,
-        phone_number: true,
+        areaprice: true,
+        size: true,
+        floor: true,
+        groundfloor: true,
+        businesslargecodename: true,
+        businessmiddlecodename: true,
+        nearsubwaystation: true,
+        ismoveindate: true,
+        previewphotourl: true,
       },
     });
 
@@ -64,50 +99,60 @@ export class RealEstateService {
 
   private buildBBoxFilter(
     query: GetRealEstateQueryDto,
-  ): Prisma.real_estate_registerWhereInput {
+  ): Prisma.real_estate_infoWhereInput {
     const { minx, miny, maxx, maxy } = query;
 
     if (!minx || !miny || !maxx || !maxy) return {};
 
     return {
-      address_x: { gte: miny, lte: maxy }, // Lat (위도)
-      address_y: { gte: minx, lte: maxx }, // Lng (경도)
+      centerlatitude: { gte: miny, lte: maxy },
+      centerlongitude: { gte: minx, lte: maxx },
     };
   }
 
   private toResponseDto(item: {
     id: string;
-    address_name: string | null;
-    address_road_name: string | null;
-    address_x: { toNumber(): number } | null;
-    address_y: { toNumber(): number } | null;
+    name: string | null;
+    address: string | null;
+    roadaddress: string | null;
+    centerlatitude: { toNumber(): number } | null;
+    centerlongitude: { toNumber(): number } | null;
+    title: string | null;
     deposit: bigint | null;
-    monthly_rent: bigint | null;
-    maintenance_fee: bigint | null;
+    monthlyrent: bigint | null;
+    maintenancefee: bigint | null;
     premium: bigint | null;
-    price_per_pyeong: bigint | null;
-    floor_info: string | null;
-    area: { toNumber(): number } | null;
-    phone_number: string | null;
+    areaprice: bigint | null;
+    size: { toNumber(): number } | null;
+    floor: number | null;
+    groundfloor: number | null;
+    businesslargecodename: string | null;
+    businessmiddlecodename: string | null;
+    nearsubwaystation: string | null;
+    ismoveindate: boolean | null;
+    previewphotourl: string | null;
   }): RealEstateResponseDto {
     return {
       id: item.id,
-      address_name: item.address_name,
-      address_road_name: item.address_road_name,
-      address_x: item.address_x?.toNumber() ?? null,
-      address_y: item.address_y?.toNumber() ?? null,
+      name: item.name,
+      address: item.address,
+      roadaddress: item.roadaddress,
+      centerlatitude: item.centerlatitude?.toNumber() ?? null,
+      centerlongitude: item.centerlongitude?.toNumber() ?? null,
+      title: item.title,
       deposit: item.deposit ? Number(item.deposit) : null,
-      monthly_rent: item.monthly_rent ? Number(item.monthly_rent) : null,
-      maintenance_fee: item.maintenance_fee
-        ? Number(item.maintenance_fee)
-        : null,
+      monthlyrent: item.monthlyrent ? Number(item.monthlyrent) : null,
+      maintenancefee: item.maintenancefee ? Number(item.maintenancefee) : null,
       premium: item.premium ? Number(item.premium) : null,
-      price_per_pyeong: item.price_per_pyeong
-        ? Number(item.price_per_pyeong)
-        : null,
-      area: item.area?.toNumber() ?? null,
-      floor_info: item.floor_info,
-      phone_number: item.phone_number,
+      areaprice: item.areaprice ? Number(item.areaprice) : null,
+      size: item.size?.toNumber() ?? null,
+      floor: item.floor,
+      groundfloor: item.groundfloor,
+      businesslargecodename: item.businesslargecodename,
+      businessmiddlecodename: item.businessmiddlecodename,
+      nearsubwaystation: item.nearsubwaystation,
+      ismoveindate: item.ismoveindate,
+      previewphotourl: item.previewphotourl,
     };
   }
 }
