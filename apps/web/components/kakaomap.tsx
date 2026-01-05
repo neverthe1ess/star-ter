@@ -286,7 +286,7 @@ export default function Kakaomap({
 
       {/* 유동인구 인포바 */}
       {population.showLayer && (
-        <div className="absolute right-100 bottom-1 z-50">
+        <div className="absolute left-6 bottom-1 z-50">
           <PopulationBar />
         </div>
       )}
