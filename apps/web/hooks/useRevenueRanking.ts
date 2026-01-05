@@ -10,16 +10,17 @@ export type RankItem = {
   amount: number;
   count: number;
   changeType?: string;
+  fluctuationRate?: number;
 };
 
 type RevenueRankingResponse = {
-  level: 'gu' | 'dong';
+  level: 'gu' | 'dong' | 'commercial';
   industryCode?: string;
   items: RankItem[];
 };
 
 interface UseRevenueRankingProps {
-  level: 'gu' | 'dong';
+  level: 'gu' | 'dong' | 'commercial';
   parentGuCode?: string;
   industryCode?: string;
   industryCodes?: string;

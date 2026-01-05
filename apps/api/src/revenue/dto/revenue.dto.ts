@@ -30,6 +30,7 @@ export class RevenueRankingItemDto {
   amount: number;
   count: number;
   changeType?: string;
+  fluctuationRate?: number;
 }
 
 export class RevenueRankingResponseDto {

@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { FloatingPopulationRepository } from './floating-population.repository';
 import { TimeSegmentedLayerResponse } from './dto/floating-population-response.dto';
+import {
+  GetPopulationRankingQueryDto,
+  PopulationRankingResponseDto,
+} from './dto/population-ranking.dto';
 
 @Injectable()
 export class FloatingPopulationService {
@@ -27,5 +31,12 @@ export class FloatingPopulationService {
       this.logger.error('Failed to fetch population layer by bounds', error);
       return { features: [] };
     }
+  }
+
+  async getRanking(
+    query: GetPopulationRankingQueryDto,
+  ): Promise<PopulationRankingResponseDto> {
+    const items = await this.repository.findRanking(query);
+    return { items };
   }
 }
