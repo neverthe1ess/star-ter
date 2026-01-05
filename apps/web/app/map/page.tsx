@@ -105,6 +105,7 @@ export default function MapPage() {
             estimatedSales: '0',
             salesChange: '',
             storeCount: '0',
+            regionCode: '',
           }
         }
         dataB={
@@ -114,6 +115,7 @@ export default function MapPage() {
             estimatedSales: '0',
             salesChange: '',
             storeCount: '0',
+            regionCode: '',
           }
         }
       />

@@ -9,6 +9,7 @@ interface ComparisonData {
   estimatedSales: string;
   salesChange: string;
   storeCount: string;
+  regionCode?: string;
 }
 
 interface ComparisonOverlayProps {
@@ -98,6 +99,7 @@ export default function ComparisonOverlay({
           onScroll={handleScroll('A')}
           isStoreExpanded={isStoreExpanded}
           onStoreExpand={setIsStoreExpanded}
+          regionCode={dataA.regionCode}
         />
         <AnalysisCard
           title={dataB.title}
@@ -116,6 +118,7 @@ export default function ComparisonOverlay({
           onScroll={handleScroll('B')}
           isStoreExpanded={isStoreExpanded}
           onStoreExpand={setIsStoreExpanded}
+          regionCode={dataB.regionCode}
         />
       </div>
     </div>
