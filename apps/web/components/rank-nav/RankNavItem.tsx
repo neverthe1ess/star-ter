@@ -1,4 +1,5 @@
 import { RankItem } from '@/hooks/useRevenueRanking';
+import { Heart } from 'lucide-react';
 
 type RankNavItemProps = {
   item: RankItem;
@@ -6,6 +7,9 @@ type RankNavItemProps = {
   onClick: () => void;
   disabled: boolean;
   formatAmount: (amount: number) => string;
+  isFavorite: boolean;
+  onToggleFavorite: (e: React.MouseEvent) => void;
+  fluctuation: number;
 };
 
 const changeLabelMap: Record<string, string> = {
@@ -21,37 +25,86 @@ export default function RankNavItem({
   onClick,
   disabled,
   formatAmount,
+  isFavorite,
+  onToggleFavorite,
+  fluctuation,
 }: RankNavItemProps) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-xl border border-transparent bg-gray-50/80 px-3 py-2 text-left transition hover:border-gray-200 hover:bg-white disabled:cursor-wait disabled:opacity-70"
+      className="grid grid-cols-11 gap-4 w-full items-center rounded-xl border border-transparent bg-gray-50/80 px-2 py-4 text-left transition hover:border-gray-200 hover:bg-white disabled:cursor-wait disabled:opacity-70 group"
       disabled={disabled}
     >
-      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 text-sm font-semibold text-white">
-        {rank}
-      </span>
-      <div className="flex flex-1 items-center justify-between gap-4">
-        <span className="text-sm font-semibold text-gray-900">{item.name}</span>
-        <span className="text-sm font-bold text-gray-900">
+      {/* Rank & Name Section */}
+      <div className="col-span-4 flex items-center gap-3 overflow-hidden">
+        <div
+          onClick={onToggleFavorite}
+          className="cursor-pointer shrink-0 p-1.5 rounded-full hover:bg-gray-200 transition-colors"
+        >
+          <Heart
+            className={`h-3.5 w-3.5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400 group-hover:text-gray-500'}`}
+          />
+        </div>
+
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">
+          {rank}
+        </span>
+
+        <span className="truncate text-base font-semibold text-gray-900">
+          {item.name}
+        </span>
+      </div>
+
+      {/* Value */}
+      <div className="col-span-3 text-right">
+        <span className="text-base font-bold text-gray-900">
           {formatAmount(item.amount)}
         </span>
       </div>
-      <span
-        className={`rounded-full px-2 py-1 text-[11px] font-semibold ${
-          changeLabelMap[item.changeType || '']?.includes('뜨는')
-            ? 'bg-blue-100 text-blue-700'
-            : changeLabelMap[item.changeType || '']?.includes('위험')
-              ? 'bg-red-100 text-red-700'
-              : changeLabelMap[item.changeType || '']?.includes('확장') ||
-                  changeLabelMap[item.changeType || '']?.includes('변동')
-                ? 'bg-amber-100 text-amber-700'
-                : 'bg-gray-100 text-gray-700'
-        }`}
-      >
-        {changeLabelMap[item.changeType || ''] || '정보 없음'}
-      </span>
+
+      {/* Fluctuation */}
+      <div className="col-span-2 flex justify-end">
+        <div
+          className={`flex items-center text-xs font-bold ${
+            fluctuation > 0
+              ? 'text-red-500'
+              : fluctuation < 0
+                ? 'text-blue-500'
+                : 'text-gray-500'
+          }`}
+        >
+          {fluctuation > 0 ? '▲' : fluctuation < 0 ? '▼' : '-'}
+          <span className="ml-1">{Math.abs(fluctuation)}%</span>
+        </div>
+      </div>
+
+      {/* Badge */}
+      <div className="col-span-2 flex justify-end">
+        {(() => {
+          const label =
+            changeLabelMap[item.changeType || ''] ||
+            item.changeType ||
+            '정보 없음';
+          let badgeClass = 'bg-gray-100 text-gray-700';
+
+          if (label.includes('뜨는') || label.includes('축소')) {
+            badgeClass = 'bg-blue-100 text-blue-700';
+          } else if (label.includes('위험') || label.includes('확장')) {
+            badgeClass = 'bg-red-100 text-red-700';
+          } else if (label.includes('변동')) {
+            badgeClass = 'bg-amber-100 text-amber-700';
+          }
+
+          return (
+            <span
+              className={`rounded-full px-2 py-1 text-[10px] font-bold text-nowrap ${badgeClass}`}
+            >
+              {label}
+            </span>
+          );
+        })()}
+      </div>
     </button>
   );
 }
