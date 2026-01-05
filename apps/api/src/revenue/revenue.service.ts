@@ -7,11 +7,10 @@ import {
   RevenueRankingResponseDto,
   RevenueResponseDto,
   MarketAnalyticsResponseDto,
+  AnalyticsSaturationDto,
 } from './dto/revenue.dto';
 
 type ModelConfig = {
-  codeField: string;
-  nameField: string;
   modelName:
     | 'salesCity'
     | 'salesGu'
@@ -43,7 +42,7 @@ type ModelConfig = {
 const modelMap: Record<RevenueLevel, ModelConfig> = {
   city: {
     codeField: 'mega_cd',
-    nameField: 'mega_nm',
+    nameField: 'mega_cd_nm',
     modelName: 'salesCity',
     storeModelName: 'storeCity',
     footTrafficModelName: 'footTrafficCity',
@@ -51,7 +50,7 @@ const modelMap: Record<RevenueLevel, ModelConfig> = {
   },
   gu: {
     codeField: 'signgu_cd',
-    nameField: 'signgu_nm',
+    nameField: 'signgu_cd_nm',
     modelName: 'salesGu',
     storeModelName: 'storeGu',
     footTrafficModelName: 'footTrafficGu',
@@ -59,7 +58,7 @@ const modelMap: Record<RevenueLevel, ModelConfig> = {
   },
   dong: {
     codeField: 'adstrd_cd',
-    nameField: 'adstrd_nm',
+    nameField: 'adstrd_cd_nm',
     modelName: 'salesDong',
     storeModelName: 'storeDong',
     footTrafficModelName: 'footTrafficDong',
@@ -159,7 +158,7 @@ export class RevenueService {
     query: GetRevenueRankingQueryDto,
   ): Promise<RevenueRankingResponseDto> {
     const { level, industryCode, industryCodes, quarter, parentGuCode } = query;
-    const modelConfig = this.modelMap[level];
+    const modelConfig = modelMap[level];
     if (!modelConfig) {
       throw new BadRequestException(`지원하지 않는 레벨: ${level}`);
     }
@@ -314,7 +313,7 @@ export class RevenueService {
     query: GetRevenueQueryDto,
   ): Promise<MarketAnalyticsResponseDto> {
     const { level, code, quarter } = query;
-    const modelConfig = this.modelMap[level];
+    const modelConfig = modelMap[level];
     if (!modelConfig) {
       throw new BadRequestException(`지원하지 않는 레벨: ${level}`);
     }
@@ -477,13 +476,12 @@ export class RevenueService {
     // Area unit in DB 'relm_ar' is likely in square meters.
     // Let's define Threshold constants here for easy tuning.
     const DENSITY_THRESHOLDS = {
-      HIGH: 0.005, // e.g., 1 store per 200m2 (Very dense)
-      MEDIUM: 0.002, // e.g., 1 store per 500m2
-      LOW: 0.0005, // e.g., 1 store per 2000m2
+      HIGH: 0.0005, // e.g., 1 store per 200m2 (Very dense)
+      MEDIUM: 0.0002, // e.g., 1 store per 500m2
+      LOW: 0.00005, // e.g., 1 store per 2000m2
     };
 
     let saturation: AnalyticsSaturationDto[] = [];
-    const storeClient = (this.prisma as any)[modelConfig.storeModelName];
     const areaClient = modelConfig.areaModelName
       ? (this.prisma as any)[modelConfig.areaModelName]
       : null;
@@ -497,9 +495,10 @@ export class RevenueService {
         select: { svc_induty_cd_nm: true, stor_co: true, svc_induty_cd: true },
       });
 
-      // 2. Get Area Size using the same region code
+      // 2. Get Area Size using the region code only (Area table is static, no quarter field)
+      const areaWhere = { [modelConfig.codeField]: code };
       const areaData = await areaClient.findFirst({
-        where: whereBase, // Reuse the same where clause (e.g. { signgu_cd: '11110' })
+        where: areaWhere,
         select: { relm_ar: true },
       });
 

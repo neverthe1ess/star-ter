@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { RankingItem, METRIC_DATA, MOCK_NEWS, MOCK_SNS, MOCK_BLOGS, METRIC_INSIGHTS, MetricType, METRIC_TYPES } from './mock-data';
+import { RankingItem, MOCK_NEWS, MOCK_SNS, MOCK_BLOGS, METRIC_INSIGHTS, MetricType, METRIC_TYPES } from './mock-data';
 import SectorChart from './charts/SectorChart';
 import SaturationGrid from './charts/SaturationGrid';
 import GrowthChart from './charts/GrowthChart';
 import DemographicsRadar from './charts/DemographicsRadar';
 import PopulationChart from './charts/PopulationChart';
+import { useMarketAnalytics } from '@/hooks/use-market-analytics';
+import { RevenueLevel } from '@/services/revenue.service';
 
 interface DetailPanelProps {
   item: RankingItem;
@@ -24,20 +26,74 @@ export default function DetailPanel({ item }: DetailPanelProps) {
   const [activeTab, setActiveTab] = useState<'뉴스' | 'SNS' | '블로그'>('뉴스');
   const [chartMetric, setChartMetric] = useState<MetricType>('잘나가는 업종');
 
+  // Fetch Real Data
+  // Mapping 'item.level' to RevenueLevel might be needed if they differ. 
+  // currently item doesn't explicitly have 'level' but assuming RankingItem context.
+  // We need to pass the level properly. 
+  // Let's assume 'gu' for now if not present, or derive from item props if available.
+  // Actually RankingItem has code. Let's assume 'gu' or check code length?
+  // 5 chars = Gu, 8 chars = Dong, etc.
+  
+  let level: RevenueLevel = 'gu';
+  if (item.code.length === 5) level = 'gu';
+  else if (item.code.length === 8) level = 'dong';
+  else if (item.code.length > 8) level = 'commercial'; 
+
+  const { data, isLoading, error } = useMarketAnalytics(level, item.code);
+
   const status = getStatusBadge(item.fluctuation);
 
   const renderChart = () => {
+    if (isLoading) {
+      return (
+        <div className="h-full flex items-center justify-center text-gray-400">
+           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        </div>
+      );
+    }
+
+    if (error || !data) {
+       return (
+         <div className="h-full flex items-center justify-center text-gray-400">
+             데이터를 불러올 수 없습니다.
+         </div>
+       );
+    }
+
+    const sectorData = data.sectors.map((item, index) => ({
+      ...item,
+      color: ['#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#dbeafe'][index % 5],
+    }));
+
+    const saturationData = data.saturation.map(item => {
+      let color = '#3b82f6'; // Default Blue
+      if(item.status === '위험') color = '#ef4444';
+      else if(item.status === '경계') color = '#f59e0b';
+      else if(item.status === '추천') color = '#10b981';
+      return { ...item, color };
+    });
+
+    const growthData = data.growth.map(item => ({
+      name: item.period,
+      value: item.amount
+    }));
+
+    const populationData = data.population.map(item => ({
+      name: item.time,
+      value: item.value
+    }));
+
     switch (chartMetric) {
       case '잘나가는 업종':
-        return <SectorChart data={METRIC_DATA.sectors} />;
+        return <SectorChart data={sectorData} />;
       case '업종 포화도':
-        return <SaturationGrid data={METRIC_DATA.saturation} />;
+        return <SaturationGrid data={saturationData} />;
       case '매출 성장성':
-        return <GrowthChart data={METRIC_DATA.growth} />;
+        return <GrowthChart data={growthData} />;
       case '성별/연령':
-        return <DemographicsRadar data={METRIC_DATA.radar} />;
+        return <DemographicsRadar data={data.demographics} />;
       case '유동인구':
-        return <PopulationChart data={METRIC_DATA.population} />;
+        return <PopulationChart data={populationData} />;
       default:
         return null;
     }
