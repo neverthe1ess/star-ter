@@ -49,6 +49,7 @@ export default function AIChatSidebar() {
 
       if (assistantMessage.actions && assistantMessage.actions.length > 0) {
         const { ActionExecutor } = await import('@/services/action-executor');
+        console.log(assistantMessage.actions);
         ActionExecutor.execute(assistantMessage.actions);
       }
     } catch (error) {

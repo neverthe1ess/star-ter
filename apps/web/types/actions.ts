@@ -23,6 +23,10 @@ export interface UiOpenPanelAction extends BaseAction {
   type: 'ui.open_panel';
   payload: {
     panelType: 'summary' | 'comparison';
+    level?: 'gu' | 'dong' | 'commercial';
+    lat?: number;
+    lng?: number;
+    areaName?: string;
   };
 }
 
