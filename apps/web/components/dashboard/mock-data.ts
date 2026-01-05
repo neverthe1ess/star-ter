@@ -12,6 +12,15 @@ export interface RankingItem {
   summary: string; // AI Summary comment
 }
 
+export const METRIC_TYPES = [
+  '잘나가는 업종',
+  '업종 포화도',
+  '매출 성장성',
+  '성별/연령',
+  '유동인구',
+] as const;
+export type MetricType = (typeof METRIC_TYPES)[number];
+
 export interface NewsItem {
   id: string;
   title: string;
@@ -166,17 +175,41 @@ export const METRIC_DATA = {
     { name: '21시', value: 3200 },
     { name: '24시', value: 1500 },
   ],
+  radar: [
+    { subject: '10대', male: 40, female: 60, fullMark: 100 },
+    { subject: '20대', male: 80, female: 90, fullMark: 100 },
+    { subject: '30대', male: 70, female: 85, fullMark: 100 },
+    { subject: '40대', male: 50, female: 50, fullMark: 100 },
+    { subject: '50대+', male: 30, female: 40, fullMark: 100 },
+  ],
 };
 
-export const METRIC_DESCRIPTIONS = {
-  '잘나가는 업종':
-    '현재 이 상권에서 가장 높은 매출을 올리고 있는 효자 업종 TOP 5입니다.',
-  '업종 포화도': '이미 점포가 많아 경쟁이 치열한 "레드오션" 업종을 주의하세요.',
-  '매출 성장성':
-    '최근 6개월간 상권 전체 매출이 상승세인지 하락세인지 확인해보세요.',
-  '성별/연령':
-    '주로 방문하는 고객층의 성별과 연령대를 분석하여 타겟을 설정하세요.',
-  유동인구: '시간대별 유동인구 흐름을 파악하여 영업 시간을 최적화하세요.',
+export const METRIC_INSIGHTS = {
+  '잘나가는 업종': {
+    highlight: '카페',
+    val: '85',
+    text: '업종이 압도적인 매출 1위를 기록하고 있어요.',
+  },
+  '업종 포화도': {
+    highlight: '카페',
+    val: '위험',
+    text: '업종은 이미 포화 상태라 진입에 주의가 필요해요.',
+  },
+  '매출 성장성': {
+    highlight: '12%',
+    val: '상승',
+    text: '지난달보다 매출이 크게 올라 성장세가 뚜렷해요.',
+  },
+  '성별/연령': {
+    highlight: '20대',
+    val: '45%',
+    text: '고객 비중이 가장 높아 젊은 층 타겟팅이 유리해요.',
+  },
+  유동인구: {
+    highlight: '18시',
+    val: '4,500명',
+    text: '퇴근 시간대에 유동인구가 가장 붐비는 상권이에요.',
+  },
 };
 
 export const RANKING_DATA: RankingItem[] = [

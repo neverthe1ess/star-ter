@@ -17,7 +17,7 @@ export default function DashboardLayout() {
   const { openModal } = useModalStore();
   const [selectedItem, setSelectedItem] = useState<RankingItem | null>(null);
   const [activeTab, setActiveTab] = useState<'REGION' | 'INDUSTRY'>('REGION');
-  const [detailWidth, setDetailWidth] = useState(450);
+  const [detailWidth, setDetailWidth] = useState(600);
   const [isResizing, setIsResizing] = useState(false);
 
   // 부동산 등록 클릭 핸들러 (로그인 체크 + 모달)
