@@ -33,7 +33,7 @@ export default function HeroSection() {
               상권 분석하러 가기 →
             </button>
           </Link>
-          <Link href={'/estate-regi'}>
+          <Link href={'/gongsil'}>
             <button className="w-full sm:w-auto cursor-pointer px-8 py-4 bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50 text-lg font-bold rounded-full shadow-md hover:shadow-lg transition-all transform hover:-translate-y-1">
               공실 등록하러 가기 +
             </button>

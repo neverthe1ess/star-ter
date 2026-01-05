@@ -63,7 +63,7 @@ export default function PropertyOwnerSection() {
         </div>
 
         <div className="text-center">
-          <Link href={'/estate-regi'}>
+          <Link href={'/gongsil'}>
             <button className="cursor-pointer px-10 py-4 bg-purple-600 hover:bg-purple-700 text-white text-lg font-bold rounded-full shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
               공실 등록하러 가기 +
             </button>
