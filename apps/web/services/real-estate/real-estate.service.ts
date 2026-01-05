@@ -1,18 +1,26 @@
 import { API_ENDPOINTS } from '@/config/api';
 
 export interface RegisterRealEstateParams {
-  address_name: string;
-  address_road_name: string;
-  address_x: number;
-  address_y: number;
+  name?: string;
+  address?: string;
+  roadaddress?: string;
+  centerlatitude: number;
+  centerlongitude: number;
+  title?: string;
   deposit?: number;
-  monthly_rent?: number;
-  maintenance_fee?: number;
+  monthlyrent?: number;
+  maintenancefee?: number;
   premium?: number;
-  area?: number;
-  price_per_pyeong?: number;
-  floor_info?: string;
-  phone_number?: string;
+  areaprice?: number;
+  size?: number;
+  floor?: number;
+  groundfloor?: number;
+  businesslargecodename?: string;
+  businessmiddlecodename?: string;
+  nearsubwaystation?: string;
+  ismoveindate?: boolean;
+  moveindate?: string;
+  previewphotourl?: string;
 }
 
 export const realEstateService = {

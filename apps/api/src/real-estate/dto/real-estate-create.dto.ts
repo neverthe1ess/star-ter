@@ -1,21 +1,37 @@
-import { IsString, IsNumber, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsBoolean,
+  IsInt,
+} from 'class-validator';
 
 export class CreateRealEstateDto {
   @IsOptional()
   @IsString()
   user_id?: string;
 
+  @IsOptional()
   @IsString()
-  address_name: string;
+  name?: string;
 
+  @IsOptional()
   @IsString()
-  address_road_name: string;
+  address?: string;
+
+  @IsOptional()
+  @IsString()
+  roadaddress?: string;
 
   @IsNumber()
-  address_x: number;
+  centerlatitude: number;
 
   @IsNumber()
-  address_y: number;
+  centerlongitude: number;
+
+  @IsOptional()
+  @IsString()
+  title?: string;
 
   @IsOptional()
   @IsNumber()
@@ -23,11 +39,11 @@ export class CreateRealEstateDto {
 
   @IsOptional()
   @IsNumber()
-  monthly_rent?: number;
+  monthlyrent?: number;
 
   @IsOptional()
   @IsNumber()
-  maintenance_fee?: number;
+  maintenancefee?: number;
 
   @IsOptional()
   @IsNumber()
@@ -35,17 +51,41 @@ export class CreateRealEstateDto {
 
   @IsOptional()
   @IsNumber()
-  price_per_pyeong?: number;
+  areaprice?: number;
 
   @IsOptional()
   @IsNumber()
-  area?: number;
+  size?: number;
+
+  @IsOptional()
+  @IsInt()
+  floor?: number;
+
+  @IsOptional()
+  @IsInt()
+  groundfloor?: number;
 
   @IsOptional()
   @IsString()
-  floor_info?: string;
+  businesslargecodename?: string;
 
   @IsOptional()
   @IsString()
-  phone_number?: string;
+  businessmiddlecodename?: string;
+
+  @IsOptional()
+  @IsString()
+  nearsubwaystation?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  ismoveindate?: boolean;
+
+  @IsOptional()
+  @IsString()
+  moveindate?: string;
+
+  @IsOptional()
+  @IsString()
+  previewphotourl?: string;
 }
