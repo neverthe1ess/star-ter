@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { RankingItem, MOCK_NEWS, MOCK_SNS, MOCK_BLOGS, METRIC_INSIGHTS, MetricType, METRIC_TYPES } from './mock-data';
+import { RankingItem, MOCK_NEWS, MOCK_SNS, MOCK_BLOGS, MetricType, METRIC_TYPES } from './mock-data';
+import { formatShortNumber, formatKoreanCurrency } from '@/utils/currency-convert-format';
 import SectorChart from './charts/SectorChart';
 import SaturationGrid from './charts/SaturationGrid';
 import GrowthChart from './charts/GrowthChart';
@@ -9,6 +10,8 @@ import DemographicsRadar from './charts/DemographicsRadar';
 import PopulationChart from './charts/PopulationChart';
 import { useMarketAnalytics } from '@/hooks/use-market-analytics';
 import { RevenueLevel } from '@/services/revenue.service';
+import { Sparkles } from 'lucide-react';
+import { fetchAiSummary, formatMetricsForAi } from '@/services/ai.service';
 
 interface DetailPanelProps {
   item: RankingItem;
@@ -25,23 +28,113 @@ const getStatusBadge = (fluctuation: number) => {
 export default function DetailPanel({ item }: DetailPanelProps) {
   const [activeTab, setActiveTab] = useState<'뉴스' | 'SNS' | '블로그'>('뉴스');
   const [chartMetric, setChartMetric] = useState<MetricType>('잘나가는 업종');
-
-  // Fetch Real Data
-  // Mapping 'item.level' to RevenueLevel might be needed if they differ. 
-  // currently item doesn't explicitly have 'level' but assuming RankingItem context.
-  // We need to pass the level properly. 
-  // Let's assume 'gu' for now if not present, or derive from item props if available.
-  // Actually RankingItem has code. Let's assume 'gu' or check code length?
-  // 5 chars = Gu, 8 chars = Dong, etc.
   
-  let level: RevenueLevel = 'gu';
+  // 지역 코드 길이로 level 결정
+  // 5자리 = 자치구 (signgu_cd), 8자리 = 행정동 (adstrd_cd)
+  // 7자리 및 기타 = 상권 (trdar_cd)
+  let level: RevenueLevel = 'commercial'; // 기본값: 상권
   if (item.code.length === 5) level = 'gu';
-  else if (item.code.length === 8) level = 'dong';
-  else if (item.code.length > 8) level = 'commercial'; 
+  else if (item.code.length === 8) level = 'dong'; 
 
   const { data, isLoading, error } = useMarketAnalytics(level, item.code);
 
+  const [aiSummary, setAiSummary] = useState<string>('');
+  const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    // Reset summary when item changes
+    setAiSummary('');
+  }, [item.code]);
+
+  React.useEffect(() => {
+    if (data && item && !isLoading) {
+      const fetchSummary = async () => {
+        setIsAiLoading(true);
+        try {
+          const metrics = formatMetricsForAi(
+            item.name,
+            data.sectors,
+            data.saturation,
+            data.growth,
+            data.demographics,
+            data.population
+          );
+          const summary = await fetchAiSummary(item.name, metrics);
+          setAiSummary(summary);
+        } catch (error) {
+          console.error('Failed to fetch AI summary', error);
+        } finally {
+          setIsAiLoading(false);
+        }
+      };
+      
+      const timer = setTimeout(() => {
+        fetchSummary();
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [data, item, isLoading]);
+
   const status = getStatusBadge(item.fluctuation);
+
+  // 실제 데이터 기반 동적 인사이트 생성
+  const getMetricInsight = (metric: MetricType): { highlight: string; text: string } => {
+    if (!data) return { highlight: '-', text: '데이터를 분석중입니다...' };
+
+    switch (metric) {
+      case '잘나가는 업종': {
+        const top = data.sectors[0];
+        if (!top) return { highlight: '-', text: '업종 데이터가 없습니다.' };
+        return {
+          highlight: top.name,
+          text: `업종이 ${formatShortNumber(top.value)}원으로 매출 1위를 기록하고 있어요.`
+        };
+      }
+      case '업종 포화도': {
+        const danger = data.saturation.find(s => s.status === '위험');
+        const warn = data.saturation.find(s => s.status === '경계');
+        if (danger) return { highlight: danger.name, text: '업종은 이미 포화 상태라 진입에 주의가 필요해요.' };
+        if (warn) return { highlight: warn.name, text: '업종은 경계 수준이에요. 시장 조사가 필요합니다.' };
+        return { highlight: '안정', text: '이 지역은 상대적으로 경쟁이 덜한 편이에요.' };
+      }
+      case '매출 성장성': {
+        if (data.growth.length < 2) return { highlight: '-', text: '성장 데이터가 부족합니다.' };
+        const latest = data.growth[data.growth.length - 1];
+        const previous = data.growth[data.growth.length - 2];
+        const growthRate = previous.amount > 0 
+          ? Math.round(((latest.amount - previous.amount) / previous.amount) * 100) 
+          : 0;
+        const trend = growthRate > 0 ? '상승' : growthRate < 0 ? '하락' : '정체';
+        return {
+          highlight: `${Math.abs(growthRate)}%`,
+          text: `지난 분기 대비 매출이 ${trend}했어요.`
+        };
+      }
+      case '성별/연령': {
+        if (!data.demographics.length) return { highlight: '-', text: '인구 데이터가 없습니다.' };
+        const topAge = data.demographics.reduce((max, curr) => 
+          (curr.male + curr.female) > (max.male + max.female) ? curr : max
+        );
+        const total = data.demographics.reduce((sum, d) => sum + d.male + d.female, 0);
+        const percentage = total > 0 ? Math.round(((topAge.male + topAge.female) / total) * 100) : 0;
+        return {
+          highlight: topAge.subject,
+          text: `고객 비중이 ${percentage}%로 가장 높아요.`
+        };
+      }
+      case '유동인구': {
+        if (!data.population.length) return { highlight: '-', text: '유동인구 데이터가 없습니다.' };
+        const peak = data.population.reduce((max, curr) => curr.value > max.value ? curr : max);
+        return {
+          highlight: `${peak.time}시`,
+          text: `시간대에 ${formatShortNumber(peak.value)}명으로 유동인구가 가장 많아요.`
+        };
+      }
+      default:
+        return { highlight: '-', text: '' };
+    }
+  };
 
   const renderChart = () => {
     if (isLoading) {
@@ -104,11 +197,6 @@ export default function DetailPanel({ item }: DetailPanelProps) {
       {/* Header Info */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-           <img 
-             src={`https://api.dicebear.com/7.x/initials/svg?seed=${item.name}`} 
-             alt="logo" 
-             className="w-10 h-10 rounded-full bg-gray-100"
-           />
            <div>
              <h2 className="text-2xl font-bold text-gray-900">{item.name}</h2>
              <span className="text-base text-gray-500">{item.code.toUpperCase()} · {item.category}</span>
@@ -117,7 +205,7 @@ export default function DetailPanel({ item }: DetailPanelProps) {
         
         <div className="flex items-center gap-3 mt-4">
            <span className="text-3xl font-bold text-gray-900">
-             {item.revenue.toLocaleString()}원
+             {formatKoreanCurrency(item.revenue, { showWon: true })}
            </span>
            <span className={`px-3 py-1 rounded-full text-sm font-bold ${status.className}`}>
              {status.label}
@@ -126,14 +214,30 @@ export default function DetailPanel({ item }: DetailPanelProps) {
         <p className="text-md text-gray-600 mt-1">평균 매출(월)</p>
         
         {/* AI Summary Comment */}
-        <div className="mt-6 bg-blue-50 p-4 rounded-xl border border-blue-100">
-           <div className="flex items-center gap-2 mb-2">
-             <span className="text-xl">🤖</span>
-             <span className="font-bold text-blue-900 text-base">AI 상권 요약</span>
+        <div className="mt-6 bg-blue-50 p-4 rounded-xl border border-blue-100 min-h-[120px]">
+           <div className="flex gap-3">
+              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                 {isAiLoading ? (
+                   <Sparkles className="w-4 h-4 text-blue-600 animate-spin" />
+                 ) : (
+                   <Sparkles className="w-4 h-4 text-blue-600" />
+                 )}
+              </div>
+              <div className="flex-1">
+                 <p className="text-md font-bold text-gray-900 mb-1">AI 상권 요약</p>
+                 {isAiLoading ? (
+                   <div className="space-y-2 animate-pulse mt-2">
+                     <div className="h-3 bg-blue-200/50 rounded w-3/4"></div>
+                     <div className="h-3 bg-blue-200/50 rounded w-full"></div>
+                     <div className="h-3 bg-blue-200/50 rounded w-5/6"></div>
+                   </div>
+                 ) : (
+                   <p className="text-md text-black-600 leading-relaxed whitespace-pre-line">
+                      {aiSummary || item.summary || "데이터를 분석하고 있어요..."}
+                   </p>
+                 )}
+              </div>
            </div>
-           <p className="text-base text-gray-700 leading-relaxed font-medium">
-             {item.summary || "데이터를 분석중입니다..."}
-           </p>
         </div>
       </div>
 
@@ -163,12 +267,12 @@ export default function DetailPanel({ item }: DetailPanelProps) {
            </div>
            
            {/* Metric Insight Box */}
-           <div className="bg-blue-50/80 border border-blue-100 rounded-xl py-3 px-4 text-center">
-              <p className="text-sm text-gray-800 tracking-tight">
-                 <span className="font-bold text-blue-700 text-lg mr-1">
-                    {METRIC_INSIGHTS[chartMetric].highlight}
+           <div className="border border-blue-100 rounded-xl py-3 px-4 text-center">
+              <p className="text-md text-gray-800 tracking-tight">
+                 <span className="font-bold text-red-500 text-lg mr-1">
+                    {getMetricInsight(chartMetric).highlight}
                  </span>
-                 {METRIC_INSIGHTS[chartMetric].text}
+                 {getMetricInsight(chartMetric).text}
               </p>
            </div>
         </div>
@@ -249,4 +353,3 @@ export default function DetailPanel({ item }: DetailPanelProps) {
     </div>
   );
 }
-
