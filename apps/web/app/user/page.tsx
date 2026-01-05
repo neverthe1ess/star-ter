@@ -77,7 +77,7 @@ export default function UserPage() {
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
     toast.success('로그아웃 되었습니다.');
-    window.location.href = '/map';
+    window.location.href = '/';
   };
 
   const { openModal } = useModalStore();
