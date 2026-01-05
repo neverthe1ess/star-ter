@@ -8,6 +8,8 @@ import StoreTabContent from './StoreTabContent';
 import AnimatedNumber from '../common/AnimatedNumber';
 import { AnalysisData, AnalysisCardProps } from '../../types/analysis-types';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+
 export default function AnalysisCard({
   title,
   address,
@@ -34,7 +36,7 @@ export default function AnalysisCard({
         if (!queryParam) return;
         setLoading(true);
         try {
-            const res = await fetch(`http://localhost:4000/analysis/${encodeURIComponent(queryParam)}?_t=${Date.now()}`);
+            const res = await fetch(`${API_BASE_URL}/${encodeURIComponent(queryParam)}?_t=${Date.now()}`);
             const json = await res.json();
             if (json.sales) {
                 if (json.store && json.store.categories) {
@@ -185,10 +187,28 @@ export default function AnalysisCard({
 
             {data && data.population ? (
                 <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm h-[320px]">
-                  <AgeGenderRadarChart populationData={data.population} />
+                  <AgeGenderRadarChart populationData={data.population} colorTheme="blue" />
                 </div>
             ) : (
-                <div className="text-center text-gray-400 text-sm py-10">인구 데이터가 없습니다.</div>
+                <div className="text-center text-gray-400 text-sm py-10">주거 인구 데이터가 없습니다.</div>
+            )}
+
+            <div>
+              <p className="text-xs font-bold text-gray-800 mb-1">총 직장 인구</p>
+              <div className="flex items-end gap-2 mb-4">
+                <span className="text-3xl font-extrabold text-emerald-600">
+                    {data && data.population?.working ? <AnimatedNumber value={data.population.working.total} /> : '0'}
+                    <span className="text-base font-normal text-gray-600 ml-1">명</span>
+                </span>
+              </div>
+            </div>
+
+            {data && data.population?.working ? (
+                <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm h-[320px]">
+                  <AgeGenderRadarChart populationData={data.population.working} colorTheme="emerald" />
+                </div>
+            ) : (
+                <div className="text-center text-gray-400 text-sm py-10">직장 인구 데이터가 없습니다.</div>
             )}
           </div>
         )}

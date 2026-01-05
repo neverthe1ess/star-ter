@@ -6,6 +6,7 @@ import ReviewSummary from './market/ReviewSummary';
 import StoreList from './market/StoreList';
 import VitalityStats from './market/VitalityStats';
 import DetailedStores from './market/DetailedStores';
+import IndustryRevenueSection from './IndustryRevenueSection';
 import SalesAnalysisSection from './market/SalesAnalysisSection';
 import { useMarketAnalysis } from '@/hooks/useMarketAnalysis';
 
@@ -64,6 +65,11 @@ export default function DetailContents({ data }: DetailContentsProps) {
           stores={analysisData.stores}
           onShowMore={() => setView('list')}
         />
+        {analysisData.sales.industryBreakdown && (
+          <IndustryRevenueSection
+            breakdown={analysisData.sales.industryBreakdown}
+          />
+        )}
         {hasSalesData && (
           <SalesAnalysisSection salesData={analysisData.sales} />
         )}

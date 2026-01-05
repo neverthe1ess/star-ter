@@ -3,6 +3,7 @@ import HeroSection from './HeroSection';
 import FeaturesSection from './FeaturesSection';
 import HowItWorksSection from './HowItWorksSection';
 import AiSection from './AiSection';
+import PropertyOwnerSection from './PropertyOwnerSection';
 import CtaSection from './CtaSection';
 
 export default function LandingPage() {
@@ -13,6 +14,7 @@ export default function LandingPage() {
       <FeaturesSection />
       <HowItWorksSection />
       <AiSection />
+      <PropertyOwnerSection />
       <CtaSection />
     </div>
   );

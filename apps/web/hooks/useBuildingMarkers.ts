@@ -1,7 +1,8 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { KakaoMap, KakaoCustomOverlay } from '../types/map-types';
+import { KakaoMap, KakaoCustomOverlay, OverlayMode } from '../types/map-types';
 import { IndustryCategory } from '../types/bottom-menu-types';
 import { createMarkerContent } from '@/utils/building-marker-utils';
+import { useMapStore } from '@/stores/useMapStore';
 
 interface BuildingStoreData {
   buildingId: string;
@@ -18,6 +19,9 @@ const mapCodeToBackend = (code: string): string[] => {
   if (code.startsWith('G2')) return ['소매'];
   if (code.startsWith('S2')) return ['생활서비스'];
   if (code.startsWith('R1')) return ['오락/스포츠'];
+  if (code.startsWith('F1')) return ['패션/뷰티'];
+  if (code.startsWith('K1')) return ['식료품'];
+  if (code.startsWith('H1')) return ['리빙/가전'];
   if (code.startsWith('P1')) return ['교육'];
   if (code.startsWith('I1')) return ['숙박'];
   if (code.startsWith('Q1')) return ['의료/건강'];
@@ -29,6 +33,9 @@ const CATEGORY_COLORS: Record<string, string> = {
   G2: '#EF4444',
   S2: '#8B5CF6',
   R1: '#EC4899',
+  F1: '#BE185D',
+  K1: '#84CC16',
+  H1: '#6366F1',
   P1: '#CA8A04',
   I1: '#06B6D4',
   Q1: '#22C55E',
@@ -38,6 +45,7 @@ export const useBuildingMarkers = (
   map: KakaoMap | null,
   selectedCategory: IndustryCategory | null,
 ) => {
+  const { overlayMode } = useMapStore();
   const customOverlaysRef = useRef<KakaoCustomOverlay[]>([]);
 
   const TOTAL_VIEW_THRESHOLD = 1;
@@ -52,6 +60,12 @@ export const useBuildingMarkers = (
 
   const fetchAndDrawMarkers = useCallback(async () => {
     if (!map) return;
+
+    // 매출(revenue) 모드일 때만 빌딩 마커 표시
+    if (overlayMode !== 'revenue') {
+      clearMarkers();
+      return;
+    }
 
     const level = map.getLevel();
     if (level > 3) {
@@ -132,7 +146,7 @@ export const useBuildingMarkers = (
     } catch (err) {
       console.error('Building Marker Fetch Error:', err);
     }
-  }, [map, selectedCategory, clearMarkers]);
+  }, [map, selectedCategory, overlayMode, clearMarkers]);
 
   useEffect(() => {
     if (!map) return;
