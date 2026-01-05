@@ -1,6 +1,6 @@
 'use client';
-import LandingPage from '@/components/landing-page/LandingPage';
+import DashboardLayout from '@/components/dashboard/DashboardLayout';
 
 export default function Home() {
-  return <LandingPage />;
+  return <DashboardLayout />;
 }

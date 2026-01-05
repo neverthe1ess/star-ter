@@ -52,7 +52,7 @@ export default function Kakaomap({
       if (polygonClick) {
         const label =
           data.buld_nm || data.adm_nm || data.commercialName || 'Unknown';
-        const code = data.adm_cd || data.commercialCode;
+        const code = data.signgu_cd || data.commercialCode || data.adstrd_cd || data.adm_cd;
         polygonClick({ name: label, code: code });
       }
     },
