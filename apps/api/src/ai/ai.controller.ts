@@ -14,4 +14,9 @@ export class AiController {
     this.logger.log(`Response time: ${Date.now() - startTime} ms`);
     return response;
   }
+
+  @Get('/area')
+  async getAreaByMessage(@Query('message') message: string) {
+    return this.aiService.getAreaByMessage(message);
+  }
 }

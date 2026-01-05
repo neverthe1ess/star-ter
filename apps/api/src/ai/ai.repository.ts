@@ -44,6 +44,11 @@ export class AiRepository {
     return rows;
   }
 
+  async runSql(sql: string): Promise<unknown[]> {
+    const rows = await this.prisma.$queryRawUnsafe<unknown[]>(sql);
+    return rows;
+  }
+
   private toVectorLiteral(vector: number[]): string {
     const normalized = vector.map((value) => {
       const numberValue = Number(value);

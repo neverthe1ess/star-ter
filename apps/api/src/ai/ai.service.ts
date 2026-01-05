@@ -4,6 +4,8 @@ import {
   embedText,
   getCategoryByMessage,
   getLocationByMessage,
+  getRecommendCommercialAreasQuery,
+  getTablesByMessage,
   getText,
   toolCallAi,
 } from './openAI/openAI';
@@ -53,6 +55,32 @@ export class AiService {
     return getText(analyzeResult);
   }
 
+  async getAreaByMessage(message: string) {
+    const [categories, areaList, tables] = await Promise.all([
+      this.getCategories(message),
+      this.buildAreaList(message),
+      this.getTables(message),
+    ]);
+
+    console.log('table:', tables);
+
+    if (tables.length === 0) {
+      return [];
+    }
+
+    const query = await getRecommendCommercialAreasQuery(
+      message,
+      categories,
+      areaList,
+      tables,
+    );
+
+    console.log('query:', getText(query));
+
+    const result = await this.aiRepository.runSql(getText(query));
+    return result;
+  }
+
   private async buildAreaList(message: string) {
     const areaText = getText(await getLocationByMessage(message));
     if (areaText === '""') return [];
@@ -88,6 +116,15 @@ export class AiService {
       categoryList = categoryList.concat(categoryResults);
     }
     return categoryList;
+  }
+
+  private async getTables(message: string) {
+    const tableList = await getTablesByMessage(message);
+    if (getText(tableList) === '""') return [];
+    const categories = getText(tableList)
+      .split(',')
+      .map((cat) => cat.trim());
+    return categories;
   }
 }
 
