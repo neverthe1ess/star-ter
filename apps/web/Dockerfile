@@ -22,6 +22,12 @@ RUN pnpm install --frozen-lockfile
 # 4. Builder stage
 FROM base AS builder
 WORKDIR /app
+
+ARG NEXT_PUBLIC_API_BASE_URL
+ARG NEXT_PUBLIC_KAKAO_MAP_API_KEY
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_KAKAO_MAP_API_KEY=$NEXT_PUBLIC_KAKAO_MAP_API_KEY
+
 COPY --from=installer /app/ .
 COPY --from=pruner /app/out/full/ .
 RUN pnpm turbo run build --filter=web
