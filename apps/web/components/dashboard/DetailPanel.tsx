@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { RankingItem, MOCK_NEWS, MOCK_SNS, MOCK_BLOGS, MetricType, METRIC_TYPES } from './mock-data';
-import { formatShortNumber, formatKoreanCurrency } from '@/lib/format';
+import { formatShortNumber, formatKoreanCurrency } from '@/utils/currency-convert-format';
 import SectorChart from './charts/SectorChart';
 import SaturationGrid from './charts/SaturationGrid';
 import GrowthChart from './charts/GrowthChart';
@@ -28,14 +28,6 @@ const getStatusBadge = (fluctuation: number) => {
 export default function DetailPanel({ item }: DetailPanelProps) {
   const [activeTab, setActiveTab] = useState<'뉴스' | 'SNS' | '블로그'>('뉴스');
   const [chartMetric, setChartMetric] = useState<MetricType>('잘나가는 업종');
-
-  // Fetch Real Data
-  // Mapping 'item.level' to RevenueLevel might be needed if they differ. 
-  // currently item doesn't explicitly have 'level' but assuming RankingItem context.
-  // We need to pass the level properly. 
-  // Let's assume 'gu' for now if not present, or derive from item props if available.
-  // Actually RankingItem has code. Let's assume 'gu' or check code length?
-  // 5 chars = Gu, 8 chars = Dong, etc.
   
   // 지역 코드 길이로 level 결정
   // 5자리 = 자치구 (signgu_cd), 8자리 = 행정동 (adstrd_cd)

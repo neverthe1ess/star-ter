@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { formatShortNumber } from '@/lib/format';
+import { formatShortNumber } from '@/utils/currency-convert-format';
 import {
   BarChart,
   Bar,
