@@ -41,7 +41,7 @@ export default function LoginPage() {
       localStorage.setItem('accessToken', data.accessToken);
 
       toast.success('준비 완료!');
-      router.push('/map');
+      router.push('/');
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message);
