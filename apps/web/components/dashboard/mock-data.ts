@@ -1,0 +1,148 @@
+export interface RankingItem {
+  id: string;
+  rank: number;
+  name: string;
+  category: string;
+  revenue: number; // 월 평균 매출
+  fluctuation: number; // 등락률
+  volume: number; // 유동인구 (or 거래량 analog)
+  stores: number;
+  isFavorite: boolean;
+  code: string; // area code
+}
+
+export const RANKING_DATA: RankingItem[] = [
+  {
+    id: '1',
+    rank: 1,
+    name: '강남역 핵심상권',
+    category: '종합',
+    revenue: 139600000,
+    fluctuation: 8.63,
+    volume: 790000,
+    stores: 450,
+    isFavorite: true,
+    code: 'gangnam',
+  },
+  {
+    id: '2',
+    rank: 2,
+    name: '성수동 카페거리',
+    category: '식음료',
+    revenue: 88000000,
+    fluctuation: 12.4,
+    volume: 450000,
+    stores: 230,
+    isFavorite: true,
+    code: 'seongsu',
+  },
+  {
+    id: '3',
+    rank: 3,
+    name: '홍대 입구',
+    category: '유흥/식음',
+    revenue: 95000000,
+    fluctuation: -0.42,
+    volume: 850000,
+    stores: 600,
+    isFavorite: false,
+    code: 'hongdae',
+  },
+  {
+    id: '4',
+    rank: 4,
+    name: '압구정 로데오',
+    category: '패션/뷰티',
+    revenue: 120000000,
+    fluctuation: 11.7,
+    volume: 320000,
+    stores: 180,
+    isFavorite: false,
+    code: 'apgujeong',
+  },
+  {
+    id: '5',
+    rank: 5,
+    name: '여의도 금융가',
+    category: '오피스',
+    revenue: 110000000,
+    fluctuation: 19.86,
+    volume: 550000,
+    stores: 310,
+    isFavorite: true,
+    code: 'yeouido',
+  },
+  {
+    id: '6',
+    rank: 6,
+    name: '이태원',
+    category: '유흥',
+    revenue: 71513000,
+    fluctuation: 4.97,
+    volume: 280000,
+    stores: 250,
+    isFavorite: false,
+    code: 'itaewon',
+  },
+  {
+    id: '7',
+    rank: 7,
+    name: '잠실 송리단길',
+    category: '식음료',
+    revenue: 56880000,
+    fluctuation: 2.86,
+    volume: 410000,
+    stores: 190,
+    isFavorite: false,
+    code: 'jamsil',
+  },
+  {
+    id: '8',
+    rank: 8,
+    name: '북촌 한옥마을',
+    category: '관광',
+    revenue: 37830000,
+    fluctuation: 25.4,
+    volume: 150000,
+    stores: 120,
+    isFavorite: true,
+    code: 'bukchon',
+  },
+  {
+    id: '9',
+    rank: 9,
+    name: '판교 테크노밸리',
+    category: '오피스',
+    revenue: 98000000,
+    fluctuation: 16.88,
+    volume: 480000,
+    stores: 290,
+    isFavorite: false,
+    code: 'pangyo',
+  },
+  {
+    id: '10',
+    rank: 10,
+    name: '한남동',
+    category: '고급주거',
+    revenue: 65000000,
+    fluctuation: 30.69,
+    volume: 120000,
+    stores: 150,
+    isFavorite: true,
+    code: 'hannam',
+  },
+];
+
+export const CHART_DATA = [
+  { time: '15:00', value: 1850 },
+  { time: '15:30', value: 1880 },
+  { time: '16:00', value: 1820 },
+  { time: '16:30', value: 1840 },
+  { time: '17:00', value: 1900 },
+  { time: '17:30', value: 2050 },
+  { time: '18:00', value: 2100 },
+  { time: '18:30', value: 2080 },
+  { time: '19:00', value: 2150 },
+  { time: '19:30', value: 2200 },
+];
