@@ -10,6 +10,8 @@ import DemographicsRadar from './charts/DemographicsRadar';
 import PopulationChart from './charts/PopulationChart';
 import { useMarketAnalytics } from '@/hooks/use-market-analytics';
 import { RevenueLevel } from '@/services/revenue.service';
+import { Sparkles } from 'lucide-react';
+import { fetchAiSummary, formatMetricsForAi } from '@/services/ai.service';
 
 interface DetailPanelProps {
   item: RankingItem;
@@ -43,6 +45,44 @@ export default function DetailPanel({ item }: DetailPanelProps) {
   else if (item.code.length === 8) level = 'dong'; 
 
   const { data, isLoading, error } = useMarketAnalytics(level, item.code);
+
+  const [aiSummary, setAiSummary] = useState<string>('');
+  const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    // Reset summary when item changes
+    setAiSummary('');
+  }, [item.code]);
+
+  React.useEffect(() => {
+    if (data && item && !isLoading) {
+      const fetchSummary = async () => {
+        setIsAiLoading(true);
+        try {
+          const metrics = formatMetricsForAi(
+            item.name,
+            data.sectors,
+            data.saturation,
+            data.growth,
+            data.demographics,
+            data.population
+          );
+          const summary = await fetchAiSummary(item.name, metrics);
+          setAiSummary(summary);
+        } catch (error) {
+          console.error('Failed to fetch AI summary', error);
+        } finally {
+          setIsAiLoading(false);
+        }
+      };
+      
+      const timer = setTimeout(() => {
+        fetchSummary();
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [data, item, isLoading]);
 
   const status = getStatusBadge(item.fluctuation);
 
@@ -182,14 +222,30 @@ export default function DetailPanel({ item }: DetailPanelProps) {
         <p className="text-md text-gray-600 mt-1">평균 매출(월)</p>
         
         {/* AI Summary Comment */}
-        <div className="mt-6 bg-blue-50 p-4 rounded-xl border border-blue-100">
-           <div className="flex items-center gap-2 mb-2">
-             <span className="text-xl">🤖</span>
-             <span className="font-bold text-blue-900 text-base">AI 상권 요약</span>
+        <div className="mt-6 bg-blue-50 p-4 rounded-xl border border-blue-100 min-h-[120px]">
+           <div className="flex gap-3">
+              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                 {isAiLoading ? (
+                   <Sparkles className="w-4 h-4 text-blue-600 animate-spin" />
+                 ) : (
+                   <Sparkles className="w-4 h-4 text-blue-600" />
+                 )}
+              </div>
+              <div className="flex-1">
+                 <p className="text-md font-bold text-gray-900 mb-1">AI 상권 요약</p>
+                 {isAiLoading ? (
+                   <div className="space-y-2 animate-pulse mt-2">
+                     <div className="h-3 bg-blue-200/50 rounded w-3/4"></div>
+                     <div className="h-3 bg-blue-200/50 rounded w-full"></div>
+                     <div className="h-3 bg-blue-200/50 rounded w-5/6"></div>
+                   </div>
+                 ) : (
+                   <p className="text-md text-black-600 leading-relaxed whitespace-pre-line">
+                      {aiSummary || item.summary || "데이터를 분석하고 있어요..."}
+                   </p>
+                 )}
+              </div>
            </div>
-           <p className="text-base text-gray-700 leading-relaxed font-medium">
-             {item.summary || "데이터를 분석중입니다..."}
-           </p>
         </div>
       </div>
 
@@ -305,4 +361,3 @@ export default function DetailPanel({ item }: DetailPanelProps) {
     </div>
   );
 }
-
