@@ -22,6 +22,7 @@ interface UseRevenueRankingProps {
   level: 'gu' | 'dong';
   parentGuCode?: string;
   industryCode?: string;
+  industryCodes?: string;
 }
 
 interface UseRevenueRankingReturn {
@@ -37,6 +38,7 @@ export const useRevenueRanking = ({
   level,
   parentGuCode,
   industryCode,
+  industryCodes,
 }: UseRevenueRankingProps): UseRevenueRankingReturn => {
   const { moveToLocation } = useMapStore();
   const [isMoving, setIsMoving] = useState(false);
@@ -54,6 +56,7 @@ export const useRevenueRanking = ({
     const url = new URL(`${API_BASE_URL}/revenue/ranking`);
     url.searchParams.set('level', level);
     if (industryCode) url.searchParams.set('industryCode', industryCode);
+    if (industryCodes) url.searchParams.set('industryCodes', industryCodes);
     if (level === 'dong' && parentGuCode) {
       url.searchParams.set('parentGuCode', parentGuCode);
     }
@@ -81,7 +84,7 @@ export const useRevenueRanking = ({
       });
 
     return () => controller.abort();
-  }, [level, parentGuCode, industryCode]);
+  }, [level, parentGuCode, industryCode, industryCodes]);
 
   const handleSelect = async (name: string) => {
     if (isMoving) return;
