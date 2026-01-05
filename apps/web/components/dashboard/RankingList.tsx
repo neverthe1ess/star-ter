@@ -20,6 +20,22 @@ interface RankingListProps {
   adminLevel?: AdminLevel;
 }
 
+// Helper to estimate fluctuation from changeType label
+const getFluctuationFromChangeType = (changeType?: string): number => {
+  switch (changeType) {
+    case 'LH':
+      return 12.5; // High Growth
+    case 'LL':
+      return 3.2; // Dynamic
+    case 'HL':
+      return -5.4; // Risk
+    case 'HH':
+      return 0.5; // Stagnant
+    default:
+      return 0;
+  }
+};
+
 export default function RankingList({
   onSelect,
   themeType,
@@ -53,6 +69,11 @@ export default function RankingList({
     adminLevel,
   });
 
+  // Auto-select first item on load
+  const [hasSelected, setHasSelected] = React.useState(false);
+
+
+
   const handleItemClick = async (item: RankItem) => {
     // Map API item to RankingItem format for DetailPanel
     const rankingItem: RankingItem = {
@@ -73,21 +94,14 @@ export default function RankingList({
     await handleSelect(item.name);
   };
 
-  // Helper to estimate fluctuation from changeType label
-  const getFluctuationFromChangeType = (changeType?: string): number => {
-    switch (changeType) {
-      case 'LH':
-        return 12.5; // High Growth
-      case 'LL':
-        return 3.2; // Dynamic
-      case 'HL':
-        return -5.4; // Risk
-      case 'HH':
-        return 0.5; // Stagnant
-      default:
-        return 0;
+  React.useEffect(() => {
+    if (!isLoading && items.length > 0 && !hasSelected) {
+      handleItemClick(items[0]);
+      setHasSelected(true);
     }
-  };
+  }, [items, isLoading, hasSelected]);
+
+
 
   const metricLabel =
     themeType === 'POPULATION' ? '유동인구 (명)' : '매출 (분기)';

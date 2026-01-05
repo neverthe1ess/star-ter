@@ -9,7 +9,8 @@ export interface RankingItem {
   stores: number;
   isFavorite: boolean;
   code: string; // area code
-  summary: string; // AI Summary comment
+  summary?: string; // AI Summary comment
+  metricType?: 'REVENUE' | 'POPULATION'; // Display type
 }
 
 export const METRIC_TYPES = [
