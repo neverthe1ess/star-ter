@@ -1,4 +1,4 @@
-export const tools = [
+export const TOOLS = [
   {
     type: 'function',
     name: 'get_store',

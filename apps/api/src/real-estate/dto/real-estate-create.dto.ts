@@ -1,8 +1,9 @@
 import { IsString, IsNumber, IsOptional } from 'class-validator';
 
 export class CreateRealEstateDto {
+  @IsOptional()
   @IsString()
-  user_id: string;
+  user_id?: string;
 
   @IsString()
   address_name: string;
@@ -35,6 +36,10 @@ export class CreateRealEstateDto {
   @IsOptional()
   @IsNumber()
   price_per_pyeong?: number;
+
+  @IsOptional()
+  @IsNumber()
+  area?: number;
 
   @IsOptional()
   @IsString()

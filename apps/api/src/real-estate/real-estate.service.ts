@@ -14,17 +14,25 @@ export class RealEstateService {
   async create(data: CreateRealEstateDto) {
     const toBigInt = (val?: number) => (val ? BigInt(val) : null);
 
-    return this.prisma.real_estate_register.create({
+    if (!data.user_id) {
+      throw new Error('User ID is required');
+    }
+
+    const result = await this.prisma.real_estate_register.create({
       data: {
         ...data,
+        user_id: data.user_id,
         id: randomUUID(),
         deposit: toBigInt(data.deposit),
         monthly_rent: toBigInt(data.monthly_rent),
         maintenance_fee: toBigInt(data.maintenance_fee),
         premium: toBigInt(data.premium),
         price_per_pyeong: toBigInt(data.price_per_pyeong),
+        area: data.area ? new Prisma.Decimal(data.area) : null,
       },
     });
+
+    return this.toResponseDto(result);
   }
 
   async getRealEstateInfo(
@@ -42,8 +50,12 @@ export class RealEstateService {
         address_y: true,
         deposit: true,
         monthly_rent: true,
+        maintenance_fee: true,
         premium: true,
+        price_per_pyeong: true,
+        area: true,
         floor_info: true,
+        phone_number: true,
       },
     });
 
@@ -71,8 +83,12 @@ export class RealEstateService {
     address_y: { toNumber(): number } | null;
     deposit: bigint | null;
     monthly_rent: bigint | null;
+    maintenance_fee: bigint | null;
     premium: bigint | null;
+    price_per_pyeong: bigint | null;
     floor_info: string | null;
+    area: { toNumber(): number } | null;
+    phone_number: string | null;
   }): RealEstateResponseDto {
     return {
       id: item.id,
@@ -82,8 +98,16 @@ export class RealEstateService {
       address_y: item.address_y?.toNumber() ?? null,
       deposit: item.deposit ? Number(item.deposit) : null,
       monthly_rent: item.monthly_rent ? Number(item.monthly_rent) : null,
+      maintenance_fee: item.maintenance_fee
+        ? Number(item.maintenance_fee)
+        : null,
       premium: item.premium ? Number(item.premium) : null,
+      price_per_pyeong: item.price_per_pyeong
+        ? Number(item.price_per_pyeong)
+        : null,
+      area: item.area?.toNumber() ?? null,
       floor_info: item.floor_info,
+      phone_number: item.phone_number,
     };
   }
 }

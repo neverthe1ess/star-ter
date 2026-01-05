@@ -1,8 +1,9 @@
 import OpenAI from 'openai';
 import { AreaVectorDto, BusinessCategoryVectorDto } from '../dto/column-vector';
 import { ResponseInput, Tool } from 'openai/resources/responses/responses.js';
-import { tools } from './tools';
-import { FINAL_RESPONSE_SCHEMA_FOR_ACTION } from './schemas';
+import { TOOLS } from './constant/tools';
+import { FINAL_RESPONSE_SCHEMA_FOR_ACTION } from './constant/schemas';
+import { RECOMMEND_TABLES } from './constant/tables';
 
 // Singleton OpenAI client
 class OpenAIClient {
@@ -67,7 +68,7 @@ export function toolCallAi(
     model: 'gpt-4.1-mini',
     temperature: 0,
     input: message,
-    tools: tools as Array<Tool>,
+    tools: TOOLS as Array<Tool>,
     instructions: `
             당신은 상권분석 전문가 입니다.
             사용자의 질의에 맞게 도구를 호출해 주세요.
@@ -108,6 +109,109 @@ export function analyzeResults(input: ResponseInput) {
   });
 }
 
+export function getTablesByMessage(message: string) {
+  return OpenAIClient.getClient().responses.create({
+    model: 'gpt-4.1-mini',
+    temperature: 0,
+    input: message,
+    instructions: `
+            #context
+            당신은 상권분석 전문가 입니다.
+            사용자의 질의에 어울리는 지역(area_cd)을 추천해주기 위해
+            어울리는 테이블 세개를 아래에서 골라 주세요.
+            ','로 구분하여 나열해 주세요. 
+            지역을 추천할 수 없는 질의인 경우 빈문자열을 반환해 주세요.
+    
+            #예시
+            ex) "한식이 잘나가는 상권 알려줘" -> v_sales, v_foot_traffic, v_commercial_change
+            ex) "카페 매출이 높은 지역 추천해줘" -> v_sales, v_income_consumption, v_foot_traffic
+            ex) "아무말" -> ""
+
+            사용 가능한 테이블은 아래와 같습니다.
+            v_commercial_change: 상권변화지표
+            v_foot_traffic: 유동인구
+            v_income_consumption: 소득소비지표
+            v_resident_population: 상주인구
+            v_sales: 매출
+            v_working_population: 직장인구
+            `,
+  });
+}
+
+export function getRecommendCommercialAreasQuery(
+  message: string,
+  categories: BusinessCategoryVectorDto[],
+  areaList: AreaVectorDto[],
+  tables: string[],
+) {
+  return OpenAIClient.getClient().responses.create({
+    model: 'gpt-4.1-mini',
+    temperature: 0,
+    input: message,
+    instructions: `
+            #context
+            사용자의 질의에 어울리는 지역(area_cd)을 3개 이하로 추천해주는 PostgreSQL 쿼리를 작성해주세요.
+            매출이 높은곳, 해당 업종에 어울리는 유동인구가 많은 곳, 해당 업종에 어울리는 상주인구가 많은곳 등
+            다양하고 간단한 관점에서 각 하나씩 뽑아 중복되지 않는 총 세개 이하를 추천해주세요.
+            별칭으로 해당 지역이 어떤 관점에서 추천되었는지 추천 사유와 추천 사유에 맞는 재치있는 설명을 함께 반환해주세요.
+  
+            ex) '해당 업종 매출 상위 지역', '남성 유동인구 상위 지역', '청년 상주인구 상위 지역', '여성 직장인구 상위 지역', '폐업률 낮은 지역' 등
+            
+            #쿼리문 작성
+            지역레벨(시/자치구/행정동/상권)에 대한 언급이 없을 경우 area_level는 commercial로 해주세요
+            시점에 대한 얘기가 없을 경우 stdr_yyqu_cd는 20253으로 해주세요.
+            area_cd를 select할때 테이블.area_cd 형식으로 작성해주세요.
+
+            출력문에는 SQL 쿼리문만 작성해주세요. 부가 설명이나 다른 텍스트는 포함하지 마세요.
+            sql을 구분짓기 위한 표기도 하지마세요 오직 쿼리문만 출력하세요.
+
+            #참고자료
+            업종 코드와 이름 같은경우 아래 값을 참고하세요.
+            ${formatCategoryVectors(categories)}
+
+            지역 코드와 이름 같은경우 아래 값을 참고하세요.
+            ${formatAreaVectors(areaList)}
+
+            데이터 베이스 정보는 아래와 같습니다.
+            ${formatTableList(tables)}
+
+            #최종 출력 예시
+            with sales_rank as (select area_cd,
+                                  area_nm,
+                                  thsmon_selng_amt
+                          from v_sales
+                          where svc_induty_cd = 'CS100008'
+                            and stdr_yyqu_cd = '20253'
+                            and area_level = 'commercial'
+                          order by thsmon_selng_amt desc
+                          limit 1),
+            foot_traffic_rank as (select area_cd,
+                                        area_nm,
+                                        tot_flpop_co
+                                  from v_foot_traffic
+                                  where stdr_yyqu_cd = '20253'
+                                    and area_level = 'commercial'
+                                  order by tot_flpop_co desc),
+            residential_population as (select area_cd,
+                                              area_nm,
+                                              agrde_20_flpop_co + agrde_30_flpop_co as young_population
+                                      from v_foot_traffic
+                                      where stdr_yyqu_cd = '20253'
+                                        and area_level = 'commercial'
+                                      order by young_population desc
+                                      limit 1)
+            select area_cd, area_nm, '해당 업종 매출 상위 지역' as recommend_title, '분식집이 잘나가는 곳!' as recommend_reason
+            from sales_rank
+            union all
+            select area_cd, area_nm, '유동인구 상위 지역' as recommend_title, '사람들이 많이 모이는 활기찬 상권!' as recommend_reason
+            from foot_traffic_rank
+            union all
+            select area_cd, area_nm, '청년 유동인구 상위 지역' as recommend_title, '젊은이들이 즐겨 찾는 핫플레이스!' as recommend_reason
+            from residential_population
+            `,
+  });
+}
+
 function formatAreaVectors(areas: AreaVectorDto[]): string {
   return areas
     .map(
@@ -126,4 +230,14 @@ function formatCategoryVectors(
         `svc_induty_cd: ${cat.code}, svc_induty_cd_nm: ${cat.categoryName}`,
     )
     .join('\n');
+}
+
+function formatTableList(tables: string[]): string {
+  let result = '';
+  for (const table of tables) {
+    if (RECOMMEND_TABLES[table]) {
+      result += `${table}: ${RECOMMEND_TABLES[table]}\n`;
+    }
+  }
+  return result;
 }

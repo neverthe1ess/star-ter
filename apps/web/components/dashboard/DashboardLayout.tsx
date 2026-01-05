@@ -1,18 +1,43 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, Home, PieChart, MessageSquare } from 'lucide-react';
+import { Search, Home, PieChart, MessageSquare, Building2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 import RankingList from './RankingList';
 import DetailPanel from './DetailPanel';
 import AiInputSection from './AiInputSection';
 import { RankingItem } from './mock-data';
+import { useAuth } from '@/hooks/useAuth';
+import { useModalStore } from '@/stores/useModalStore';
 
 export default function DashboardLayout() {
+  const router = useRouter();
+  const { isLoggedIn } = useAuth();
+  const { openModal } = useModalStore();
   const [selectedItem, setSelectedItem] = useState<RankingItem | null>(null);
   const [activeTab, setActiveTab] = useState<'REGION' | 'INDUSTRY'>('REGION');
-  const [detailWidth, setDetailWidth] = useState(450);
+  const [detailWidth, setDetailWidth] = useState(600);
   const [isResizing, setIsResizing] = useState(false);
+
+  // 부동산 등록 클릭 핸들러 (로그인 체크 + 모달)
+  const handleRealEstateClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isLoggedIn) {
+      router.push('/real-estate/register');
+    } else {
+      openModal({
+        type: 'confirm',
+        title: '로그인 필요',
+        content: '부동산 등록을 위해서는 로그인이 필요합니다.',
+        confirmText: '로그인',
+        cancelText: '취소',
+        onConfirm: () => {
+          router.push('/login');
+        },
+      });
+    }
+  };
 
   return (
     <div className="flex flex-col h-screen bg-white">
@@ -38,6 +63,12 @@ export default function DashboardLayout() {
             <a href="#" className="flex items-center gap-1 hover:text-gray-900">
               <MessageSquare className="h-4 w-4" /> 커뮤니티
             </a>
+            <button
+              onClick={handleRealEstateClick}
+              className="flex items-center gap-1 hover:text-gray-900"
+            >
+              <Building2 className="h-4 w-4" /> 부동산 등록
+            </button>
           </nav>
         </div>
 
@@ -74,7 +105,7 @@ export default function DashboardLayout() {
         onMouseLeave={() => setIsResizing(false)}
       >
         {/* Left: Ranking List */}
-        <section className="flex-1 flex flex-col min-w-[400px] border-r border-gray-200">
+        <section className="flex-1 flex flex-col min-w-100 border-r border-gray-200">
           <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-100">
             <button
               onClick={() => setActiveTab('REGION')}
@@ -117,7 +148,7 @@ export default function DashboardLayout() {
 
         {/* Right: Detail Panel */}
         <aside
-          className="flex-shrink-0 bg-white shadow-[-4px_0_12px_rgba(0,0,0,0.05)] z-10"
+          className="shrink-0 bg-white shadow-[-4px_0_12px_rgba(0,0,0,0.05)] z-10"
           style={{ width: detailWidth }}
         >
           {selectedItem && <DetailPanel item={selectedItem} />}
