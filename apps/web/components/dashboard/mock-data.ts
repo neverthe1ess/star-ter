@@ -12,6 +12,15 @@ export interface RankingItem {
   summary: string; // AI Summary comment
 }
 
+export const METRIC_TYPES = [
+  '잘나가는 업종',
+  '업종 포화도',
+  '매출 성장성',
+  '성별/연령',
+  '유동인구',
+] as const;
+export type MetricType = (typeof METRIC_TYPES)[number];
+
 export interface NewsItem {
   id: string;
   title: string;

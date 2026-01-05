@@ -1,36 +1,47 @@
 'use client';
 
 import React, { useState } from 'react';
-import { RankingItem, METRIC_DATA, MOCK_NEWS, MOCK_SNS, MOCK_BLOGS, METRIC_INSIGHTS } from './mock-data';
-import { 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  Cell,
-  Legend,
-  LineChart,
-  Line,
-  LabelList,
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis
-} from 'recharts';
+import { RankingItem, METRIC_DATA, MOCK_NEWS, MOCK_SNS, MOCK_BLOGS, METRIC_INSIGHTS, MetricType, METRIC_TYPES } from './mock-data';
+import SectorChart from './charts/SectorChart';
+import SaturationGrid from './charts/SaturationGrid';
+import GrowthChart from './charts/GrowthChart';
+import DemographicsRadar from './charts/DemographicsRadar';
+import PopulationChart from './charts/PopulationChart';
 
 interface DetailPanelProps {
   item: RankingItem;
 }
 
+/* TODO: DB 로직으로 수정하기 */
+const getStatusBadge = (fluctuation: number) => {
+  if (fluctuation >= 10) return { label: '뜨는 상권', className: 'bg-blue-100 text-blue-700' };
+  if (fluctuation >= 3) return { label: '변동 상권', className: 'bg-amber-100 text-amber-700' };
+  if (fluctuation <= -3) return { label: '위험 상권', className: 'bg-red-100 text-red-700' };
+  return { label: '정체 상권', className: 'bg-gray-100 text-gray-700' };
+};
+
 export default function DetailPanel({ item }: DetailPanelProps) {
   const [activeTab, setActiveTab] = useState<'뉴스' | 'SNS' | '블로그'>('뉴스');
-  const [chartMetric, setChartMetric] = useState<'잘나가는 업종' | '업종 포화도' | '매출 성장성' | '성별/연령' | '유동인구'>('잘나가는 업종');
+  const [chartMetric, setChartMetric] = useState<MetricType>('잘나가는 업종');
+
+  const status = getStatusBadge(item.fluctuation);
+
+  const renderChart = () => {
+    switch (chartMetric) {
+      case '잘나가는 업종':
+        return <SectorChart data={METRIC_DATA.sectors} />;
+      case '업종 포화도':
+        return <SaturationGrid data={METRIC_DATA.saturation} />;
+      case '매출 성장성':
+        return <GrowthChart data={METRIC_DATA.growth} />;
+      case '성별/연령':
+        return <DemographicsRadar data={METRIC_DATA.radar} />;
+      case '유동인구':
+        return <PopulationChart data={METRIC_DATA.population} />;
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="flex flex-col h-full bg-white border-l border-gray-200 p-6 overflow-y-auto">
@@ -48,12 +59,12 @@ export default function DetailPanel({ item }: DetailPanelProps) {
            </div>
         </div>
         
-        <div className="flex items-end gap-3 mt-4">
+        <div className="flex items-center gap-3 mt-4">
            <span className="text-3xl font-bold text-gray-900">
              {item.revenue.toLocaleString()}원
            </span>
-           <span className={`text-lg font-bold mb-1 ${item.fluctuation > 0 ? 'text-red-500': 'text-blue-500'}`}>
-             {item.fluctuation > 0 ? '+' : ''}{item.fluctuation}%
+           <span className={`px-3 py-1 rounded-full text-sm font-bold ${status.className}`}>
+             {status.label}
            </span>
         </div>
         <p className="text-md text-gray-600 mt-1">평균 매출(월)</p>
@@ -80,10 +91,10 @@ export default function DetailPanel({ item }: DetailPanelProps) {
            
            {/* Metric Badges */}
            <div className="flex flex-wrap gap-2">
-              {['잘나가는 업종', '업종 포화도', '매출 성장성', '성별/연령', '유동인구'].map((metric) => (
+              {METRIC_TYPES.map((metric) => (
                 <button
                   key={metric}
-                  onClick={() => setChartMetric(metric as '잘나가는 업종' | '업종 포화도' | '매출 성장성' | '성별/연령' | '유동인구')}
+                  onClick={() => setChartMetric(metric)}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all border ${
                     chartMetric === metric
                       ? 'bg-gray-900 text-white border-gray-900 shadow-md transform scale-105'
@@ -107,93 +118,7 @@ export default function DetailPanel({ item }: DetailPanelProps) {
         </div>
 
         <div className="h-64 w-full bg-white rounded-2xl border border-gray-100 p-4">
-            {chartMetric === '업종 포화도' ? (
-                <div className="grid grid-cols-2 gap-3 h-full p-2">
-                    {METRIC_DATA.saturation.map((item, index) => (
-                        <div key={index} className="bg-white border border-gray-100 rounded-xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow cursor-default group">
-                            <div className="flex justify-between items-start mb-2">
-                                <span className="font-bold text-gray-800 text-lg">{item.name.split(' ')[0]}</span>
-                                <div className={`w-4 h-4 rounded-full shadow-sm ring-2 ring-offset-1 ${
-                                    item.value >= 80 ? 'ring-red-100' : item.value >= 50 ? 'ring-orange-100' : 'ring-green-100'
-                                }`} style={{backgroundColor: item.color}} />
-                            </div>
-                            <div>
-                                <div className="flex justify-between items-end mb-1">
-                                    <span className="text-xs text-gray-400 font-medium">포화도</span>
-                                    <span className="text-sm font-bold" style={{color: item.color}}>
-                                        {item.value >= 80 ? '진입 자제' : item.value >= 60 ? '경쟁 심화' : '진입 추천'}
-                                    </span>
-                                </div>
-                                <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                                    <div 
-                                        className="h-full rounded-full transition-all duration-1000 ease-out" 
-                                        style={{width: `${item.value}%`, backgroundColor: item.color}} 
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                {chartMetric === '잘나가는 업종' ? (
-                    <BarChart data={METRIC_DATA.sectors} margin={{ top: 20, right: 30, left: 30, bottom: 5 }}>
-                        <defs>
-                          <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#3b82f6" />
-                            <stop offset="100%" stopColor="#2563eb" />
-                          </linearGradient>
-                          <linearGradient id="redGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#ef4444" />
-                            <stop offset="100%" stopColor="#D9515E" />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                        <XAxis dataKey="name" type="category" tick={{fontSize: 16, fontWeight: 500, fill: '#111827'}} axisLine={false} tickLine={false} />
-                        <YAxis type="number" hide domain={[0, 100]} />
-                        <Tooltip cursor={{fill: 'transparent'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                        <Bar dataKey="value" radius={[8, 8, 0, 0]} barSize={40}>
-                           {METRIC_DATA.sectors.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={index === 0 ? "url(#redGradient)" : "url(#barGradient)"} />
-                           ))}
-                           <LabelList dataKey="value" position="top" style={{ fontSize: '13px', fontWeight: 'bold', fill: '#4b5563' }} />
-                        </Bar>
-                    </BarChart>
-                ) : chartMetric === '매출 성장성' ? (
-                    <AreaChart data={METRIC_DATA.growth}>
-                        <defs>
-                            <linearGradient id="colorGrowth" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
-                                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
-                            </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#6b7280'}} />
-                        <YAxis hide />
-                        <Tooltip contentStyle={{borderRadius: '8px', border: 'none'}} />
-                        <Area type="monotone" dataKey="value" stroke="#8b5cf6" fillOpacity={1} fill="url(#colorGrowth)" />
-                    </AreaChart>
-                ) : chartMetric === '성별/연령' ? (
-                    <RadarChart outerRadius={90} width={730} height={250} data={METRIC_DATA.radar}>
-                    <PolarGrid stroke="#e5e7eb" />
-                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#4b5563', fontSize: 12, fontWeight: 600 }} />
-                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                    <Radar name="남성" dataKey="male" stroke="#3b82f6" strokeWidth={2} fill="#3b82f6" fillOpacity={0.3} />
-                    <Radar name="여성" dataKey="female" stroke="#ec4899" strokeWidth={2} fill="#ec4899" fillOpacity={0.3} />
-                    <Legend iconType="circle" wrapperStyle={{ paddingTop: '24px' }} />
-                    <Tooltip contentStyle={{borderRadius: '8px', border: 'none'}} />
-                </RadarChart>
-                ) : (
-                    <LineChart data={METRIC_DATA.population}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#6b7280'}} />
-                        <YAxis hide />
-                        <Tooltip contentStyle={{borderRadius: '8px', border: 'none'}} />
-                        <Line type="monotone" dataKey="value" stroke="#ef4444" strokeWidth={3} dot={{r: 4, fill: '#ef4444'}} activeDot={{r: 6}} />
-                    </LineChart>
-                )}
-              </ResponsiveContainer>
-            )}
+            {renderChart()}
         </div>
       </div>
 

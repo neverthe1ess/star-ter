@@ -11,7 +11,7 @@ import { RankingItem } from './mock-data';
 export default function DashboardLayout() {
   const [selectedItem, setSelectedItem] = useState<RankingItem | null>(null);
   const [activeTab, setActiveTab] = useState<'REGION' | 'INDUSTRY'>('REGION');
-  const [detailWidth, setDetailWidth] = useState(450);
+  const [detailWidth, setDetailWidth] = useState(600);
   const [isResizing, setIsResizing] = useState(false);
 
   return (
