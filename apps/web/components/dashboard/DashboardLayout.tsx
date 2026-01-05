@@ -66,7 +66,6 @@ export default function DashboardLayout() {
           if (!isResizing) return;
           e.preventDefault();
           const newWidth = document.body.clientWidth - e.clientX;
-          // Min 200px, Max 1200px constraint
           if (newWidth > 200 && newWidth < 1200) {
             setDetailWidth(newWidth);
           }
