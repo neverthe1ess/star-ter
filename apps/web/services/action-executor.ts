@@ -61,7 +61,7 @@ export class ActionExecutor {
     lng: number;
     zoom?: number;
   }): void {
-    const { lat, lng, zoom = 15 } = payload;
+    const { lat, lng, zoom = 3 } = payload;
 
     console.log(
       `[ActionExecutor] Moving map to (${lat}, ${lng}), zoom: ${zoom}`,
@@ -81,14 +81,29 @@ export class ActionExecutor {
    */
   private static executeUiOpenPanel(payload: {
     panelType: 'summary' | 'comparison';
+    level?: 'gu' | 'dong' | 'commercial';
+    lat?: number;
+    lng?: number;
+    areaName?: string;
   }): void {
-    const { panelType } = payload;
+    const { panelType, level, lat, lng, areaName } = payload;
 
-    console.log(`[ActionExecutor] Opening panel: ${panelType}`);
+    console.log(`[ActionExecutor] Opening panel: ${panelType}`, payload);
 
-    // summary 패널: InfoBar 열기
+    // summary 패널: InfoBar 열기 (selectArea를 통해 데이터 주입)
     if (panelType === 'summary') {
-      useSidebarStore.getState().setInfoBarOpen(true);
+      if (lat && lng && level) {
+        useSidebarStore.getState().selectArea({
+          x: lng,
+          y: lat,
+          level,
+          adm_nm: areaName,
+          // 필요한 경우 다른 코드도 매핑 (현재는 이름과 좌표, 레벨로 충분)
+        });
+      } else {
+        // 데이터가 부족하면 그냥 열기만 함 (빈 상태)
+        useSidebarStore.getState().setInfoBarOpen(true);
+      }
     }
 
     // 추가 panelType은 여기에 구현
