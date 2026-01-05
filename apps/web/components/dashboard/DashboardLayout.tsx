@@ -10,11 +10,11 @@ import { RANKING_DATA, RankingItem } from './mock-data';
 
 export default function DashboardLayout() {
   const [selectedItem, setSelectedItem] = useState<RankingItem>(RANKING_DATA[0]);
-  const [detailWidth, setDetailWidth] = useState(450);
+  const [detailWidth, setDetailWidth] = useState(700);
   const [isResizing, setIsResizing] = useState(false);
 
   return (
-    <div className="flex flex-col h-screen bg-white">
+    <div className="flex flex-col bg-white">
       {/* 1. Global Header */}
       <header className="flex h-16 items-center justify-between border-b border-gray-200 px-6">
         <div className="flex items-center gap-8">
@@ -66,7 +66,6 @@ export default function DashboardLayout() {
           if (!isResizing) return;
           e.preventDefault();
           const newWidth = document.body.clientWidth - e.clientX;
-          // Min 200px, Max 1200px constraint
           if (newWidth > 200 && newWidth < 1200) {
             setDetailWidth(newWidth);
           }
