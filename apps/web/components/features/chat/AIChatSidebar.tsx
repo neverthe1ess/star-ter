@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import type { FormEvent } from 'react';
+import type { FormEvent, PointerEvent as ReactPointerEvent } from 'react';
 import { Sparkles, BarChart3, Store, ArrowUp } from 'lucide-react';
 import { ChatMessage } from '@/services/chat/types';
 import { useSidebarStore } from '@/stores/useSidebarStore';
 import { sendMessage } from '@/services/chat/chat.repository.api';
+
+const MIN_SIDEBAR_WIDTH = 280;
+const MAX_SIDEBAR_WIDTH = 600;
 
 /**
  * AI Chat Sidebar Component
@@ -15,7 +18,6 @@ export default function AIChatSidebar() {
   // 독립적인 채팅 메시지 상태 (초기화 방지)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isSending, setIsSending] = useState(false);
-
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -56,7 +58,8 @@ export default function AIChatSidebar() {
         {
           id: Date.now().toString(),
           role: 'assistant',
-          content: '요청 처리 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.',
+          content:
+            '요청 처리 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.',
           timestamp: new Date(),
         },
       ]);
@@ -67,8 +70,10 @@ export default function AIChatSidebar() {
 
   // Resizing Logic
   // Global State for Sidebar
-  const { width, isOpen, setIsOpen } = useSidebarStore();
+  const { width, setWidth, isOpen, setIsOpen, isResizing, setIsResizing } =
+    useSidebarStore();
 
+  const sidebarRef = useRef<HTMLElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -79,6 +84,50 @@ export default function AIChatSidebar() {
   useEffect(() => {
     scrollToBottom();
   }, [chatMessages.length]);
+
+  const startResizing = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.preventDefault();
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+    setIsResizing(true);
+  };
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const prevCursor = document.body.style.cursor;
+    const prevUserSelect = document.body.style.userSelect;
+    document.body.style.cursor = 'ew-resize';
+    document.body.style.userSelect = 'none';
+
+    const stop = () => setIsResizing(false);
+    const onMove = (e: PointerEvent) => {
+      const rightEdge =
+        sidebarRef.current?.getBoundingClientRect().right ?? window.innerWidth;
+      const rawWidth = rightEdge - e.clientX;
+      const nextWidth = Math.min(
+        MAX_SIDEBAR_WIDTH,
+        Math.max(MIN_SIDEBAR_WIDTH, rawWidth),
+      );
+      setWidth(nextWidth);
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', stop);
+    window.addEventListener('pointercancel', stop);
+
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', stop);
+      window.removeEventListener('pointercancel', stop);
+      document.body.style.cursor = prevCursor;
+      document.body.style.userSelect = prevUserSelect;
+    };
+  }, [isResizing, setIsResizing, setWidth]);
 
   return (
     <>
@@ -115,13 +164,20 @@ export default function AIChatSidebar() {
 
       {/* Sidebar Container */}
       <aside
+        ref={sidebarRef}
         style={{ width: `${width}px` }}
         className={`fixed top-2 right-2 bottom-2 z-50 flex flex-col bg-transparent transition-transform duration-300 ${
           isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+20px)]'
         }`}
       >
         {/* Resizer Handle (Wider hit area with visible line) */}
-        <div className="group absolute -left-3 top-0 z-50 flex h-full w-6 cursor-ew-resize justify-center bg-transparent">
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize chat sidebar"
+          onPointerDown={startResizing}
+          className="group absolute -left-3 top-0 z-50 flex h-full w-6 cursor-ew-resize justify-center bg-transparent"
+        >
           <div className="my-6 w-1 transition-colors group-hover:bg-blue-400/50 group-active:bg-blue-600" />
         </div>
 
@@ -218,10 +274,7 @@ export default function AIChatSidebar() {
 
           {/* Input Area */}
           <div className="p-4 rounded-bl-3xl">
-            <form
-              onSubmit={handleSubmit}
-              className="relative group"
-            >
+            <form onSubmit={handleSubmit} className="relative group">
               <textarea
                 name="message"
                 placeholder="AI Coach에 메시지 보내기"
