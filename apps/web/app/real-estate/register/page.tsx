@@ -20,29 +20,6 @@ import { realEstateService } from '@/services/real-estate/real-estate.service';
 import { uploadService } from '@/services/upload/upload.service';
 import { BUSINESS_CATEGORIES } from '../constants';
 
-// 카카오 맵 SDK 타입 정의
-interface KakaoMapsServices {
-  Geocoder: new () => {
-    addressSearch: (
-      address: string,
-      callback: (
-        result: Array<{ x: string; y: string }>,
-        status: string,
-      ) => void,
-    ) => void;
-  };
-  Status: { OK: string };
-}
-
-interface KakaoMaps {
-  load: (callback: () => void) => void;
-  services: KakaoMapsServices;
-}
-
-interface Kakao {
-  maps: KakaoMaps;
-}
-
 // 다음 주소 검색 SDK 타입 정의
 interface DaumPostcodeData {
   roadAddress: string;
@@ -63,7 +40,6 @@ interface Daum {
 declare global {
   interface Window {
     daum: Daum;
-    kakao: Kakao;
   }
 }
 
