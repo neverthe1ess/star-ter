@@ -5,6 +5,10 @@ import {
   TimeSlotPopulation,
   GeoJsonGeometry,
 } from './dto/floating-population-response.dto';
+import {
+  GetPopulationRankingQueryDto,
+  PopulationRankingItemDto,
+} from './dto/population-ranking.dto';
 
 // 전역 상수 정의
 const AGE_GROUPS = [
@@ -159,6 +163,301 @@ export class FloatingPopulationRepository {
         error,
       );
       throw error;
+    }
+  }
+
+  async findRanking(
+    query: GetPopulationRankingQueryDto,
+  ): Promise<PopulationRankingItemDto[]> {
+    // 1. Level Config
+    const level = query.level || 'commercial';
+    const configMap = {
+      gu: {
+        model: 'footTrafficGu',
+        changeModel: 'commercialChangeGu',
+        table: 'foot_traffic_gu',
+        codeField: 'signgu_cd',
+        nameField: 'signgu_cd_nm',
+      },
+      dong: {
+        model: 'footTrafficDong',
+        changeModel: 'commercialChangeDong',
+        table: 'foot_traffic_dong',
+        codeField: 'adstrd_cd',
+        nameField: 'adstrd_cd_nm',
+      },
+      commercial: {
+        model: 'footTrafficCommercial',
+        changeModel: 'commercialChangeCommercial',
+        table: 'foot_traffic_commercial',
+        codeField: 'trdar_cd',
+        nameField: 'trdar_cd_nm',
+      },
+    };
+    const cfg = configMap[level];
+
+    // 2. Get Quarters
+    // Use the dynamic model to find the latest quarter
+    const latest = await (this.prisma as any)[cfg.model].findFirst({
+      orderBy: { stdr_yyqu_cd: 'desc' },
+      select: { stdr_yyqu_cd: true },
+    });
+    const currentQ = latest?.stdr_yyqu_cd || '20233';
+    const prevQ = this.getPreviousQuarter(currentQ);
+
+    let items: {
+      code: string;
+      name: string;
+      amount: number;
+      currentMetricVal?: number;
+    }[] = [];
+    let metricField = 'tot_flpop_co';
+
+    // 3. Fetch Ranking (Current Q)
+    const isCombined =
+      query.ageGroup &&
+      query.ageGroup !== 'total' &&
+      query.timeSlot &&
+      query.timeSlot !== 'total';
+
+    if (isCombined) {
+      // Case A: Combined Filter (Approximation: Age * Time / Total)
+      const ageCol =
+        query.ageGroup === '60'
+          ? '"agrde_60_above_flpop_co"'
+          : `"agrde_${query.ageGroup}_flpop_co"`;
+
+      const tMap: Record<string, string> = {
+        '00': 'tmzon_00_06_flpop_co',
+        '06': 'tmzon_06_11_flpop_co',
+        '11': 'tmzon_11_14_flpop_co',
+        '14': 'tmzon_14_17_flpop_co',
+        '17': 'tmzon_17_21_flpop_co',
+        '21': 'tmzon_21_24_flpop_co',
+      };
+      const timeCol = `"${tMap[query.timeSlot!] || 'tot_flpop_co'}"`;
+
+      const sql = `
+            SELECT 
+              ${cfg.codeField} as code,
+              ${cfg.nameField} as name,
+              (CAST(${ageCol} AS NUMERIC) * CAST(${timeCol} AS NUMERIC) / NULLIF(CAST(tot_flpop_co AS NUMERIC), 0)) as amount,
+              tot_flpop_co as metric_val
+            FROM ${cfg.table}
+            WHERE stdr_yyqu_cd = '${currentQ}'
+            ORDER BY amount DESC
+            LIMIT 100
+          `;
+
+      try {
+        const results = await this.prisma.$queryRawUnsafe<any[]>(sql);
+        items = results.map((r) => ({
+          code: r.code,
+          name: r.name,
+          amount: Math.round(Number(r.amount)),
+          currentMetricVal: Number(r.metric_val),
+        }));
+      } catch (e) {
+        this.logger.error('Failed combined ranking query', e);
+        items = [];
+      }
+      metricField = 'tot_flpop_co';
+    } else {
+      // Case B: Single or No Filter
+      if (query.ageGroup && query.ageGroup !== 'total') {
+        metricField =
+          query.ageGroup === '60'
+            ? 'agrde_60_above_flpop_co'
+            : `agrde_${query.ageGroup}_flpop_co`;
+      } else if (query.timeSlot && query.timeSlot !== 'total') {
+        const timeMap: Record<string, string> = {
+          '00': 'tmzon_00_06_flpop_co',
+          '06': 'tmzon_06_11_flpop_co',
+          '11': 'tmzon_11_14_flpop_co',
+          '14': 'tmzon_14_17_flpop_co',
+          '17': 'tmzon_17_21_flpop_co',
+          '21': 'tmzon_21_24_flpop_co',
+        };
+        if (timeMap[query.timeSlot]) metricField = timeMap[query.timeSlot];
+      }
+
+      const results = await (this.prisma as any)[cfg.model].findMany({
+        where: { stdr_yyqu_cd: currentQ },
+        orderBy: { [metricField]: 'desc' },
+        take: 100,
+      });
+
+      items = results.map((r: any) => ({
+        code: r[cfg.codeField],
+        name: r[cfg.nameField],
+        amount: Number(r[metricField]),
+        currentMetricVal: Number(r[metricField]),
+      }));
+    }
+
+    if (items.length === 0) return [];
+
+    // 4. Fetch Details for Fluctuation & Status
+    const codes = items.map((i) => i.code);
+
+    // Previous Quarter Data (for Fluctuation)
+    const prevData = await (this.prisma as any)[cfg.model].findMany({
+      where: { stdr_yyqu_cd: prevQ, [cfg.codeField]: { in: codes } },
+      select: { [cfg.codeField]: true, [metricField]: true },
+    });
+
+    // Commercial Status Data
+    const statusData = await (this.prisma as any)[cfg.changeModel].findMany({
+      where: { stdr_yyqu_cd: currentQ, [cfg.codeField]: { in: codes } },
+      select: { [cfg.codeField]: true, trdar_chnge_ix: true },
+    });
+
+    // 5. Merge
+    return items.map((item) => {
+      const prev = prevData.find((p: any) => p[cfg.codeField] === item.code);
+      const status = statusData.find(
+        (s: any) => s[cfg.codeField] === item.code,
+      );
+
+      // Fluctuation Calculation
+      let fluctuationRate = 0;
+      const currentVal = item.currentMetricVal || 0;
+      const prevVal = prev ? Number(prev[metricField]) : 0;
+
+      if (prevVal > 0) {
+        fluctuationRate = ((currentVal - prevVal) / prevVal) * 100;
+        fluctuationRate = Number(fluctuationRate.toFixed(1));
+      }
+
+      return {
+        code: item.code,
+        name: item.name,
+        amount: item.amount,
+        count: 0,
+        changeType: status?.trdar_chnge_ix,
+        fluctuationRate,
+      };
+    });
+  }
+
+  private getPreviousQuarter(current: string): string {
+    const year = parseInt(current.substring(0, 4));
+    const quarter = parseInt(current.substring(4, 5));
+    if (quarter === 1) return `${year - 1}4`;
+    return `${year}${quarter - 1}`;
+  }
+
+  /**
+   * MZ세대(10-30대) 비중 기준 랭킹
+   */
+  async findMZRanking(
+    level: 'gu' | 'dong' | 'commercial' = 'commercial',
+  ): Promise<PopulationRankingItemDto[]> {
+    const configMap = {
+      gu: {
+        table: 'foot_traffic_gu',
+        codeField: 'signgu_cd',
+        nameField: 'signgu_cd_nm',
+      },
+      dong: {
+        table: 'foot_traffic_dong',
+        codeField: 'adstrd_cd',
+        nameField: 'adstrd_cd_nm',
+      },
+      commercial: {
+        table: 'foot_traffic_commercial',
+        codeField: 'trdar_cd',
+        nameField: 'trdar_cd_nm',
+      },
+    };
+    const cfg = configMap[level];
+
+    const sql = `
+      SELECT 
+        ${cfg.codeField} as code,
+        ${cfg.nameField} as name,
+        (COALESCE(agrde_10_flpop_co, 0) + COALESCE(agrde_20_flpop_co, 0) + COALESCE(agrde_30_flpop_co, 0)) as mz_pop,
+        tot_flpop_co as total_pop,
+        CASE WHEN tot_flpop_co > 0 
+          THEN ROUND((COALESCE(agrde_10_flpop_co, 0) + COALESCE(agrde_20_flpop_co, 0) + COALESCE(agrde_30_flpop_co, 0))::numeric / tot_flpop_co * 100, 1)
+          ELSE 0 
+        END as mz_ratio
+      FROM ${cfg.table}
+      WHERE stdr_yyqu_cd = (SELECT MAX(stdr_yyqu_cd) FROM ${cfg.table})
+      ORDER BY mz_ratio DESC, mz_pop DESC
+      LIMIT 100
+    `;
+
+    try {
+      const results = await this.prisma.$queryRawUnsafe<any[]>(sql);
+      return results.map((r) => ({
+        code: r.code,
+        name: r.name,
+        amount: Number(r.mz_pop),
+        count: 0,
+        fluctuationRate: Number(r.mz_ratio), // MZ 비중을 fluctuationRate로 활용
+      }));
+    } catch (e) {
+      this.logger.error('Failed MZ ranking query', e);
+      return [];
+    }
+  }
+
+  /**
+   * 성별 비중 기준 랭킹
+   */
+  async findGenderRanking(
+    level: 'gu' | 'dong' | 'commercial' = 'commercial',
+    gender: 'male' | 'female' = 'female',
+  ): Promise<PopulationRankingItemDto[]> {
+    const configMap = {
+      gu: {
+        table: 'foot_traffic_gu',
+        codeField: 'signgu_cd',
+        nameField: 'signgu_cd_nm',
+      },
+      dong: {
+        table: 'foot_traffic_dong',
+        codeField: 'adstrd_cd',
+        nameField: 'adstrd_cd_nm',
+      },
+      commercial: {
+        table: 'foot_traffic_commercial',
+        codeField: 'trdar_cd',
+        nameField: 'trdar_cd_nm',
+      },
+    };
+    const cfg = configMap[level];
+    const genderCol = gender === 'male' ? 'ml_flpop_co' : 'fml_flpop_co';
+
+    const sql = `
+      SELECT 
+        ${cfg.codeField} as code,
+        ${cfg.nameField} as name,
+        ${genderCol} as gender_pop,
+        tot_flpop_co as total_pop,
+        CASE WHEN tot_flpop_co > 0 
+          THEN ROUND(${genderCol}::numeric / tot_flpop_co * 100, 1)
+          ELSE 0 
+        END as gender_ratio
+      FROM ${cfg.table}
+      WHERE stdr_yyqu_cd = (SELECT MAX(stdr_yyqu_cd) FROM ${cfg.table})
+      ORDER BY gender_ratio DESC, gender_pop DESC
+      LIMIT 100
+    `;
+
+    try {
+      const results = await this.prisma.$queryRawUnsafe<any[]>(sql);
+      return results.map((r) => ({
+        code: r.code,
+        name: r.name,
+        amount: Number(r.gender_pop),
+        count: 0,
+        fluctuationRate: Number(r.gender_ratio), // 성별 비중을 fluctuationRate로 활용
+      }));
+    } catch (e) {
+      this.logger.error('Failed gender ranking query', e);
+      return [];
     }
   }
 }

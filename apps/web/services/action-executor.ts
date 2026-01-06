@@ -1,6 +1,5 @@
 import { ClientAction } from '@/types/actions';
 import { useMapStore } from '@/stores/useMapStore';
-import { useSidebarStore } from '@/stores/useSidebarStore';
 
 /**
  * ActionExecutor
@@ -61,7 +60,7 @@ export class ActionExecutor {
     lng: number;
     zoom?: number;
   }): void {
-    const { lat, lng, zoom = 15 } = payload;
+    const { lat, lng, zoom = 3 } = payload;
 
     console.log(
       `[ActionExecutor] Moving map to (${lat}, ${lng}), zoom: ${zoom}`,
@@ -81,14 +80,35 @@ export class ActionExecutor {
    */
   private static executeUiOpenPanel(payload: {
     panelType: 'summary' | 'comparison';
+    level?: 'gu' | 'dong' | 'commercial';
+    lat?: number;
+    lng?: number;
+    areaName?: string;
   }): void {
-    const { panelType } = payload;
+    const { panelType, level, lat, lng, areaName } = payload;
 
-    console.log(`[ActionExecutor] Opening panel: ${panelType}`);
+    console.log(`[ActionExecutor] Opening panel: ${panelType}`, payload);
 
-    // summary 패널: InfoBar 열기
+    // summary 패널: InfoBar 열기 (selectArea를 통해 데이터 주입)
     if (panelType === 'summary') {
-      useSidebarStore.getState().setInfoBarOpen(true);
+      if (lat && lng && level) {
+        useMapStore.getState().selectArea(
+          {
+            name: areaName || 'AI Search Result',
+            coords: { lat, lng },
+            type: level as any,
+          },
+          {
+            x: lng,
+            y: lat,
+            level: level as any,
+            adm_nm: areaName,
+          },
+        );
+      } else {
+        // 데이터가 부족하면 그냥 열기만 함 (빈 상태)
+        useMapStore.getState().setInfoBarOpen(true);
+      }
     }
 
     // 추가 panelType은 여기에 구현

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class GetSummaryReportQueryDto {
   @IsString()
@@ -10,11 +10,11 @@ export class GetSummaryReportQueryDto {
   regionCode: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   industryName?: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   regionName?: string;
 }
 

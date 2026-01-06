@@ -1,6 +1,10 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { FloatingPopulationService } from './floating-population.service';
 import { TimeSegmentedLayerResponse } from './dto/floating-population-response.dto';
+import {
+  GetPopulationRankingQueryDto,
+  PopulationRankingResponseDto,
+} from './dto/population-ranking.dto';
 
 @Controller('floating-population')
 export class FloatingPopulationController {
@@ -20,6 +24,31 @@ export class FloatingPopulationController {
       parseFloat(minLng),
       parseFloat(maxLat),
       parseFloat(maxLng),
+    );
+  }
+
+  @Get('ranking')
+  async getRanking(
+    @Query() query: GetPopulationRankingQueryDto,
+  ): Promise<PopulationRankingResponseDto> {
+    return this.floatingPopulationService.getRanking(query);
+  }
+
+  @Get('ranking/mz')
+  async getMZRanking(
+    @Query('level') level?: 'gu' | 'dong' | 'commercial',
+  ): Promise<PopulationRankingResponseDto> {
+    return this.floatingPopulationService.getMZRanking(level || 'commercial');
+  }
+
+  @Get('ranking/gender')
+  async getGenderRanking(
+    @Query('level') level?: 'gu' | 'dong' | 'commercial',
+    @Query('gender') gender?: 'male' | 'female',
+  ): Promise<PopulationRankingResponseDto> {
+    return this.floatingPopulationService.getGenderRanking(
+      level || 'commercial',
+      gender || 'female',
     );
   }
 }

@@ -17,6 +17,8 @@ import { UsersModule } from './user/user.module';
 import { ReportModule } from './report/report.module';
 import { BookmarkModule } from './bookmark/bookmark.module';
 import { RentModule } from './rent/rent.module';
+import { RealEstateModule } from './real-estate/real_estate.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -36,6 +38,8 @@ import { RentModule } from './rent/rent.module';
     ReportModule,
     BookmarkModule,
     RentModule,
+    RealEstateModule,
+    UploadModule,
   ],
   controllers: [HealthController],
   providers: [],

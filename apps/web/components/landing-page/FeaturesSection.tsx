@@ -7,6 +7,9 @@ export default function FeaturesSection() {
   return (
     <section className="py-24 px-4 max-w-7xl mx-auto w-full">
       <div className="text-center mb-16">
+        <span className="inline-block px-4 py-2 bg-blue-100 text-blue-700 font-semibold rounded-full text-sm mb-4">
+          창업자를 위한 서비스
+        </span>
         <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
           모든 데이터를 한곳에서
         </h2>
@@ -52,7 +55,7 @@ export default function FeaturesSection() {
             key={idx}
             className="group p-8 bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:border-blue-100 transition-all duration-300"
           >
-            <div className="text-4xl mb-6 bg-blue-50 w-16 h-16 flex items-center justify-center rounded-2xl group-hover:scale-110 transition-transform duration-300">
+            <div className="text-4xl mb-6 text-blue-600 bg-blue-50 w-16 h-16 flex items-center justify-center rounded-2xl group-hover:scale-110 transition-transform duration-300">
               {feature.icon}
             </div>
             <h5 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">

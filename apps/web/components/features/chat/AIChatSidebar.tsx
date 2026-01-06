@@ -1,142 +1,80 @@
 'use client';
 
-import { useActionState, useState, useCallback, useEffect, useRef, startTransition } from 'react';
-import { Sparkles, BarChart3, Store, ArrowUp, PanelRight } from 'lucide-react';
-import { sendMessageAction } from '@/actions/chat';
+import { useEffect, useState, useRef } from 'react';
+import type { FormEvent, PointerEvent as ReactPointerEvent } from 'react';
+import { Sparkles, BarChart3, Store, ArrowUp } from 'lucide-react';
 import { ChatMessage } from '@/services/chat/types';
 import { useSidebarStore } from '@/stores/useSidebarStore';
-import { useComparisonStore } from '@/stores/useComparisonStore';
-import { useMapStore } from '@/stores/useMapStore';
-import { parseChatMessage } from './useChatHandler';
+import { sendMessage } from '@/services/chat/chat.repository.api';
+
+const MIN_SIDEBAR_WIDTH = 280;
+const MAX_SIDEBAR_WIDTH = 600;
 
 /**
  * AI Chat Sidebar Component
  * - Styled via Tailwind Utility Classes (Inline)
  */
 export default function AIChatSidebar() {
-  const [state, formAction, isPending] = useActionState(sendMessageAction, {
-    messages: [],
-  });
-
   // 독립적인 채팅 메시지 상태 (초기화 방지)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [isSending, setIsSending] = useState(false);
 
-  // 메시지 추가 함수
-  const addMessage = useCallback((message: ChatMessage) => {
-    setChatMessages((prev) => [...prev, message]);
-  }, []);
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (isSending) return;
 
-  // 서버 응답 동기화 (formAction 결과가 있으면 반영)
-  useEffect(() => {
-    if (state.messages && state.messages.length > chatMessages.length) {
-      setChatMessages(state.messages);
-
-      // ActionExecutor 연동: 마지막 메시지에 actions가 있으면 실행
-      const lastMessage = state.messages[state.messages.length - 1];
-      if (lastMessage.role === 'assistant' && lastMessage.actions) {
-        import('@/services/action-executor').then(({ ActionExecutor }) => {
-          ActionExecutor.execute(lastMessage.actions!);
-        });
-      }
-    }
-  }, [state.messages, chatMessages.length]);
-  
-  const { openComparison } = useComparisonStore();
-  const { moveToLocation, moveToLocations } = useMapStore();
-
-  const formRef = useRef<HTMLFormElement>(null);
-
-  const handleSendMessage = async (formData: FormData) => {
-    const message = formData.get('message') as string;
-    if (!message || message.trim() === '') return;
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    const message = (formData.get('message') ?? '').toString().trim();
+    if (!message) return;
 
     // Optimistic Update: Show user message immediately
-    addMessage({
+    const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
       content: message,
       timestamp: new Date(),
-    });
+    };
 
-    // Reset form immediately
-    formRef.current?.reset();
+    setChatMessages((prev) => [...prev, userMessage]);
+    form.reset();
 
-    // 채팅 메시지 파싱 및 처리
-    const parseResult = await parseChatMessage(message);
-    
-    if (parseResult) {
-      // 지도 마커 표시
-      if (parseResult.markers && parseResult.markers.length > 0) {
-        if (parseResult.markers.length > 1) {
-          moveToLocations(parseResult.markers);
-        } else {
-          const marker = parseResult.markers[0];
-          moveToLocation(marker.coords, marker.name, 3);
-        }
+    setIsSending(true);
+    try {
+      const assistantMessage = await sendMessage(message, [
+        ...chatMessages,
+        userMessage,
+      ]);
+      setChatMessages((prev) => [...prev, assistantMessage]);
+
+      if (assistantMessage.actions && assistantMessage.actions.length > 0) {
+        const { ActionExecutor } = await import('@/services/action-executor');
+        console.log(assistantMessage.actions);
+        ActionExecutor.execute(assistantMessage.actions);
       }
-
-      // 비교 카드 UI 표시
-      if (parseResult.isComparison && parseResult.comparisonData) {
-        setTimeout(() => {
-          openComparison(parseResult.comparisonData![0], parseResult.comparisonData![1]);
-        }, 500);
-      }
-
-      // AI 응답 추가
-      if (parseResult.assistantMessage) {
-        addMessage(parseResult.assistantMessage);
-      }
-
-      return; // 파싱 처리 완료 시 종료
+    } catch (error) {
+      console.error('[AIChatSidebar] sendMessage failed:', error);
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content:
+            '요청 처리 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.',
+          timestamp: new Date(),
+        },
+      ]);
+    } finally {
+      setIsSending(false);
     }
-
-    // 일반 메시지 - 서버 액션 호출
-    // formData는 이미 reset되었으므로 새로 생성
-    const newFormData = new FormData();
-    newFormData.set('message', message);
-    startTransition(() => {
-      formAction(newFormData);
-    });
   };
 
   // Resizing Logic
   // Global State for Sidebar
-  const { width, setWidth, isOpen, setIsOpen, isResizing, setIsResizing } = useSidebarStore();
+  const { width, setWidth, isOpen, setIsOpen, isResizing, setIsResizing } =
+    useSidebarStore();
 
-  const startResizing = useCallback(() => setIsResizing(true), []);
-  const stopResizing = useCallback(() => setIsResizing(false), []);
-
-  const resize = useCallback(
-    (mouseMoveEvent: MouseEvent) => {
-      if (isResizing) {
-        const newWidth = window.innerWidth - mouseMoveEvent.clientX;
-        if (newWidth > 280 && newWidth < 500) {
-          setWidth(newWidth);
-        }
-      }
-    },
-    [isResizing]
-  );
-
-  useEffect(() => {
-    if (isResizing) {
-      // Fix issues: Text selection and cursor reset
-      document.body.style.cursor = 'ew-resize';
-      document.body.style.userSelect = 'none';
-
-      window.addEventListener('mousemove', resize);
-      window.addEventListener('mouseup', stopResizing);
-    }
-    
-    return () => {
-      window.removeEventListener('mousemove', resize);
-      window.removeEventListener('mouseup', stopResizing);
-      // Cleanup styles
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
-  }, [isResizing, resize, stopResizing]);
-
+  const sidebarRef = useRef<HTMLElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -146,7 +84,51 @@ export default function AIChatSidebar() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [chatMessages, isPending]);
+  }, [chatMessages.length]);
+
+  const startResizing = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.preventDefault();
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+    setIsResizing(true);
+  };
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const prevCursor = document.body.style.cursor;
+    const prevUserSelect = document.body.style.userSelect;
+    document.body.style.cursor = 'ew-resize';
+    document.body.style.userSelect = 'none';
+
+    const stop = () => setIsResizing(false);
+    const onMove = (e: PointerEvent) => {
+      const rightEdge =
+        sidebarRef.current?.getBoundingClientRect().right ?? window.innerWidth;
+      const rawWidth = rightEdge - e.clientX;
+      const nextWidth = Math.min(
+        MAX_SIDEBAR_WIDTH,
+        Math.max(MIN_SIDEBAR_WIDTH, rawWidth),
+      );
+      setWidth(nextWidth);
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', stop);
+    window.addEventListener('pointercancel', stop);
+
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', stop);
+      window.removeEventListener('pointercancel', stop);
+      document.body.style.cursor = prevCursor;
+      document.body.style.userSelect = prevUserSelect;
+    };
+  }, [isResizing, setIsResizing, setWidth]);
 
   return (
     <>
@@ -183,6 +165,7 @@ export default function AIChatSidebar() {
 
       {/* Sidebar Container */}
       <aside
+        ref={sidebarRef}
         style={{ width: `${width}px` }}
         className={`fixed top-2 right-2 bottom-2 z-50 flex flex-col bg-transparent transition-transform duration-300 ${
           isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+20px)]'
@@ -190,8 +173,11 @@ export default function AIChatSidebar() {
       >
         {/* Resizer Handle (Wider hit area with visible line) */}
         <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize chat sidebar"
+          onPointerDown={startResizing}
           className="group absolute -left-3 top-0 z-50 flex h-full w-6 cursor-ew-resize justify-center bg-transparent"
-          onMouseDown={startResizing}
         >
           <div className="my-6 w-1 transition-colors group-hover:bg-blue-400/50 group-active:bg-blue-600" />
         </div>
@@ -207,7 +193,7 @@ export default function AIChatSidebar() {
           </header>
 
           {/* Main Content Area */}
-          <div 
+          <div
             ref={scrollContainerRef}
             className="flex flex-1 flex-col overflow-y-auto p-6 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
           >
@@ -230,7 +216,7 @@ export default function AIChatSidebar() {
                     </div>
                   </div>
                 ))}
-                {isPending && (
+                {isSending && (
                   <div className="flex justify-start">
                     <div className="flex space-x-1 rounded-2xl bg-white px-4 py-3 shadow-sm border border-gray-100">
                       <div className="h-2 w-2 animate-bounce rounded-full bg-gray-400 [animation-delay:-0.3s]"></div>
@@ -263,7 +249,9 @@ export default function AIChatSidebar() {
                       <span>매출 요약</span>
                     </div>
                     <p className="text-sm text-gray-700">
-                      이 입지에서 <span className="font-bold text-blue-600">치킨집</span>의 평균 매출을 요약해서 정리해줘
+                      이 입지에서{' '}
+                      <span className="font-bold text-blue-600">치킨집</span>의
+                      평균 매출을 요약해서 정리해줘
                     </p>
                   </button>
 
@@ -273,7 +261,11 @@ export default function AIChatSidebar() {
                       <span>업종 / 메뉴 추천</span>
                     </div>
                     <p className="text-sm text-gray-700">
-                      이 상권에서 <span className="font-bold text-blue-600">잘 맞는 업종 5개</span>를 추천하고, 체인점 설명해줘
+                      이 상권에서{' '}
+                      <span className="font-bold text-blue-600">
+                        잘 맞는 업종 5개
+                      </span>
+                      를 추천하고, 체인점 설명해줘
                     </p>
                   </button>
                 </div>
@@ -283,7 +275,7 @@ export default function AIChatSidebar() {
 
           {/* Input Area */}
           <div className="p-4 rounded-bl-3xl">
-            <form ref={formRef} action={handleSendMessage} className="relative group">
+            <form onSubmit={handleSubmit} className="relative group">
               <textarea
                 name="message"
                 placeholder="AI Coach에 메시지 보내기"
@@ -293,7 +285,9 @@ export default function AIChatSidebar() {
                   if (!container) return;
 
                   // Check if user is near bottom (threshold 20px)
-                  const isNearBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 20;
+                  const isNearBottom =
+                    container.scrollHeight - container.scrollTop <=
+                    container.clientHeight + 20;
 
                   if (isNearBottom) {
                     const startTime = Date.now();
@@ -318,7 +312,7 @@ export default function AIChatSidebar() {
               />
               <button
                 type="submit"
-                disabled={isPending}
+                disabled={isSending}
                 className="absolute right-3 bottom-3 flex items-center gap-1 rounded-xl bg-gray-900 px-4 py-2 text-xs font-medium text-white transition-opacity hover:bg-gray-800 disabled:opacity-50 opacity-0 pointer-events-none duration-100 group-focus-within:opacity-100 group-focus-within:pointer-events-auto group-focus-within:duration-300"
               >
                 질문하기

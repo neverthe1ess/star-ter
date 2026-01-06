@@ -10,7 +10,7 @@ import { usePopulationLayer } from '../hooks/usePopulationLayer';
 import { usePopulationVisual } from '../hooks/usePopulationVisual';
 import { IndustryCategory } from '../types/bottom-menu-types';
 import { useMapStore } from '../stores/useMapStore';
-import { useSidebarStore } from '../stores/useSidebarStore';
+// import { useSidebarStore } from '../stores/useSidebarStore'; // Deprecated
 import { useBuildingMarkers } from '../hooks/useBuildingMarkers';
 import { PopulationBar } from './population/PopulationBar';
 import { useSeoulBoundary } from '../hooks/useSeoulBoundary';
@@ -38,21 +38,46 @@ export default function Kakaomap({
   const markersRef = useRef<KakaoMarker[]>([]);
 
   const { map } = useKakaoMap(mapRef);
-  const { selectedArea, selectArea, clearSelection, setSelectedArea } =
-    useSidebarStore();
-  const { center, zoom, markers, setZoom, setCenter, clearMarkers, setSelectedIndustryCodes } =
-    useMapStore();
+  const {
+    center,
+    zoom,
+    markers,
+    setZoom,
+    setCenter,
+    clearMarkers,
+    setSelectedIndustryCodes,
+    selectedArea,
+    selectArea,
+    clearSelection,
+  } = useMapStore();
 
   usePolygonData(
     map,
     (data: InfoBarData) => {
       if (!disableInfoBar) {
-        selectArea(data);
+        const label =
+          data.buld_nm || data.adm_nm || data.commercialName || 'Unknown';
+        const code =
+          data.signgu_cd ||
+          data.commercialCode ||
+          data.adstrd_cd ||
+          data.adm_cd;
+        const type = data.level || 'dong';
+
+        selectArea(
+          {
+            name: label,
+            coords: { lat: Number(data.y), lng: Number(data.x) },
+            type: type as any,
+            code: code,
+          },
+          data,
+        );
       }
       if (polygonClick) {
         const label =
           data.buld_nm || data.adm_nm || data.commercialName || 'Unknown';
-        const code = data.adm_cd || data.commercialCode;
+        const code = data.signgu_cd || data.commercialCode || data.adstrd_cd || data.adm_cd;
         polygonClick({ name: label, code: code });
       }
     },
@@ -66,10 +91,10 @@ export default function Kakaomap({
   const prevCategoryRef = useRef(selectedCategory);
   useEffect(() => {
     if (selectedCategory && selectedCategory !== prevCategoryRef.current) {
-      setSelectedArea(null);
+      clearSelection();
     }
     prevCategoryRef.current = selectedCategory;
-  }, [selectedCategory, setSelectedArea]);
+  }, [selectedCategory, clearSelection]);
 
   useEffect(() => {
     if (!map) return;
@@ -274,7 +299,7 @@ export default function Kakaomap({
   return (
     <div className="relative w-full h-full">
       <InfoBar
-        data={selectedArea}
+        data={selectedArea?.fullData || null}
         onClose={handleClose}
       />
 
@@ -285,7 +310,7 @@ export default function Kakaomap({
         style={{ width: '100vw', height: '100vh' }}
       />
       {population.showLayer && (
-        <div className="absolute right-100 bottom-1 z-50">
+        <div className="absolute left-6 bottom-1 z-50">
           <PopulationBar />
         </div>
       )}

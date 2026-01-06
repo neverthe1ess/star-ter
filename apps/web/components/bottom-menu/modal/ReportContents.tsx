@@ -38,7 +38,7 @@ export default function ReportContents({
   return (
     <div className="relative w-[360px] bg-white rounded-2xl shadow-xl overflow-hidden animate-slide-up font-sans">
       <div className="flex items-center gap-3 p-6 border-b border-gray-100">
-        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 20V10" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M18 20V4" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

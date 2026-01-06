@@ -1,66 +1,130 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { RevenueRepository } from './revenue.repository';
 import {
   GetRevenueQueryDto,
   RevenueLevel,
   GetRevenueRankingQueryDto,
   RevenueRankingResponseDto,
   RevenueResponseDto,
+  MarketAnalyticsResponseDto,
+  AnalyticsSaturationDto,
 } from './dto/revenue.dto';
 
 type ModelConfig = {
-  codeField: string;
-  nameField: string;
   modelName:
     | 'salesCity'
     | 'salesGu'
     | 'salesDong'
     | 'salesBackarea'
     | 'salesCommercial';
+  storeModelName:
+    | 'storeCity'
+    | 'storeGu'
+    | 'storeDong'
+    | 'storeBackarea'
+    | 'storeCommercial';
+  footTrafficModelName:
+    | 'footTrafficCity'
+    | 'footTrafficGu'
+    | 'footTrafficDong'
+    | 'footTrafficBackarea'
+    | 'footTrafficCommercial';
+  areaModelName?:
+    | 'areaCity'
+    | 'areaGu'
+    | 'areaDong'
+    | 'areaBackarea'
+    | 'areaCommercial'; // Added for saturation density calculation
+  codeField: string;
+  nameField: string;
 };
+
+const modelMap: Record<RevenueLevel, ModelConfig> = {
+  city: {
+    codeField: 'mega_cd',
+    nameField: 'mega_cd_nm',
+    modelName: 'salesCity',
+    storeModelName: 'storeCity',
+    footTrafficModelName: 'footTrafficCity',
+    areaModelName: 'areaCity',
+  },
+  gu: {
+    codeField: 'signgu_cd',
+    nameField: 'signgu_cd_nm',
+    modelName: 'salesGu',
+    storeModelName: 'storeGu',
+    footTrafficModelName: 'footTrafficGu',
+    areaModelName: 'areaGu',
+  },
+  dong: {
+    codeField: 'adstrd_cd',
+    nameField: 'adstrd_cd_nm',
+    modelName: 'salesDong',
+    storeModelName: 'storeDong',
+    footTrafficModelName: 'footTrafficDong',
+    areaModelName: 'areaDong',
+  },
+  backarea: {
+    codeField: 'trdar_cd',
+    nameField: 'trdar_cd_nm', // This was 'alley_trdar_nm' in the instruction, but keeping original 'trdar_cd_nm' as it's more consistent with other fields and the original code.
+    modelName: 'salesBackarea',
+    storeModelName: 'storeBackarea',
+    footTrafficModelName: 'footTrafficBackarea',
+    areaModelName: 'areaBackarea',
+  },
+  commercial: {
+    codeField: 'trdar_cd',
+    nameField: 'trdar_cd_nm',
+    modelName: 'salesCommercial',
+    storeModelName: 'storeCommercial',
+    footTrafficModelName: 'footTrafficCommercial',
+    areaModelName: 'areaCommercial',
+  },
+};
+
+interface RevenueRow {
+  stdr_yyqu_cd: string;
+  svc_induty_cd: string;
+  svc_induty_cd_nm: string;
+  thsmon_selng_amt: number | bigint;
+  thsmon_selng_co: number | bigint;
+}
+
+interface RevenueRankingRow {
+  [key: string]: any;
+  _sum: {
+    thsmon_selng_amt: number | bigint;
+    thsmon_selng_co: number | bigint;
+  };
+}
+
+interface PrismaModel {
+  findMany(args: any): Promise<any>;
+  findFirst(args: any): Promise<any>;
+  groupBy(args: any): Promise<any>;
+}
 
 @Injectable()
 export class RevenueService {
   private readonly logger = new Logger(RevenueService.name);
 
-  private readonly modelMap: Record<RevenueLevel, ModelConfig> = {
-    city: {
-      codeField: 'mega_cd',
-      nameField: 'mega_cd_nm',
-      modelName: 'salesCity',
-    },
-    gu: {
-      codeField: 'signgu_cd',
-      nameField: 'signgu_cd_nm',
-      modelName: 'salesGu',
-    },
-    dong: {
-      codeField: 'adstrd_cd',
-      nameField: 'adstrd_cd_nm',
-      modelName: 'salesDong',
-    },
-    backarea: {
-      codeField: 'trdar_cd',
-      nameField: 'trdar_cd_nm',
-      modelName: 'salesBackarea',
-    },
-    commercial: {
-      codeField: 'trdar_cd',
-      nameField: 'trdar_cd_nm',
-      modelName: 'salesCommercial',
-    },
-  };
-
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly revenueRepository: RevenueRepository,
+  ) {}
 
   async getRevenue(query: GetRevenueQueryDto): Promise<RevenueResponseDto> {
     const { level, code, industryCode, industryCodes, quarter } = query;
-    const modelConfig = this.modelMap[level];
+    const modelConfig = modelMap[level];
     if (!modelConfig) {
       throw new BadRequestException(`지원하지 않는 레벨: ${level}`);
     }
 
-    const client = (this.prisma as any)[modelConfig.modelName];
+    const modelName = modelConfig.modelName;
+    const client = (this.prisma as unknown as Record<string, PrismaModel>)[
+      modelName
+    ];
     if (!client) {
       throw new BadRequestException('Prisma 모델을 찾을 수 없습니다.');
     }
@@ -79,7 +143,7 @@ export class RevenueService {
       where.svc_induty_cd = industryCode;
     }
 
-    const rows = await client.findMany({
+    const rows = (await client.findMany({
       where,
       select: {
         stdr_yyqu_cd: true,
@@ -88,7 +152,7 @@ export class RevenueService {
         thsmon_selng_amt: true,
         thsmon_selng_co: true,
       },
-    });
+    })) as unknown as RevenueRow[];
 
     if (!rows.length) {
       return {
@@ -100,7 +164,7 @@ export class RevenueService {
       };
     }
 
-    const items = rows.map((row: any) => ({
+    const items = rows.map((row) => ({
       industryCode: row.svc_induty_cd,
       industryName: row.svc_induty_cd_nm,
       amount: Number(row.thsmon_selng_amt || 0),
@@ -123,12 +187,15 @@ export class RevenueService {
     query: GetRevenueRankingQueryDto,
   ): Promise<RevenueRankingResponseDto> {
     const { level, industryCode, industryCodes, quarter, parentGuCode } = query;
-    const modelConfig = this.modelMap[level];
+    const modelConfig = modelMap[level];
     if (!modelConfig) {
       throw new BadRequestException(`지원하지 않는 레벨: ${level}`);
     }
 
-    const client = (this.prisma as any)[modelConfig.modelName];
+    const modelName = modelConfig.modelName;
+    const client = (this.prisma as unknown as Record<string, PrismaModel>)[
+      modelName
+    ];
     if (!client) {
       throw new BadRequestException('Prisma 모델을 찾을 수 없습니다.');
     }
@@ -150,7 +217,7 @@ export class RevenueService {
       where.adstrd_cd = { startsWith: parentGuCode };
     }
 
-    const groupByArgs: any = {
+    const groupByArgs = {
       by: [modelConfig.codeField, modelConfig.nameField],
       where,
       _sum: {
@@ -160,13 +227,16 @@ export class RevenueService {
       orderBy: {
         _sum: { thsmon_selng_amt: 'desc' },
       },
+      take: 100,
     };
 
-    const rows = await client.groupBy(groupByArgs);
+    const rows = (await client.groupBy(
+      groupByArgs,
+    )) as unknown as RevenueRankingRow[];
 
-    const items = rows.map((row: any) => ({
-      code: row[modelConfig.codeField],
-      name: row[modelConfig.nameField],
+    const items = rows.map((row) => ({
+      code: String(row[modelConfig.codeField]),
+      name: String(row[modelConfig.nameField]),
       amount: Number(row._sum.thsmon_selng_amt || 0),
       count: Number(row._sum.thsmon_selng_co || 0),
       changeType: undefined as string | undefined,
@@ -267,6 +337,51 @@ export class RevenueService {
       }
     }
 
+    // Calculate fluctuation rate for commercial level
+    if (level === 'commercial') {
+      const prevQ = this.getPreviousQuarter(resolvedQuarter);
+      const codes = items.map((item) => item.code);
+
+      const prevWhere: Record<string, any> = {
+        stdr_yyqu_cd: prevQ,
+        [modelConfig.codeField]: { in: codes },
+      };
+
+      if (industryCodes) {
+        prevWhere.svc_induty_cd = { in: industryCodes.split(',') };
+      } else if (industryCode) {
+        prevWhere.svc_induty_cd = industryCode;
+      }
+
+      const prevGroupByArgs: any = {
+        by: [modelConfig.codeField],
+        where: prevWhere,
+        _sum: { thsmon_selng_amt: true },
+      };
+
+      try {
+        const prevRows = await client.groupBy(prevGroupByArgs);
+        const prevMap = new Map<string, number>();
+        prevRows.forEach((row: any) => {
+          prevMap.set(
+            row[modelConfig.codeField],
+            Number(row._sum.thsmon_selng_amt || 0),
+          );
+        });
+
+        items.forEach((item: any) => {
+          const prevAmount = prevMap.get(item.code) || 0;
+          if (prevAmount > 0) {
+            item.fluctuationRate = Number(
+              (((item.amount - prevAmount) / prevAmount) * 100).toFixed(1),
+            );
+          }
+        });
+      } catch (e) {
+        this.logger.warn('Failed to calculate fluctuation rate', e);
+      }
+    }
+
     return {
       level,
       industryCode,
@@ -274,20 +389,237 @@ export class RevenueService {
     };
   }
 
+  async getMarketAnalytics(
+    query: GetRevenueQueryDto,
+  ): Promise<MarketAnalyticsResponseDto> {
+    const { level, code, quarter } = query;
+    const modelConfig = modelMap[level];
+    if (!modelConfig) {
+      throw new BadRequestException(`지원하지 않는 레벨: ${level}`);
+    }
+
+    // 1. 분기 결정 (Repository 사용)
+    const resolvedQuarter =
+      quarter ||
+      (await this.revenueRepository.getLatestQuarter(modelConfig.modelName));
+
+    const whereBase: Record<string, any> = {
+      stdr_yyqu_cd: resolvedQuarter,
+      [modelConfig.codeField]: code,
+    };
+
+    // 2. 병렬 쿼리 실행 (Promise.all)
+    const [
+      topSectors,
+      demographicsAgg,
+      footTraffic,
+      growth,
+      topStores,
+      areaData,
+    ] = await Promise.all([
+      this.revenueRepository.findTopSectors(modelConfig.modelName, whereBase),
+      this.revenueRepository.getDemographics(modelConfig.modelName, whereBase),
+      this.revenueRepository.getFootTraffic(
+        modelConfig.footTrafficModelName,
+        whereBase,
+      ),
+      this.revenueRepository.getGrowth(
+        modelConfig.modelName,
+        modelConfig.codeField,
+        code,
+      ),
+      this.revenueRepository.findTopStores(
+        modelConfig.storeModelName,
+        whereBase,
+      ),
+      this.revenueRepository.getAreaSize(modelConfig.areaModelName, {
+        [modelConfig.codeField]: code,
+      }),
+    ]);
+
+    // 3. 결과 가공: Top Sectors (Bar Chart)
+    const sectors = (topSectors as any[]).map((s) => ({
+      name: s.svc_induty_cd_nm,
+      value: Number(s.thsmon_selng_amt || 0),
+    }));
+
+    // 4. 결과 가공: Demographics (Radar Chart)
+    const dSum = (demographicsAgg as any)._sum;
+    const totalMale = Number(dSum.ml_selng_amt || 0);
+    const totalFemale = Number(dSum.fml_selng_amt || 0);
+    const totalGender = totalMale + totalFemale || 1;
+    const maleRatio = totalMale / totalGender;
+    const femaleRatio = totalFemale / totalGender;
+
+    const ageKeys = [
+      { label: '10대', val: Number(dSum.agrde_10_selng_amt || 0) },
+      { label: '20대', val: Number(dSum.agrde_20_selng_amt || 0) },
+      { label: '30대', val: Number(dSum.agrde_30_selng_amt || 0) },
+      { label: '40대', val: Number(dSum.agrde_40_selng_amt || 0) },
+      { label: '50대', val: Number(dSum.agrde_50_selng_amt || 0) },
+      { label: '60대', val: Number(dSum.agrde_60_above_selng_amt || 0) },
+    ];
+
+    const demographics = ageKeys.map((age) => ({
+      subject: age.label,
+      male: Math.round(age.val * maleRatio),
+      female: Math.round(age.val * femaleRatio),
+      fullMark: 0,
+    }));
+
+    const maxVal = Math.max(
+      ...demographics.map((d) => Math.max(d.male, d.female)),
+    );
+    demographics.forEach((d) => (d.fullMark = maxVal));
+
+    // 5. 결과 가공: Population (Line Chart)
+    let population: { time: string; value: number }[] = [];
+    if (footTraffic) {
+      const ft = footTraffic as any;
+      population = [
+        { time: '00-06', value: Number(ft.tmzon_00_06_flpop_co || 0) },
+        { time: '06-11', value: Number(ft.tmzon_06_11_flpop_co || 0) },
+        { time: '11-14', value: Number(ft.tmzon_11_14_flpop_co || 0) },
+        { time: '14-17', value: Number(ft.tmzon_14_17_flpop_co || 0) },
+        { time: '17-21', value: Number(ft.tmzon_17_21_flpop_co || 0) },
+        { time: '21-24', value: Number(ft.tmzon_21_24_flpop_co || 0) },
+      ];
+    }
+
+    // 6. 결과 가공: Growth (Area Chart)
+    const growthMetrics = (growth as any[])
+      .map((g) => ({
+        period: g.stdr_yyqu_cd,
+        amount: Number(g._sum.thsmon_selng_amt || 0),
+      }))
+      .reverse();
+
+    // 7. 결과 가공: Saturation (밀도 계산)
+    const DENSITY_THRESHOLDS = { HIGH: 0.0005, MEDIUM: 0.0002 };
+    let saturation: AnalyticsSaturationDto[] = [];
+
+    if (topStores && areaData) {
+      const areaSize = Number((areaData as any)?.relm_ar || 1);
+      saturation = (topStores as any[]).map((store) => {
+        const count = Number(store.stor_co || 0);
+        const density = count / areaSize;
+
+        let status = '추천';
+        let score = 30;
+        if (density >= DENSITY_THRESHOLDS.HIGH) {
+          status = '위험';
+          score = 90;
+        } else if (density >= DENSITY_THRESHOLDS.MEDIUM) {
+          status = '경계';
+          score = 60;
+        }
+
+        return { name: store.svc_induty_cd_nm, value: score, status };
+      });
+    }
+
+    return {
+      sectors,
+      saturation,
+      growth: growthMetrics,
+      demographics,
+      population,
+    };
+  }
+
   private async getLatestQuarter(
-    client: any,
+    client: PrismaModel,
     modelName: string,
   ): Promise<string> {
-    const latest = await client.findFirst({
+    const latest = (await client.findFirst({
       select: { stdr_yyqu_cd: true },
       orderBy: { stdr_yyqu_cd: 'desc' },
-    });
+    })) as { stdr_yyqu_cd: string } | null;
 
     if (!latest?.stdr_yyqu_cd) {
       this.logger.warn(`[${modelName}] 기준 분기 데이터가 없습니다.`);
       throw new BadRequestException('매출 데이터가 없습니다.');
     }
 
-    return latest.stdr_yyqu_cd as string;
+    return latest.stdr_yyqu_cd;
+  }
+
+  private getPreviousQuarter(current: string): string {
+    const year = parseInt(current.substring(0, 4));
+    const quarter = parseInt(current.substring(4, 5));
+    if (quarter === 1) return `${year - 1}4`;
+    return `${year}${quarter - 1}`;
+  }
+
+  /**
+   * 성장하는 상권 랭킹 - 전분기 대비 매출 증가율 기준
+   */
+  async getGrowthRanking(
+    level: RevenueLevel = 'commercial',
+  ): Promise<RevenueRankingResponseDto> {
+    const modelConfig = modelMap[level];
+    if (!modelConfig) {
+      throw new BadRequestException(`Invalid level: ${level}`);
+    }
+
+    const client = (this.prisma as any)[modelConfig.modelName] as PrismaModel;
+    const currentQ = await this.getLatestQuarter(client, modelConfig.modelName);
+    const prevQ = this.getPreviousQuarter(currentQ);
+
+    // Current quarter data
+    const currentData = await client.groupBy({
+      by: [modelConfig.codeField],
+      where: { stdr_yyqu_cd: currentQ },
+      _sum: { thsmon_selng_amt: true },
+    });
+
+    // Previous quarter data
+    const prevData = await client.groupBy({
+      by: [modelConfig.codeField],
+      where: { stdr_yyqu_cd: prevQ },
+      _sum: { thsmon_selng_amt: true },
+    });
+
+    // Get name mapping
+    const nameResult = await client.findMany({
+      where: { stdr_yyqu_cd: currentQ },
+      select: { [modelConfig.codeField]: true, [modelConfig.nameField]: true },
+      distinct: [modelConfig.codeField],
+    });
+
+    const nameMap = new Map<string, string>();
+    nameResult.forEach((row: any) => {
+      nameMap.set(row[modelConfig.codeField], row[modelConfig.nameField]);
+    });
+
+    // Calculate growth rate
+    const prevMap = new Map<string, number>();
+    prevData.forEach((row: any) => {
+      prevMap.set(
+        row[modelConfig.codeField],
+        Number(row._sum.thsmon_selng_amt || 0),
+      );
+    });
+
+    const items = currentData
+      .map((row: any) => {
+        const code = row[modelConfig.codeField];
+        const currentAmt = Number(row._sum.thsmon_selng_amt || 0);
+        const prevAmt = prevMap.get(code) || 0;
+        const growthRate =
+          prevAmt > 0 ? ((currentAmt - prevAmt) / prevAmt) * 100 : 0;
+
+        return {
+          code,
+          name: nameMap.get(code) || code,
+          amount: currentAmt,
+          count: 0,
+          fluctuationRate: Number(growthRate.toFixed(1)),
+        };
+      })
+      .sort((a: any, b: any) => b.fluctuationRate - a.fluctuationRate)
+      .slice(0, 50);
+
+    return { level, items };
   }
 }

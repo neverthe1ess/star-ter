@@ -30,6 +30,7 @@ export class RevenueRankingItemDto {
   amount: number;
   count: number;
   changeType?: string;
+  fluctuationRate?: number;
 }
 
 export class RevenueRankingResponseDto {
@@ -82,4 +83,41 @@ export class GetRevenueRankingQueryDto {
   @IsString()
   @IsOptional()
   quarter?: string;
+}
+// Analytics DTOs
+export class AnalyticsSectorDto {
+  name: string;
+  value: number;
+  // color can be assigned in frontend
+}
+
+export class AnalyticsSaturationDto {
+  name: string;
+  value: number; // 0-100 score
+  status: string; // '위험', '주의', '보통', '여유'
+}
+
+export class AnalyticsGrowthDto {
+  period: string; // '23.1Q'
+  amount: number;
+}
+
+export class AnalyticsRadarItemDto {
+  subject: string;
+  male: number;
+  female: number;
+  fullMark: number;
+}
+
+export class AnalyticsPopulationDto {
+  time: string;
+  value: number;
+}
+
+export class MarketAnalyticsResponseDto {
+  sectors: AnalyticsSectorDto[];
+  saturation: AnalyticsSaturationDto[];
+  growth: AnalyticsGrowthDto[];
+  demographics: AnalyticsRadarItemDto[];
+  population: AnalyticsPopulationDto[];
 }
