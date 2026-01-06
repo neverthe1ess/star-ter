@@ -10,6 +10,7 @@ import {
   Filter,
   ChevronDown,
   Sparkles,
+  Star,
 } from 'lucide-react';
 import { useMapStore } from '../../stores/useMapStore';
 import { RealEstateItem } from '../../types/map-store-types';
@@ -17,6 +18,7 @@ import {
   fetchRealEstateAiSummary,
   formatRealEstateMetrics,
 } from '../../services/ai.service';
+import { useRealEstateBookmark } from '../../hooks/useRealEstateBookmark';
 
 type SortOption = 'latest' | 'deposit' | 'monthlyrent' | 'premium' | 'size';
 
@@ -36,6 +38,8 @@ export default function RealEstateInfoSection() {
     filteredClusterCoords,
     setFilteredClusterCoords,
   } = useMapStore();
+
+  const { toggleBookmark, isBookmarked } = useRealEstateBookmark();
 
   const [sortBy, setSortBy] = useState<SortOption>('latest');
   const [isSortOpen, setIsSortOpen] = useState(false);
@@ -276,6 +280,11 @@ export default function RealEstateInfoSection() {
                     .getState()
                     .setHoveredRealEstateItemId(isHovering ? item.id : null)
                 }
+                onBookmark={(e) => {
+                  e.stopPropagation();
+                  toggleBookmark(item.id);
+                }}
+                isBookmarked={isBookmarked(item.id)}
               />
             ))
           )}
@@ -290,21 +299,49 @@ function RealEstateCard({
   item,
   onClick,
   onHover,
+  onBookmark,
+  isBookmarked = false,
 }: {
   item: RealEstateItem;
   onClick: () => void;
   onHover: (state: boolean) => void;
+  onBookmark: (e: React.MouseEvent) => void;
+  isBookmarked?: boolean;
 }) {
-  const { deposit, monthlyrent, size, title, previewphotourl, roadaddress } =
-    item;
+  const {
+    deposit,
+    monthlyrent,
+    size,
+    title,
+    previewphotourl,
+    roadaddress,
+    businesslargecodename,
+    businessmiddlecodename,
+  } = item;
 
   return (
     <div
       onClick={onClick}
       onMouseEnter={() => onHover(true)}
       onMouseLeave={() => onHover(false)}
-      className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer flex flex-col sm:flex-row h-auto sm:h-32"
+      className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer flex flex-col sm:flex-row h-auto sm:h-32 relative"
     >
+      {/* 즐겨찾기 버튼 */}
+      <button
+        onClick={onBookmark}
+        className="absolute top-2 right-3 z-10 hover:scale-110 transition-transform"
+        title={isBookmarked ? '즐겨찾기 해제' : '즐겨찾기 추가'}
+      >
+        <Star
+          size={25}
+          className={
+            isBookmarked
+              ? 'fill-yellow-400 text-yellow-400'
+              : 'text-gray-300 hover:text-yellow-400'
+          }
+        />
+      </button>
+
       {/* 이미지 썸네일 */}
       <div className="w-full sm:w-32 h-32 bg-gray-200 shrink-0 relative">
         {previewphotourl ? (
@@ -335,6 +372,22 @@ function RealEstateCard({
               {roadaddress?.split(' ').slice(0, 2).join(' ') || '주소미상'}
             </span>
           </div>
+
+          {/* 업종 뱃지 */}
+          {(businesslargecodename || businessmiddlecodename) && (
+            <div className="flex items-center gap-2 mt-2">
+              {businesslargecodename && (
+                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
+                  {businesslargecodename}
+                </span>
+              )}
+              {businessmiddlecodename && (
+                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
+                  {businessmiddlecodename}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="text-sm text-gray-600 truncate mt-2">

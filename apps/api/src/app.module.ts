@@ -19,6 +19,7 @@ import { BookmarkModule } from './bookmark/bookmark.module';
 import { RentModule } from './rent/rent.module';
 import { RealEstateModule } from './real-estate/real_estate.module';
 import { UploadModule } from './upload/upload.module';
+import { RealEstateBookmarkModule } from './real-estate-bookmark/real_estate_bookmark.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { UploadModule } from './upload/upload.module';
     RentModule,
     RealEstateModule,
     UploadModule,
+    RealEstateBookmarkModule,
   ],
   controllers: [HealthController],
   providers: [],
