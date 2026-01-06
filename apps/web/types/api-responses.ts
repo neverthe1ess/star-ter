@@ -89,6 +89,11 @@ export interface SummaryReportResponse {
     characteristics: string;
   }[];
 
+  weeklyFlow: {
+    day: string;
+    value: number;
+  }[];
+
   // 8) 경쟁/상권 구조
   competitionAnalysis: {
     category: string;
