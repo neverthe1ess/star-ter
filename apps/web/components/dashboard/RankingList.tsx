@@ -74,8 +74,6 @@ export default function RankingList({
   // Auto-select first item on load
   const [hasSelected, setHasSelected] = React.useState(false);
 
-
-
   const handleItemClick = async (item: RankItem) => {
     if (adminLevel === 'gu') return;
     // Map API item to RankingItem format for DetailPanel
@@ -85,7 +83,8 @@ export default function RankingList({
       name: item.name,
       category: '상권',
       revenue: item.amount, // This holds Population Count for Population Theme
-      fluctuation: item.fluctuationRate ?? getFluctuationFromChangeType(item.changeType),
+      fluctuation:
+        item.fluctuationRate ?? getFluctuationFromChangeType(item.changeType),
       volume: 0,
       stores: item.count,
       isFavorite: favorites.has(item.code),
@@ -96,6 +95,7 @@ export default function RankingList({
     onSelect(rankingItem);
     // 주소 검색 및 스토어 업데이트 (코드와 레벨 정보 추가 전달)
     await handleSelect(item.name, item.code, adminLevel);
+  };
 
     // 분석 페이지로 이동
     router.push('/analysis');
