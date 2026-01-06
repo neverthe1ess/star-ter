@@ -12,7 +12,7 @@ import { ThemeType, ThemeValue, AdminLevel } from '@/hooks/useThemeRanking';
 import { IndustryData } from '@/mocks/industry';
 
 export default function DashboardLayout() {
-  const [selectedItem, setSelectedItem] = useState<RankingItem | null>(null);
+  const [displayedItem, setDisplayedItem] = useState<RankingItem | null>(null);
   const [activeTab, setActiveTab] = useState<ThemeType>('MZ');
   const [selectedCategory, setSelectedCategory] = useState<string>('I2'); // 대분류
   const [themeValue, setThemeValue] = useState<ThemeValue>('CS100001'); // 소분류
@@ -24,7 +24,7 @@ export default function DashboardLayout() {
 
   // Clear selection when dashboard is fresh
   React.useEffect(() => {
-    setSelectedItem(null);
+    setDisplayedItem(null);
   }, []);
 
   // 대분류 옵션 (INDUSTRY_THEMES)
@@ -233,7 +233,8 @@ export default function DashboardLayout() {
           <div className="flex-1 overflow-hidden relative">
             <RankingList
               key={`${activeTab}-${themeValue}-${ageGroup}-${timeSlot}-${adminLevel}`}
-              onSelect={setSelectedItem}
+              onSelect={() => {}} // 클릭 시 DetailPanel 갱신 불필요 (analysis로 이동만)
+              onHover={setDisplayedItem} // Hover 시 DetailPanel 갱신
               themeType={activeTab}
               themeValue={themeValue}
               ageGroup={ageGroup}
@@ -256,7 +257,7 @@ export default function DashboardLayout() {
           className="shrink-0 bg-white shadow-[-4px_0_12px_rgba(0,0,0,0.05)] z-10"
           style={{ width: `${detailWidth}%` }}
         >
-          {selectedItem && <DetailPanel item={selectedItem} />}
+          {displayedItem && <DetailPanel item={displayedItem} />}
         </aside>
       </main>
     </div>
