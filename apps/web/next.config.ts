@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
         hostname: 'star-ter-real-estate-image.s3.ap-northeast-2.amazonaws.com',
         pathname: '/images/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'img.nemoapp.kr',
+        pathname: '/**',
+      },
     ],
   },
   async rewrites() {

@@ -1,5 +1,4 @@
 import { RankItem } from '@/hooks/useRevenueRanking';
-import { Heart } from 'lucide-react';
 
 type RankNavItemProps = {
   item: RankItem;
@@ -25,8 +24,6 @@ export default function RankNavItem({
   onClick,
   disabled,
   formatAmount,
-  isFavorite,
-  onToggleFavorite,
   fluctuation,
 }: RankNavItemProps) {
   return (
@@ -38,15 +35,6 @@ export default function RankNavItem({
     >
       {/* Rank & Name Section */}
       <div className="col-span-4 flex items-center gap-3 overflow-hidden">
-        <div
-          onClick={onToggleFavorite}
-          className="cursor-pointer shrink-0 p-1.5 rounded-full hover:bg-gray-200 transition-colors"
-        >
-          <Heart
-            className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400 group-hover:text-gray-500'}`}
-          />
-        </div>
-
         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">
           {rank}
         </span>
