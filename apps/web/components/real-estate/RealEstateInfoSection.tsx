@@ -147,7 +147,11 @@ export default function RealEstateInfoSection() {
           </div>
 
           <div className="flex-1 overflow-y-auto bg-white">
-            <DetailView item={selectedRealEstateItem} />
+            <DetailView
+              item={selectedRealEstateItem}
+              isBookmarked={isBookmarked(selectedRealEstateItem.id)}
+              onToggleBookmark={() => toggleBookmark(selectedRealEstateItem.id)}
+            />
           </div>
         </div>
       </div>
@@ -361,28 +365,28 @@ function RealEstateCard({
       {/* 정보 영역 */}
       <div className="flex-1 p-3 flex flex-col justify-between">
         <div>
-          <div className="text-lg font-bold text-gray-900 leading-tight">
+          <div className="text-xl font-bold text-gray-900 leading-tight">
             {formatMoney(deposit)} / {formatMoney(monthlyrent)}
           </div>
 
-          <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-            <span>{formatArea(size)}</span>
-            <span className="w-px h-2 bg-gray-300 mx-1"></span>
-            <span>
+          <div className="text-xs text-gray-500 mt-1 flex items-center gap-0.5 tracking-tight">
+            <span className="shrink-0">{formatArea(size)}</span>
+            <span className="w-px h-2.5 bg-gray-300 mx-0.5 shrink-0"></span>
+            <span className="truncate">
               {roadaddress?.split(' ').slice(0, 2).join(' ') || '주소미상'}
             </span>
           </div>
 
           {/* 업종 뱃지 */}
           {(businesslargecodename || businessmiddlecodename) && (
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex items-center gap-1 mt-1.5">
               {businesslargecodename && (
-                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
+                <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-[11px] rounded tracking-tight">
                   {businesslargecodename}
                 </span>
               )}
               {businessmiddlecodename && (
-                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
+                <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-[11px] rounded tracking-tight">
                   {businessmiddlecodename}
                 </span>
               )}
@@ -390,7 +394,7 @@ function RealEstateCard({
           )}
         </div>
 
-        <div className="text-sm text-gray-600 truncate mt-2">
+        <div className="text-base text-gray-600 truncate mt-1.5">
           {title || '상세 설명 없음'}
         </div>
       </div>
@@ -399,7 +403,15 @@ function RealEstateCard({
 }
 
 // 상세 뷰 컴포넌트 - 모든 DB 필드 표시
-function DetailView({ item }: { item: RealEstateItem }) {
+function DetailView({
+  item,
+  isBookmarked,
+  onToggleBookmark,
+}: {
+  item: RealEstateItem;
+  isBookmarked: boolean;
+  onToggleBookmark: () => void;
+}) {
   const {
     name,
     address,
@@ -439,11 +451,27 @@ function DetailView({ item }: { item: RealEstateItem }) {
       <div className="p-6 space-y-4">
         {/* 제목 및 업종 */}
         <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
-          <h2 className="font-bold text-gray-900 text-lg mb-2">
-            {title || '제목 없음'}
-          </h2>
+          <div className="flex items-start justify-between">
+            <h2 className="font-bold text-gray-900 text-lg flex-1">
+              {title || '제목 없음'}
+            </h2>
+            <button
+              onClick={onToggleBookmark}
+              className="ml-3 hover:scale-110 transition-transform"
+              title={isBookmarked ? '즐겨찾기 해제' : '즐겨찾기 추가'}
+            >
+              <Star
+                size={25}
+                className={
+                  isBookmarked
+                    ? 'fill-yellow-400 text-yellow-400'
+                    : 'text-gray-300 hover:text-yellow-400'
+                }
+              />
+            </button>
+          </div>
           {(businesslargecodename || businessmiddlecodename) && (
-            <div className="flex items-center gap-2 text-sm text-gray-500">
+            <div className="flex items-center gap-2 text-sm text-gray-500 mt-2">
               {businesslargecodename && (
                 <span className="px-2 py-0.5 bg-gray-100 rounded">
                   {businesslargecodename}
@@ -501,7 +529,9 @@ function DetailView({ item }: { item: RealEstateItem }) {
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 bg-gray-50 rounded-lg">
               <p className="text-xs text-gray-500 font-medium mb-1">면적</p>
-              <p className="font-bold text-gray-900">{formatArea(size)}</p>
+              <p className="font-bold text-gray-900">
+                {formatAreaDetailed(size)}
+              </p>
             </div>
             <div className="p-3 bg-gray-50 rounded-lg">
               <p className="text-xs text-gray-500 font-medium mb-1">층수</p>
@@ -612,6 +642,13 @@ function formatMoney(value: number | null): string {
 }
 
 function formatArea(m2: number | null): string {
+  if (!m2) return '0m²';
+  const pyeong = Math.round(m2 / 3.3058);
+  const m2Rounded = Math.round(m2);
+  return `${m2Rounded}m²(${pyeong}평)`;
+}
+
+function formatAreaDetailed(m2: number | null): string {
   if (!m2) return '0m²';
   const pyeong = (m2 / 3.3058).toFixed(1);
   return `${m2}m² (${pyeong}평)`;

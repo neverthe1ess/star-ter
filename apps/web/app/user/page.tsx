@@ -327,20 +327,26 @@ export default function UserPage() {
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-gray-900 text-sm truncate">
+                        <h4 className="font-semibold text-gray-900 text-lg truncate">
                           {item.name || '이름 없음'}
                         </h4>
-                        <p className="text-xs text-gray-500 truncate flex items-center gap-1 mt-0.5">
-                          <MapPin className="h-3 w-3 shrink-0" />
+                        <p className="text-sm text-gray-500 truncate flex items-center gap-1 mt-1">
+                          <MapPin className="h-3.5 w-3.5 shrink-0" />
                           {item.roadaddress || item.address || '주소 없음'}
                         </p>
-                        <div className="flex gap-2 mt-1.5">
-                          <span className="text-xs font-medium text-blue-600">
-                            보증금 {formatPrice(item.deposit)}
+                        <div className="flex gap-2 mt-2 items-center">
+                          <span className="text-sm font-medium text-blue-600">
+                            보증금{' '}
+                            <span className="text-base">
+                              {formatPrice(item.deposit)}
+                            </span>
                           </span>
                           <span className="text-xs text-gray-300">|</span>
-                          <span className="text-xs font-medium text-indigo-600">
-                            월세 {formatPrice(item.monthlyrent)}
+                          <span className="text-sm font-medium text-indigo-600">
+                            월세{' '}
+                            <span className="text-base">
+                              {formatPrice(item.monthlyrent)}
+                            </span>
                           </span>
                         </div>
                       </div>
@@ -397,35 +403,41 @@ export default function UserPage() {
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-gray-900 text-sm truncate">
+                        <h4 className="font-semibold text-gray-900 text-lg truncate">
                           {bookmark.real_estate_info?.title ||
                             bookmark.real_estate_info?.name ||
                             '이름 없음'}
                         </h4>
-                        <p className="text-xs text-gray-500 truncate flex items-center gap-1 mt-0.5">
-                          <MapPin className="h-3 w-3 shrink-0" />
+                        <p className="text-sm text-gray-500 truncate flex items-center gap-1 mt-1">
+                          <MapPin className="h-3.5 w-3.5 shrink-0" />
                           {bookmark.real_estate_info?.roadaddress ||
                             bookmark.real_estate_info?.address ||
                             '주소 없음'}
                         </p>
-                        <div className="flex gap-2 mt-1.5">
-                          <span className="text-xs font-medium text-blue-600">
+                        <div className="flex gap-2 mt-2 items-center">
+                          <span className="text-sm font-medium text-blue-600">
                             보증금{' '}
-                            {formatPrice(bookmark.real_estate_info?.deposit)}
+                            <span className="text-base">
+                              {formatPrice(bookmark.real_estate_info?.deposit)}
+                            </span>
                           </span>
                           <span className="text-xs text-gray-300">|</span>
-                          <span className="text-xs font-medium text-indigo-600">
+                          <span className="text-sm font-medium text-indigo-600">
                             월세{' '}
-                            {formatPrice(
-                              bookmark.real_estate_info?.monthlyrent,
-                            )}
+                            <span className="text-base">
+                              {formatPrice(
+                                bookmark.real_estate_info?.monthlyrent,
+                              )}
+                            </span>
                           </span>
                           <span className="text-xs text-gray-300">|</span>
-                          <span className="text-xs font-medium text-orange-600">
+                          <span className="text-sm font-medium text-orange-600">
                             권리금{' '}
-                            {formatPrice(
-                              bookmark.real_estate_info?.premium || 0,
-                            )}
+                            <span className="text-base">
+                              {formatPrice(
+                                bookmark.real_estate_info?.premium || 0,
+                              )}
+                            </span>
                           </span>
                         </div>
                       </div>
