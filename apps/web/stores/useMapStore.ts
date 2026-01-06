@@ -66,6 +66,9 @@ export const useMapStore = create<MapStore>()(
           highlightedAreaName: area.name,
           isInfoBarOpen: true,
           isMoving: true,
+          // 상권 선택 시 부동산 관련 상태 초기화
+          selectedRealEstateItem: null,
+          viewMode: 'analysis',
           markers: [
             {
               id: 'selected',
