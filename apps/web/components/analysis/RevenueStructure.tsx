@@ -3,6 +3,7 @@
 import React from 'react';
 import { CreditCard, Coins, TrendingUp, Crown } from 'lucide-react';
 import RevenuePatternChart from './RevenuePatternChart';
+import AiInsightBlock from './AiInsightBlock';
 import { SummaryReportResponse } from '../../types/api-responses';
 
 interface RevenueStructureProps {
@@ -18,8 +19,25 @@ export default function RevenueStructure({
 }: RevenueStructureProps) {
   if (!data.revenueAnalysis) return null;
 
+  // AI 분석용 metrics 문자열 생성
+  const revenueMetrics = `
+객단가: ${data.revenueAnalysis.avgTransactionPrice.toLocaleString()}원
+월 평균 결제건수: ${data.revenueAnalysis.totalTransactionCount.toLocaleString()}건
+주중 매출 비중: ${data.revenueAnalysis.weekdayComparison.weekday}%
+주말 매출 비중: ${data.revenueAnalysis.weekdayComparison.weekend}%
+TOP 매출 업종: ${data.topIndustries?.slice(0, 3).map(i => `${i.industryName}(${i.salesAmount >= 100000000 ? (i.salesAmount / 100000000).toFixed(1) + '억' : Math.round(i.salesAmount / 10000).toLocaleString() + '만'})`).join(', ') || '정보 없음'}
+${data.revenueAnalysis.weekdayComparison.weekday > data.revenueAnalysis.weekdayComparison.weekend ? '주중 집중형 상권' : '주말 집중형 상권'}
+  `.trim();
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700">
+      {/* AI 매출 분석 */}
+      <AiInsightBlock
+        topic="revenue"
+        areaName={data.locationInfo?.dongName || data.meta?.region || '해당 상권'}
+        metrics={revenueMetrics}
+      />
+
       {/* TOP 매출 업종 선택 */}
       {data.topIndustries && data.topIndustries.length > 0 && (
         <div className="p-5 bg-linear-to-r from-amber-50 to-orange-50 rounded-3xl border border-amber-100">

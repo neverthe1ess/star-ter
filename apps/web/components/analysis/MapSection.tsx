@@ -18,9 +18,9 @@ export default function MapSection() {
 
   // viewMode 변경 시 데이터 정리
   useEffect(() => {
-    if (viewMode === 'analysis') {
+    if (viewMode === 'analysis' || viewMode === 'population') {
       clearData();
-      setSelectedRealEstateItem(null); // 상권 분석 모드로 전환 시 상세페이지 상태 초기화
+      setSelectedRealEstateItem(null);
     }
   }, [viewMode, clearData, setSelectedRealEstateItem]);
 
@@ -43,6 +43,7 @@ export default function MapSection() {
             realEstateData={viewMode === 'real-estate' ? realEstateData : []}
             onMarkerClick={setSelectedRealEstateItem}
             hoveredItemId={hoveredRealEstateItemId}
+            showPopulationHeatmap={viewMode === 'population'}
           />
         </div>
         {/* 모드 토글 버튼 */}

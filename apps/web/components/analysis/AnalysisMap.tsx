@@ -2,7 +2,7 @@
 
 import { useRef, useEffect } from 'react';
 import { initProj4, convertCoord } from '../../utils/map-utils';
-import { KakaoMarker, KakaoPolygon, KakaoLatLng } from '../../types/map-types';
+import { KakaoPolygon, KakaoLatLng } from '../../types/map-types';
 import { useKakaoMap } from '../../hooks/useKakaoMap';
 import { usePopulationLayer } from '../../hooks/usePopulationLayer';
 import { usePopulationVisual } from '../../hooks/usePopulationVisual';
@@ -27,6 +27,7 @@ interface AnalysisMapProps {
   realEstateData?: RealEstateItem[];
   onMarkerClick?: (item: RealEstateItem) => void;
   hoveredItemId?: string | null;
+  showPopulationHeatmap?: boolean;
   // 외부에서 유동인구 레이어 토글 가능
   showPopulationLayer?: boolean;
   populationFilters?: {
@@ -44,13 +45,13 @@ export default function AnalysisMap({
   realEstateData = [],
   onMarkerClick,
   hoveredItemId,
+  showPopulationHeatmap = false,
   showPopulationLayer: externalShowLayer,
   populationFilters,
   storeMarkers = [],
   onStoreMarkerClick,
 }: AnalysisMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const markersRef = useRef<KakaoMarker[]>([]);
   const polygonsRef = useRef<KakaoPolygon[]>([]);
 
   const { map } = useKakaoMap(mapRef);
@@ -61,9 +62,7 @@ export default function AnalysisMap({
   // 업종별 매장 마커 렌더링 (치킨, 카페 등)
   useStoreMarkers(map, storeMarkers, onStoreMarkerClick);
   const {
-    center,
     zoom,
-    markers,
     setZoom,
     setCenter,
     clearMarkers,
@@ -73,7 +72,7 @@ export default function AnalysisMap({
   const population = usePopulationVisual();
   
   // 외부 prop이 있으면 외부 값 사용, 없으면 내부 상태 사용
-  const effectiveShowLayer = externalShowLayer !== undefined ? externalShowLayer : population.showLayer;
+  const effectiveShowLayer = externalShowLayer !== undefined ? externalShowLayer : (showPopulationHeatmap || population.showLayer);
   const effectiveGenderFilter = populationFilters?.genderFilter || population.genderFilter;
   const effectiveAgeFilter = populationFilters?.ageFilter || population.ageFilter;
   const effectiveTimeFilter = populationFilters?.timeFilter || population.timeFilter;
