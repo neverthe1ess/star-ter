@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
-import { initProj4 } from '../../utils/map-utils';
+import { initProj4, convertCoord } from '../../utils/map-utils';
 import { KakaoMarker, KakaoPolygon } from '../../types/map-types';
 import { useKakaoMap } from '../../hooks/useKakaoMap';
 import { usePopulationLayer } from '../../hooks/usePopulationLayer';
@@ -67,7 +67,13 @@ export default function AnalysisMap() {
       if (path.length === 0) return;
 
       // 카카오맵 폴리곤 생성 (첫 번째 링만 사용)
-      const kakaoPath = path[0].map((coord) => new window.kakao.maps.LatLng(coord.lat, coord.lng));
+      // EPSG:5179 좌표(행정동)인 경우 WGS84로 변환
+      const kakaoPath = path[0].map((coord) => {
+        if (coord.lng > 180) {
+          return convertCoord(coord.lng, coord.lat);
+        }
+        return new window.kakao.maps.LatLng(coord.lat, coord.lng);
+      });
 
       const polygon = new window.kakao.maps.Polygon({
         path: kakaoPath,
