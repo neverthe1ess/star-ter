@@ -196,8 +196,8 @@ export default function ComparisonModal({ isOpen, onClose }: ComparisonModalProp
         {/* 헤더 */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">상권 비교</h2>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <h2 className="text-xl font-bold text-gray-900">상권 비교</h2>
+            <p className="text-base text-gray-500 mt-0.5">
               {selectedArea?.name ? (
                 <>
                   <span className="font-medium text-blue-600">{selectedArea.name}</span>
@@ -295,19 +295,19 @@ export default function ComparisonModal({ isOpen, onClose }: ComparisonModalProp
         {/* 검색창 */}
         <div className="px-4 py-3 border-b border-gray-100">
           <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="상권 이름으로 검색..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>
 
         {/* 리스트 헤더 */}
-        <div className="grid grid-cols-11 gap-4 border-b border-gray-100 px-6 py-3 text-xs font-semibold text-gray-500 bg-gray-50/80">
+        <div className="grid grid-cols-11 gap-4 border-b border-gray-100 px-6 py-3 text-sm font-semibold text-gray-500 bg-gray-50/80">
           <div className="col-span-4 pl-12">순위 / 상권명</div>
           <div className="col-span-3 text-right">{getMetricLabel()}</div>
           <div className="col-span-2 text-right">{getFluctuationLabel()}</div>
@@ -318,8 +318,8 @@ export default function ComparisonModal({ isOpen, onClose }: ComparisonModalProp
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
           {!selectedArea?.code ? (
             <div className="flex flex-col items-center justify-center h-48 text-gray-400">
-              <Building2 size={32} className="mb-2 opacity-50" />
-              <p className="text-sm font-medium">먼저 분석 페이지에서 상권을 선택해주세요</p>
+              <Building2 size={40} className="mb-2 opacity-50" />
+              <p className="text-base font-medium">먼저 분석 페이지에서 상권을 선택해주세요</p>
             </div>
           ) : isLoading ? (
             <div className="space-y-2">
@@ -339,8 +339,8 @@ export default function ComparisonModal({ isOpen, onClose }: ComparisonModalProp
             </div>
           ) : filteredItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-48 text-gray-400">
-              <Search size={32} className="mb-2 opacity-50" />
-              <p className="text-sm font-medium">
+              <Search size={40} className="mb-2 opacity-50" />
+              <p className="text-base font-medium">
                 {searchTerm ? '검색 결과가 없습니다' : '비교 가능한 상권이 없습니다'}
               </p>
             </div>
@@ -371,17 +371,17 @@ export default function ComparisonModal({ isOpen, onClose }: ComparisonModalProp
                         className={`h-4 w-4 ${favorites.has(item.code) ? 'fill-red-500 text-red-500' : 'text-gray-400 group-hover:text-gray-500'}`}
                       />
                     </div>
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-900 text-sm font-bold text-white">
                       {index + 1}
                     </span>
-                    <span className="truncate text-base font-semibold text-gray-900 group-hover:text-blue-600">
+                    <span className="truncate text-lg font-semibold text-gray-900 group-hover:text-blue-600">
                       {item.name}
                     </span>
                   </div>
 
                   {/* Value */}
                   <div className="col-span-3 text-right">
-                    <span className="text-base font-bold text-gray-900">
+                    <span className="text-lg font-bold text-gray-900">
                       {formatAmount(item.amount)}
                     </span>
                   </div>
@@ -389,7 +389,7 @@ export default function ComparisonModal({ isOpen, onClose }: ComparisonModalProp
                   {/* Fluctuation */}
                   <div className="col-span-2 flex justify-end">
                     <div
-                      className={`flex items-center text-xs font-bold ${
+                      className={`flex items-center text-sm font-bold ${
                         fluctuation > 0
                           ? 'text-red-500'
                           : fluctuation < 0
@@ -404,7 +404,7 @@ export default function ComparisonModal({ isOpen, onClose }: ComparisonModalProp
 
                   {/* Badge */}
                   <div className="col-span-2 flex justify-end">
-                    <span className={`rounded-full px-2 py-1 text-[10px] font-bold text-nowrap ${badgeClass}`}>
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold text-nowrap ${badgeClass}`}>
                       {label}
                     </span>
                   </div>
@@ -416,7 +416,7 @@ export default function ComparisonModal({ isOpen, onClose }: ComparisonModalProp
 
         {/* 푸터 */}
         <div className="px-6 py-3 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl">
-          <p className="text-xs text-gray-400 text-center">
+          <p className="text-sm text-gray-400 text-center">
             총 {filteredItems.length}개의 상권 비교 가능
           </p>
         </div>
