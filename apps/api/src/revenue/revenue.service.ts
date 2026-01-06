@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { RevenueRepository } from './revenue.repository';
 import {
   GetRevenueQueryDto,
   RevenueLevel,
@@ -108,7 +109,10 @@ interface PrismaModel {
 export class RevenueService {
   private readonly logger = new Logger(RevenueService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly revenueRepository: RevenueRepository,
+  ) {}
 
   async getRevenue(query: GetRevenueQueryDto): Promise<RevenueResponseDto> {
     const { level, code, industryCode, industryCodes, quarter } = query;
@@ -393,219 +397,123 @@ export class RevenueService {
       throw new BadRequestException(`지원하지 않는 레벨: ${level}`);
     }
 
-    // Initialize Clients
-    const salesClient = (this.prisma as any)[modelConfig.modelName];
-    const storeClient = (this.prisma as any)[modelConfig.storeModelName];
-    const footTrafficClient = (this.prisma as any)[
-      modelConfig.footTrafficModelName
-    ];
-
-    if (!salesClient) {
-      throw new BadRequestException('Prisma 모델을 찾을 수 없습니다.');
-    }
-
+    // 1. 분기 결정 (Repository 사용)
     const resolvedQuarter =
       quarter ||
-      (await this.getLatestQuarter(salesClient, modelConfig.modelName));
+      (await this.revenueRepository.getLatestQuarter(modelConfig.modelName));
 
     const whereBase: Record<string, any> = {
       stdr_yyqu_cd: resolvedQuarter,
       [modelConfig.codeField]: code,
     };
 
-    // 1. Top Sectors (Bar Chart) - Top 5 Revenue Sectors
-    const topSectors = await salesClient.findMany({
-      where: whereBase,
-      orderBy: { thsmon_selng_amt: 'desc' },
-      take: 5,
-      select: { svc_induty_cd_nm: true, thsmon_selng_amt: true },
-    });
+    // 2. 병렬 쿼리 실행 (Promise.all)
+    const [
+      topSectors,
+      demographicsAgg,
+      footTraffic,
+      growth,
+      topStores,
+      areaData,
+    ] = await Promise.all([
+      this.revenueRepository.findTopSectors(modelConfig.modelName, whereBase),
+      this.revenueRepository.getDemographics(modelConfig.modelName, whereBase),
+      this.revenueRepository.getFootTraffic(
+        modelConfig.footTrafficModelName,
+        whereBase,
+      ),
+      this.revenueRepository.getGrowth(
+        modelConfig.modelName,
+        modelConfig.codeField,
+        code,
+      ),
+      this.revenueRepository.findTopStores(
+        modelConfig.storeModelName,
+        whereBase,
+      ),
+      this.revenueRepository.getAreaSize(modelConfig.areaModelName, {
+        [modelConfig.codeField]: code,
+      }),
+    ]);
 
-    const sectors = topSectors.map((s: any) => ({
+    // 3. 결과 가공: Top Sectors (Bar Chart)
+    const sectors = (topSectors as any[]).map((s) => ({
       name: s.svc_induty_cd_nm,
       value: Number(s.thsmon_selng_amt || 0),
     }));
 
-    // 2. Demographics (Radar Chart) - Statistical Estimation
-    // Apply total gender ratio to each age group to simulate breakdown
-    const demographicsAgg = await salesClient.aggregate({
-      where: whereBase,
-      _sum: {
-        ml_selng_amt: true,
-        fml_selng_amt: true,
-        agrde_10_selng_amt: true,
-        agrde_20_selng_amt: true,
-        agrde_30_selng_amt: true,
-        agrde_40_selng_amt: true,
-        agrde_50_selng_amt: true,
-        agrde_60_above_selng_amt: true,
-      },
-    });
-
-    const dSum = demographicsAgg._sum;
+    // 4. 결과 가공: Demographics (Radar Chart)
+    const dSum = (demographicsAgg as any)._sum;
     const totalMale = Number(dSum.ml_selng_amt || 0);
     const totalFemale = Number(dSum.fml_selng_amt || 0);
     const totalGender = totalMale + totalFemale || 1;
-
     const maleRatio = totalMale / totalGender;
     const femaleRatio = totalFemale / totalGender;
 
     const ageKeys = [
-      { key: '10', label: '10대', val: Number(dSum.agrde_10_selng_amt || 0) },
-      { key: '20', label: '20대', val: Number(dSum.agrde_20_selng_amt || 0) },
-      { key: '30', label: '30대', val: Number(dSum.agrde_30_selng_amt || 0) },
-      { key: '40', label: '40대', val: Number(dSum.agrde_40_selng_amt || 0) },
-      { key: '50', label: '50대', val: Number(dSum.agrde_50_selng_amt || 0) },
-      {
-        key: '60',
-        label: '60대',
-        val: Number(dSum.agrde_60_above_selng_amt || 0),
-      },
+      { label: '10대', val: Number(dSum.agrde_10_selng_amt || 0) },
+      { label: '20대', val: Number(dSum.agrde_20_selng_amt || 0) },
+      { label: '30대', val: Number(dSum.agrde_30_selng_amt || 0) },
+      { label: '40대', val: Number(dSum.agrde_40_selng_amt || 0) },
+      { label: '50대', val: Number(dSum.agrde_50_selng_amt || 0) },
+      { label: '60대', val: Number(dSum.agrde_60_above_selng_amt || 0) },
     ];
-
-    // Find max value for normalization (fullMark)
-    // Actually RadarChart auto-scales, but having a consistent fullMark is good.
-    // Let's use 100 as percentage relative to the Age group total?
-    // No, Radar chart usually compares absolute values or normalized relative values.
-    // Since we are showing distribution, let's return raw estimated values,
-    // but maybe valid Radar data needs normalization?
-    // Let's return raw estimated amounts first.
 
     const demographics = ageKeys.map((age) => ({
       subject: age.label,
       male: Math.round(age.val * maleRatio),
       female: Math.round(age.val * femaleRatio),
-      fullMark: 0, // Frontend or Recharts will handle scale
+      fullMark: 0,
     }));
 
-    // Calculate max value for fullMark property (optional but good for consistency)
     const maxVal = Math.max(
       ...demographics.map((d) => Math.max(d.male, d.female)),
     );
     demographics.forEach((d) => (d.fullMark = maxVal));
 
-    // 3. Population (Line Chart) - Time zone based
-    // If FootTraffic is empty, return empty array (User Request)
+    // 5. 결과 가공: Population (Line Chart)
     let population: { time: string; value: number }[] = [];
-    if (footTrafficClient) {
-      const footTraffic = await footTrafficClient.findFirst({
-        where: whereBase,
-      });
-
-      if (footTraffic) {
-        population = [
-          {
-            time: '00-06',
-            value: Number(footTraffic.tmzon_00_06_flpop_co || 0),
-          },
-          {
-            time: '06-11',
-            value: Number(footTraffic.tmzon_06_11_flpop_co || 0),
-          },
-          {
-            time: '11-14',
-            value: Number(footTraffic.tmzon_11_14_flpop_co || 0),
-          },
-          {
-            time: '14-17',
-            value: Number(footTraffic.tmzon_14_17_flpop_co || 0),
-          },
-          {
-            time: '17-21',
-            value: Number(footTraffic.tmzon_17_21_flpop_co || 0),
-          },
-          {
-            time: '21-24',
-            value: Number(footTraffic.tmzon_21_24_flpop_co || 0),
-          },
-        ];
-      }
+    if (footTraffic) {
+      const ft = footTraffic as any;
+      population = [
+        { time: '00-06', value: Number(ft.tmzon_00_06_flpop_co || 0) },
+        { time: '06-11', value: Number(ft.tmzon_06_11_flpop_co || 0) },
+        { time: '11-14', value: Number(ft.tmzon_11_14_flpop_co || 0) },
+        { time: '14-17', value: Number(ft.tmzon_14_17_flpop_co || 0) },
+        { time: '17-21', value: Number(ft.tmzon_17_21_flpop_co || 0) },
+        { time: '21-24', value: Number(ft.tmzon_21_24_flpop_co || 0) },
+      ];
     }
 
-    // 4. Growth (Area Chart) - Last 5 Quarters Total Revenue
-    // Need to find codes for past quarters.
-    // Assuming code is stable.
-    const growth = await salesClient.groupBy({
-      by: ['stdr_yyqu_cd'],
-      where: {
-        [modelConfig.codeField]: code,
-      },
-      _sum: {
-        thsmon_selng_amt: true,
-      },
-      orderBy: {
-        stdr_yyqu_cd: 'desc',
-      },
-      take: 5,
-    });
-
-    const growthMetrics = growth
-      .map((g: any) => ({
+    // 6. 결과 가공: Growth (Area Chart)
+    const growthMetrics = (growth as any[])
+      .map((g) => ({
         period: g.stdr_yyqu_cd,
         amount: Number(g._sum.thsmon_selng_amt || 0),
       }))
-      .reverse(); // Show oldest to newest
+      .reverse();
 
-    // 5. Saturation (Business Density) - Using Store Count / Area
-    // Thresholds for Density (Stores per 10,000 m2 potentially? or just Raw Count / Area)
-    // Area unit in DB 'relm_ar' is likely in square meters.
-    // Let's define Threshold constants here for easy tuning.
-    const DENSITY_THRESHOLDS = {
-      HIGH: 0.0005, // e.g., 1 store per 200m2 (Very dense)
-      MEDIUM: 0.0002, // e.g., 1 store per 500m2
-      LOW: 0.00005, // e.g., 1 store per 2000m2
-    };
-
+    // 7. 결과 가공: Saturation (밀도 계산)
+    const DENSITY_THRESHOLDS = { HIGH: 0.0005, MEDIUM: 0.0002 };
     let saturation: AnalyticsSaturationDto[] = [];
-    const areaClient = modelConfig.areaModelName
-      ? (this.prisma as any)[modelConfig.areaModelName]
-      : null;
 
-    if (storeClient && areaClient) {
-      // 1. Get Top 4 Industries by Store Count
-      const topStores = await storeClient.findMany({
-        where: whereBase,
-        orderBy: { stor_co: 'desc' },
-        take: 4,
-        select: { svc_induty_cd_nm: true, stor_co: true, svc_induty_cd: true },
-      });
-
-      // 2. Get Area Size using the region code only (Area table is static, no quarter field)
-      const areaWhere = { [modelConfig.codeField]: code };
-      const areaData = await areaClient.findFirst({
-        where: areaWhere,
-        select: { relm_ar: true },
-      });
-
-      const areaSize = Number(areaData?.relm_ar || 1); // Avoid division by zero
-
-      // 3. Calculate Density & Score
-      saturation = topStores.map((store: any) => {
+    if (topStores && areaData) {
+      const areaSize = Number((areaData as any)?.relm_ar || 1);
+      saturation = (topStores as any[]).map((store) => {
         const count = Number(store.stor_co || 0);
-        const density = count / areaSize; // Stores per unit area (m2)
+        const density = count / areaSize;
 
-        // Determine Status based on Density thresholds
-        let status = '안정'; // Green
-        let score = 20;
-
+        let status = '추천';
+        let score = 30;
         if (density >= DENSITY_THRESHOLDS.HIGH) {
-          status = '위험'; // Red
+          status = '위험';
           score = 90;
         } else if (density >= DENSITY_THRESHOLDS.MEDIUM) {
-          status = '경계'; // Orange
+          status = '경계';
           score = 60;
-        } else {
-          // Low density = Good opportunity? or just Stable.
-          // Let's keep it simple: Low density -> Recommend/Stable
-          status = '추천';
-          score = 30;
         }
 
-        return {
-          name: store.svc_induty_cd_nm,
-          value: score,
-          status: status,
-        };
+        return { name: store.svc_induty_cd_nm, value: score, status };
       });
     }
 
