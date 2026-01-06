@@ -227,6 +227,7 @@ export class RevenueService {
       orderBy: {
         _sum: { thsmon_selng_amt: 'desc' },
       },
+      take: 100,
     };
 
     const rows = (await client.groupBy(
@@ -617,7 +618,7 @@ export class RevenueService {
         };
       })
       .sort((a: any, b: any) => b.fluctuationRate - a.fluctuationRate)
-      .slice(0, 10);
+      .slice(0, 50);
 
     return { level, items };
   }

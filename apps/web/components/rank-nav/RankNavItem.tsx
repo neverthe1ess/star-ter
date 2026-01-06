@@ -43,11 +43,11 @@ export default function RankNavItem({
           className="cursor-pointer shrink-0 p-1.5 rounded-full hover:bg-gray-200 transition-colors"
         >
           <Heart
-            className={`h-3.5 w-3.5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400 group-hover:text-gray-500'}`}
+            className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400 group-hover:text-gray-500'}`}
           />
         </div>
 
-        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">
           {rank}
         </span>
 

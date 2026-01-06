@@ -13,7 +13,7 @@ import { IndustryData } from '@/mocks/industry';
 
 export default function DashboardLayout() {
   const [displayedItem, setDisplayedItem] = useState<RankingItem | null>(null);
-  const [activeTab, setActiveTab] = useState<ThemeType>('MZ');
+  const [activeTab, setActiveTab] = useState<ThemeType>('GROWTH');
   const [selectedCategory, setSelectedCategory] = useState<string>('I2'); // 대분류
   const [themeValue, setThemeValue] = useState<ThemeValue>('CS100001'); // 소분류
   const [ageGroup, setAgeGroup] = useState<string>('total');
@@ -82,21 +82,17 @@ export default function DashboardLayout() {
   const POPULATION_LEVEL_OPTIONS: { label: string; value: AdminLevel }[] = [
     { label: '상권', value: 'commercial' },
     { label: '행정동', value: 'dong' },
-    { label: '자치구', value: 'gu' },
   ];
 
   const INDUSTRY_LEVEL_OPTIONS: { label: string; value: AdminLevel }[] = [
     { label: '상권', value: 'commercial' },
     { label: '행정동', value: 'dong' },
-    { label: '자치구', value: 'gu' },
   ];
 
   const handleTabChange = (tab: ThemeType) => {
     setActiveTab(tab);
     if (tab === 'POPULATION') {
-      if (adminLevel === 'commercial') {
-        setAdminLevel('dong');
-      }
+      setAdminLevel('commercial');
     } else if (tab === 'GENDER') {
       setThemeValue('female');
       setAdminLevel('commercial');
@@ -142,11 +138,11 @@ export default function DashboardLayout() {
               value={activeTab}
               onChange={handleTabChange}
               options={[
-                { label: 'MZ핫플', value: 'MZ' as ThemeType },
-                { label: '성별', value: 'GENDER' as ThemeType },
                 { label: '성장상권', value: 'GROWTH' as ThemeType },
-                { label: '업종별', value: 'INDUSTRY' as ThemeType },
                 { label: '유동인구', value: 'POPULATION' as ThemeType },
+                { label: '업종별', value: 'INDUSTRY' as ThemeType },
+                { label: '성별', value: 'GENDER' as ThemeType },
+                { label: 'MZ핫플', value: 'MZ' as ThemeType },
               ]}
               variant="primary"
             />
