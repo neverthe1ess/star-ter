@@ -8,6 +8,15 @@ export interface SummaryReportResponse {
     period: string;
   };
 
+  // 0) 위치/공간 정보
+  locationInfo: {
+    areaType: string;
+    areaTypeName: string;
+    guName: string;
+    dongName: string;
+    area: number;
+  };
+
   // 1) 핵심 지표
   keyMetrics: {
     estimatedMonthlySales: {
@@ -93,4 +102,23 @@ export interface SummaryReportResponse {
     content: string;
     highlight?: string;
   }[];
+
+  // 10) 매출 분석
+  revenueAnalysis: {
+    monthlyTotal: number;
+    avgTransactionPrice: number;
+    totalTransactionCount: number;
+    weekdayComparison: {
+      weekday: number;
+      weekend: number;
+    };
+    dailyRatio: {
+      day: string;
+      ratio: number;
+    }[];
+    timePeriodRatio: {
+      timeRange: string;
+      ratio: number;
+    }[];
+  };
 }

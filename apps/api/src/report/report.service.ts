@@ -20,6 +20,7 @@ export class ReportService {
       industry,
       income,
       topIndustries,
+      areaDetails,
     ] = await Promise.all([
       this.repository.getLatestSales(regionCode, industryCode),
       this.repository.getLatestFootTraffic(regionCode),
@@ -28,6 +29,7 @@ export class ReportService {
       this.repository.getIndustryName(industryCode),
       this.repository.getLatestIncome(regionCode),
       this.repository.getTopIndustriesInArea(regionCode),
+      this.repository.getAreaDetails(regionCode),
     ]);
 
     // 지역 또는 산업 정보가 완전히 없는 경우에만 에러를 던지고,
@@ -40,6 +42,9 @@ export class ReportService {
 
     const defaultSales = {
       thsmon_selng_amt: 0,
+      thsmon_selng_co: 0,
+      mdwk_selng_amt: 0,
+      wkend_selng_amt: 0,
       mon_selng_amt: 0,
       tues_selng_amt: 0,
       wed_selng_amt: 0,
@@ -138,6 +143,26 @@ export class ReportService {
     const peakFTTime = sortedFT[0].value > 0 ? sortedFT[0].name : '데이터 부족';
     const maxFT = Math.max(...ftTimes.map((t) => t.value));
 
+    // 매출 분석용 변수 복구 (revenueAnalysis에서 사용)
+    const days = [
+      { name: '월', value: Number(activeSales.mon_selng_amt) },
+      { name: '화', value: Number(activeSales.tues_selng_amt) },
+      { name: '수', value: Number(activeSales.wed_selng_amt) },
+      { name: '목', value: Number(activeSales.thur_selng_amt) },
+      { name: '금', value: Number(activeSales.fri_selng_amt) },
+      { name: '토', value: Number(activeSales.sat_selng_amt) },
+      { name: '일', value: Number(activeSales.sun_selng_amt) },
+    ];
+
+    const times = [
+      { name: '00~06시', value: Number(activeSales.tmzon_00_06_selng_amt) },
+      { name: '06~11시', value: Number(activeSales.tmzon_06_11_selng_amt) },
+      { name: '11~14시', value: Number(activeSales.tmzon_11_14_selng_amt) },
+      { name: '14~17시', value: Number(activeSales.tmzon_14_17_selng_amt) },
+      { name: '17~21시', value: Number(activeSales.tmzon_17_21_selng_amt) },
+      { name: '21~24시', value: Number(activeSales.tmzon_21_24_selng_amt) },
+    ];
+
     // 6) 성별 구성
     const maleRevenue = Number(activeSales.ml_selng_amt);
     const femaleRevenue = Number(activeSales.fml_selng_amt);
@@ -218,13 +243,20 @@ export class ReportService {
       (100 - (age10 + age20 + age30 + age40)).toFixed(1),
     );
 
-    return {
+    const baseResult = {
       meta: {
         generatedAt: new Date().toISOString().split('T')[0],
         category: industryName,
         region: areaName,
         radius: 500, // 기본값
         period: '최근 분기',
+      },
+      locationInfo: {
+        areaType: areaDetails?.areaType || '',
+        areaTypeName: areaDetails?.areaTypeName || '데이터 부족',
+        guName: areaDetails?.guName || '',
+        dongName: areaDetails?.dongName || '',
+        area: areaDetails?.area || 0,
       },
       keyMetrics: {
         estimatedMonthlySales: {
@@ -439,6 +471,48 @@ export class ReportService {
         },
       ],
     };
+
+    const result: SummaryReportResponse = {
+      ...(baseResult as Omit<SummaryReportResponse, 'revenueAnalysis'>),
+      revenueAnalysis: {
+        monthlyTotal: Math.floor(avgRevenue),
+        avgTransactionPrice:
+          totalRevenue > 0
+            ? Math.floor(
+                totalRevenue / (Number(activeSales.thsmon_selng_co) || 1),
+              )
+            : 0,
+        totalTransactionCount: Math.floor(
+          (Number(activeSales.thsmon_selng_co) || 0) / (storeCount || 1) / 3,
+        ),
+        weekdayComparison: {
+          weekday: Number(
+            this.calcRatio(Number(activeSales.mdwk_selng_amt), [
+              { value: Number(activeSales.mdwk_selng_amt) },
+              { value: Number(activeSales.wkend_selng_amt) },
+            ]).toFixed(1),
+          ),
+          weekend: 0, // 아래에서 보정
+        },
+        dailyRatio: days.map((d) => ({
+          day: d.name,
+          ratio: Number(this.calcRatio(d.value, days).toFixed(1)),
+        })),
+        timePeriodRatio: times.map((t) => ({
+          timeRange: t.name,
+          ratio: Number(this.calcRatio(t.value, times).toFixed(1)),
+        })),
+      },
+    };
+
+    // 주말 비중 보정
+    if (result.revenueAnalysis.weekdayComparison.weekday > 0) {
+      result.revenueAnalysis.weekdayComparison.weekend = Number(
+        (100 - result.revenueAnalysis.weekdayComparison.weekday).toFixed(1),
+      );
+    }
+
+    return result;
   }
 
   private calcRatio(value: number, all: { value: number }[]): number {
