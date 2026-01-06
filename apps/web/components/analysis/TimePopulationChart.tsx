@@ -104,11 +104,11 @@ export default function TimePopulationChart({
               <div className={`p-1.5 ${metric.bgColor} rounded-lg`}>
                 {metric.icon}
               </div>
-              <span className="text-sm font-bold text-gray-500 uppercase tracking-tight">
+              <span className="text-base font-bold text-gray-500 uppercase tracking-tight">
                 {metric.label}
               </span>
             </div>
-            <p className="text-xl font-extrabold text-gray-900 tracking-tight">
+            <p className="text-2xl font-extrabold text-gray-900 tracking-tight">
               {metric.value}
             </p>
           </div>
@@ -118,7 +118,7 @@ export default function TimePopulationChart({
       {/* 3. 차트 영역 */}
       <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-xs transition-all hover:shadow-sm">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+          <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
             <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
             시간대별 방문 비중 상세
           </h3>

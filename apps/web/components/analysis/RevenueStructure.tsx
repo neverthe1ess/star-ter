@@ -47,7 +47,7 @@ ${data.revenueAnalysis.weekdayComparison.weekday > data.revenueAnalysis.weekdayC
                 <Crown size={18} className="text-amber-600" />
               </div>
               <div>
-                <h3 className="text-sm font-black text-gray-900">매출 TOP 업종</h3>
+                <h3 className="text-xl font-black text-gray-900">매출 TOP 업종</h3>
               </div>
             </div>
           </div>
@@ -62,19 +62,19 @@ ${data.revenueAnalysis.weekdayComparison.weekday > data.revenueAnalysis.weekdayC
                 <button
                   key={`top-${item.rank}-${item.industryCode}`}
                   onClick={() => onIndustrySelect(item.industryCode, item.industryName)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-[13px] font-bold transition-all duration-200 ${
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-[16px] font-bold transition-all duration-200 ${
                     isActive
                       ? 'bg-amber-600 text-white shadow-lg shadow-amber-200 scale-105'
                       : 'bg-white text-gray-600 hover:text-amber-700 border border-amber-100 hover:border-amber-300 hover:bg-amber-50'
                   }`}
                 >
-                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[16px] font-black ${
                     isActive ? 'bg-white/20' : 'bg-amber-100 text-amber-600'
                   }`}>
                     {item.rank}
                   </span>
                   {item.industryName}
-                  <span className={`text-[10px] ${
+                  <span className={`text-[14px] ${
                     isActive ? 'text-amber-200' : 'text-gray-400'
                   }`}>
                     {salesDisplay}
@@ -93,11 +93,11 @@ ${data.revenueAnalysis.weekdayComparison.weekday > data.revenueAnalysis.weekdayC
             <div className="p-2 bg-blue-50 text-blue-600 rounded-xl group-hover:scale-110 transition-transform">
               <CreditCard size={18} />
             </div>
-            <span className="text-[13px] font-black text-gray-400 uppercase tracking-wider">객단가</span>
+            <span className="text-[16px] font-black text-gray-400 uppercase tracking-wider">객단가</span>
           </div>
-          <p className="text-2xl font-black text-gray-900 tracking-tight">
+          <p className="text-3xl font-black text-gray-900 tracking-tight">
             {data.revenueAnalysis.avgTransactionPrice.toLocaleString()}
-            <span className="text-sm font-bold text-gray-400 ml-1">원</span>
+            <span className="text-lg font-bold text-gray-400 ml-1">원</span>
           </p>
         </div>
         <div className="p-6 bg-white rounded-3xl border border-gray-100 shadow-sm group hover:border-emerald-200 transition-all">
@@ -105,11 +105,11 @@ ${data.revenueAnalysis.weekdayComparison.weekday > data.revenueAnalysis.weekdayC
             <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl group-hover:scale-110 transition-transform">
               <Coins size={18} />
             </div>
-            <span className="text-[13px] font-black text-gray-400 uppercase tracking-wider">평균 결제건수</span>
+            <span className="text-[16px] font-black text-gray-400 uppercase tracking-wider">평균 결제건수</span>
           </div>
-          <p className="text-2xl font-black text-gray-900 tracking-tight">
+          <p className="text-3xl font-black text-gray-900 tracking-tight">
             {data.revenueAnalysis.totalTransactionCount.toLocaleString()}
-            <span className="text-sm font-bold text-gray-400 ml-1">건/월</span>
+            <span className="text-lg font-bold text-gray-400 ml-1">건/월</span>
           </p>
         </div>
       </div>
@@ -117,11 +117,11 @@ ${data.revenueAnalysis.weekdayComparison.weekday > data.revenueAnalysis.weekdayC
       {/* 주중/주말 비중 섹션 */}
       <div className="p-6 bg-white rounded-3xl border border-gray-100 shadow-sm">
         <div className="flex items-center justify-between mb-8">
-          <h3 className="text-sm font-black text-gray-900 flex items-center gap-2">
+          <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
             <TrendingUp size={16} className="text-blue-600" />
             주중 · 주말 매출 비중
           </h3>
-          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md border border-blue-100">
+          <span className="text-[12px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md border border-blue-100">
             {data.revenueAnalysis.weekdayComparison.weekday > data.revenueAnalysis.weekdayComparison.weekend ? '주중 집중형' : '주말 집중형'}
           </span>
         </div>
@@ -138,12 +138,12 @@ ${data.revenueAnalysis.weekdayComparison.weekday > data.revenueAnalysis.weekdayC
         </div>
         <div className="flex justify-between mt-3 px-1">
           <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-gray-400 uppercase">주중</span>
-            <span className="text-sm font-black text-blue-600">{data.revenueAnalysis.weekdayComparison.weekday}%</span>
+            <span className="text-[16px] font-bold text-gray-400 uppercase">주중</span>
+            <span className="text-lg font-black text-blue-600">{data.revenueAnalysis.weekdayComparison.weekday}%</span>
           </div>
           <div className="flex flex-col items-end">
-            <span className="text-[10px] font-bold text-gray-400 uppercase">주말</span>
-            <span className="text-sm font-black text-indigo-400">{data.revenueAnalysis.weekdayComparison.weekend}%</span>
+            <span className="text-[16px] font-bold text-gray-400 uppercase">주말</span>
+            <span className="text-lg font-black text-indigo-400">{data.revenueAnalysis.weekdayComparison.weekend}%</span>
           </div>
         </div>
       </div>

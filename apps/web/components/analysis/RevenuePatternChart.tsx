@@ -32,7 +32,7 @@ export default function RevenuePatternChart({
     <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* 탭 헤더 */}
       <div className="flex items-center justify-between px-6 py-5 border-b border-gray-50">
-        <h3 className="text-lg font-black text-gray-900 tracking-tight">매출 패턴 분석</h3>
+        <h3 className="text-xl font-black text-gray-900 tracking-tight">매출 패턴 분석</h3>
         <div className="flex p-1 bg-gray-100/80 rounded-xl">
           <button
             onClick={() => setActiveTab('day')}
