@@ -75,4 +75,20 @@ export class PolygonController {
     if (!code) return Promise.resolve(null);
     return this.polygonService.getCommercialPolygonByCode(code);
   }
+
+  @Get('dong/code')
+  getDongPolygonByCode(
+    @Query('code') code: string,
+  ): Promise<AdminPolygonResponse | null> {
+    if (!code) return Promise.resolve(null);
+    return this.polygonService.getDongPolygonByCode(code);
+  }
+
+  @Get('gu/code')
+  getGuPolygonByCode(
+    @Query('code') code: string,
+  ): Promise<AdminPolygonResponse | null> {
+    if (!code) return Promise.resolve(null);
+    return this.polygonService.getGuPolygonByCode(code);
+  }
 }

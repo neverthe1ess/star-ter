@@ -415,4 +415,36 @@ export class PolygonService {
       return null;
     }
   }
+
+  // 행정동 코드로 단일 폴리곤 조회
+  async getDongPolygonByCode(code: string): Promise<AdminPolygonResponse | null> {
+    try {
+      const result = await this.prisma.adminAreaDong.findFirst({
+        where: { adstrd_cd: code },
+      });
+
+      if (!result) return null;
+
+      return result as unknown as AdminPolygonResponse;
+    } catch (error) {
+      console.error('Failed to fetch dong polygon by code:', error);
+      return null;
+    }
+  }
+
+  // 자치구 코드로 단일 폴리곤 조회
+  async getGuPolygonByCode(code: string): Promise<AdminPolygonResponse | null> {
+    try {
+      const result = await this.prisma.adminAreaGu.findFirst({
+        where: { signgu_cd: code },
+      });
+
+      if (!result) return null;
+
+      return result as unknown as AdminPolygonResponse;
+    } catch (error) {
+      console.error('Failed to fetch gu polygon by code:', error);
+      return null;
+    }
+  }
 }
