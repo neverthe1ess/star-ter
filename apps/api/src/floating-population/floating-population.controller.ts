@@ -33,4 +33,22 @@ export class FloatingPopulationController {
   ): Promise<PopulationRankingResponseDto> {
     return this.floatingPopulationService.getRanking(query);
   }
+
+  @Get('ranking/mz')
+  async getMZRanking(
+    @Query('level') level?: 'gu' | 'dong' | 'commercial',
+  ): Promise<PopulationRankingResponseDto> {
+    return this.floatingPopulationService.getMZRanking(level || 'commercial');
+  }
+
+  @Get('ranking/gender')
+  async getGenderRanking(
+    @Query('level') level?: 'gu' | 'dong' | 'commercial',
+    @Query('gender') gender?: 'male' | 'female',
+  ): Promise<PopulationRankingResponseDto> {
+    return this.floatingPopulationService.getGenderRanking(
+      level || 'commercial',
+      gender || 'female',
+    );
+  }
 }

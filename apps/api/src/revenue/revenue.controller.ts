@@ -6,6 +6,7 @@ import {
   RevenueRankingResponseDto,
   RevenueResponseDto,
   MarketAnalyticsResponseDto,
+  RevenueLevel,
 } from './dto/revenue.dto';
 
 @Controller('revenue')
@@ -22,6 +23,15 @@ export class RevenueController {
     @Query() query: GetRevenueRankingQueryDto,
   ): Promise<RevenueRankingResponseDto> {
     return this.revenueService.getRevenueRanking(query);
+  }
+
+  @Get('ranking/growth')
+  getGrowthRanking(
+    @Query('level') level?: string,
+  ): Promise<RevenueRankingResponseDto> {
+    return this.revenueService.getGrowthRanking(
+      (level as RevenueLevel) || 'commercial',
+    );
   }
 
   @Get('analytics')
