@@ -75,12 +75,12 @@ export default function AnalysisCard({
         : 'bg-white/60 backdrop-blur-sm'
     }`}>
       <div className="text-center mb-4">
-        <h3 className="text-lg font-bold text-gray-900 flex items-center justify-center gap-2">
+        <h3 className="text-2xl font-bold text-gray-900 flex items-center justify-center gap-2">
           <span className="truncate max-w-[60%] block" title={title}>
             {title.replace(/^서울특별시\s*/, '')}
           </span>
           <button
-            className="text-xs font-normal text-blue-500 px-2 py-0.5 rounded hover:font-semibold hover:text-blue-600 transition shrink-0"
+            className="text-sm font-normal text-blue-500 px-2 py-0.5 rounded hover:font-semibold hover:text-blue-600 transition shrink-0"
             onClick={() => navigator.clipboard.writeText(address)}
           >
             주소 복사
@@ -90,7 +90,7 @@ export default function AnalysisCard({
 
       <div className="flex border-b border-gray-100 mb-4">
         <button
-          className={`flex-1 pb-2 text-sm transition-all ${
+          className={`flex-1 pb-2 text-base transition-all ${
             activeTab === 'sales'
               ? 'font-semibold text-blue-600 border-b-2 border-blue-600'
               : hoveredTab === 'sales'
@@ -104,7 +104,7 @@ export default function AnalysisCard({
           상권
         </button>
         <button
-          className={`flex-1 pb-2 text-sm transition-all ${
+          className={`flex-1 pb-2 text-base transition-all ${
             activeTab === 'store'
               ? 'font-semibold text-blue-600 border-b-2 border-blue-600'
               : hoveredTab === 'store'
@@ -118,7 +118,7 @@ export default function AnalysisCard({
           매장
         </button>
         <button
-          className={`flex-1 pb-2 text-sm transition-all ${
+          className={`flex-1 pb-2 text-base transition-all ${
             activeTab === 'population'
               ? 'font-semibold text-blue-600 border-b-2 border-blue-600'
               : hoveredTab === 'population'
@@ -141,11 +141,11 @@ export default function AnalysisCard({
         {activeTab === 'sales' && (
           <div className="animate-fade-in space-y-6">
             <div>
-              <p className="text-xs font-bold text-gray-800 mb-1">
+              <p className="text-base font-bold text-gray-800 mb-1">
                 {data ? `${data.meta.yearQuarter.slice(0, 4)}년 ${data.meta.yearQuarter.slice(4)}분기 총 매출` : '11월 상권 추정 매출'}
               </p>
               <div className="flex items-end gap-2">
-                <span className="text-3xl font-extrabold text-blue-600">
+                <span className="text-4xl font-extrabold text-blue-600">
                   {loading ? 'Loading...' : (
                       data ? (
                           <AnimatedNumber 
@@ -185,9 +185,9 @@ export default function AnalysisCard({
         {activeTab === 'population' && (
           <div className="animate-fade-in space-y-6">
             <div>
-              <p className="text-xs font-bold text-gray-800 mb-1">총 주거 인구</p>
+              <p className="text-base font-bold text-gray-800 mb-1">총 주거 인구</p>
               <div className="flex items-end gap-2 mb-4">
-                <span className="text-3xl font-extrabold text-blue-600">
+                <span className="text-4xl font-extrabold text-blue-600">
                     {data && data.population ? <AnimatedNumber value={data.population.total} /> : '0'}
                     <span className="text-base font-normal text-gray-600 ml-1">명</span>
                 </span>
@@ -203,7 +203,7 @@ export default function AnalysisCard({
             )}
 
             <div>
-              <p className="text-xs font-bold text-gray-800 mb-1">총 직장 인구</p>
+              <p className="text-base font-bold text-gray-800 mb-1">총 직장 인구</p>
               <div className="flex items-end gap-2 mb-4">
                 <span className="text-3xl font-extrabold text-emerald-600">
                     {data && data.population?.working ? <AnimatedNumber value={data.population.working.total} /> : '0'}

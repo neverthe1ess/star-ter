@@ -43,8 +43,8 @@ export default function TimeOfDaySalesGraph({ data }: TimeOfDaySalesGraphProps) 
     <div className="w-full mt-6">
        {/* Caption */}
        <div className="mb-4">
-           <h4 className="text-[12px] font-semibold text-gray-500 mb-1">시간대별 결제 추정</h4>
-           <div className="text-[15px] font-bold text-gray-900 leading-tight">
+           <h4 className="text-[13px] font-semibold text-gray-500 mb-1">시간대별 결제 추정</h4>
+           <div className="text-[17px] font-bold text-gray-900 leading-tight">
                전체 결제 중 <span className="text-[#D9515E]">{maxPercentage}%</span>는 <span className="text-[#D9515E]">{formatTimeCaption(maxLabel)}</span>에 결제됐어요!
            </div>
        </div>
