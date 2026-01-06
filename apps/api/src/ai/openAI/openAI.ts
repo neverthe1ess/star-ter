@@ -81,6 +81,24 @@ export function toolCallAi(
             지역 코드와 이름 같은경우 아래 값을 참고하세요.
             지도를 이동해야 할 경우(map.pan_to) 반드시 아래 제공된 위도(lat), 경도(lng) 값을 사용하세요.
             ${formatAreaVectors(areaList)}
+
+            [중요]
+            업종 코드는 반드시 위에서 제공된 목록(svc_induty_cd) 중 하나를 사용해야 합니다.
+            'Q12', 'I2' 같은 상위 분류 코드나 존재하지 않는 코드를 절대 사용하지 마세요.
+            목록에 적합한 코드가 없다면 null을 사용하세요.
+
+            [업종 관련 질의 시 도구 선택 - 매우 중요]
+            사용자가 "치킨", "카페", "음식점" 등 특정 업종을 언급하면, 반드시 'get_industry_commercial_summary' 도구를 사용하세요.
+            - 예: "서울대입구역에서 치킨집 창업 어때?" → get_industry_commercial_summary (areaCd + categoryCode)
+            - 예: "강남역 카페 매출 알려줘" → get_industry_commercial_summary (areaCd + categoryCode)
+            
+            'get_store' 도구는 업종 구분 없이 상권 전체 요약이 필요할 때만 사용하세요.
+            업종이 명시되면 get_store가 아닌 get_industry_commercial_summary를 호출해야 합니다!
+
+            [부동산 매물 추천 시 주의사항 - 최우선 순위]
+            사용자가 "추천"과 함께 가격(보증금, 월세)이나 면적 조건을 언급하면, **무조건** 'recommend_real_estate' 도구를 호출해야 합니다.
+            업종 코드 유무와 상관없이 이 도구를 호출하세요.
+            다른 도구(UI 패널 등)보다 이 도구 호출이 우선입니다.
             `,
   });
 }
@@ -106,6 +124,7 @@ export function analyzeResults(input: ResponseInput) {
 - "비교", "vs", "어디가 나아" 키워드 → compare.areas (상권 비교)
 - "유동인구", "방문객", "시간대" 키워드 → population.filter (유동인구)
 - "임대료", "수익", "창업비용" 키워드 → rent.calculate (임대료)
+- "매물 추천", "빈 상가", "부동산", "보증금", "월세" 키워드 → real_estate.recommend (매물 추천)
 - "리포트", "보고서" 키워드 → report.generate (리포트)
 - 위 내용 없이 *단순히 위치만* 확인하려는 경우 → map.pan_to (지도 이동)
 
@@ -119,8 +138,11 @@ export function analyzeResults(input: ResponseInput) {
 2. ui.open_panel - 분석 패널 열기 (지도가 해당 상권으로 이동함)
    - 사용 시점: 상권 분석, 업종 통계(점포 수, 매출 등), *업종 마커 표시*가 필요할 때
    - 필수: level(gu/dong/commercial), lat, lng, areaName, panelType(summary)
-   - 선택: industryCode (업종 언급 시 필수 포함)
-   - 예: "강남역 치킨집 몇 개야?", "홍대 카페 보여줘", "성수동 매출 분석"
+   - 선택: industryCode
+   - **중요: industryCode는 사용자가 "치킨", "카페", "음식점" 등 특정 업종을 명시적으로 언급했을 때만 설정하세요.
+           업종 언급이 없으면 반드시 industryCode: null로 설정해야 합니다. 임의로 업종 코드를 추측하거나 추가하지 마세요!**
+   - 예: "강남역 치킨집 몇 개야?" → industryCode: "CS100007"
+   - 예: "서울대입구역 분석해줘" → industryCode: null (업종 언급 없음)
 
 3. ranking.show - 매출 랭킹 표시
    - 사용 시점: 순위, TOP N, 매출 높은/낮은 상권 질문 시
@@ -147,6 +169,18 @@ export function analyzeResults(input: ResponseInput) {
    - 사용 시점: 보고서, 리포트, 요약 문서 요청 시
    - 필수: areaName
    - 예: "강남역 상권 리포트 만들어줘" → report.generate
+
+8. real_estate.recommend - 부동산 매물 추천
+   - 사용 시점: 자본금, 보증금, 월세, 면적 조건을 언급하며 매물/상가를 찾을 때
+   - **자본금 해석: "자본금 5천만원" = maxDeposit: 5000 (만원 단위)**
+   - 필수: areaName, lat, lng + 다음 중 하나 이상:
+     - maxDeposit: 최대 보증금 (만원 단위). "자본금", "보증금", "투자금" 언급 시 사용
+     - maxMonthlyRent: 최대 월세 (만원 단위)
+     - minSize: 최소 면적 (평 단위)
+     - keywords: 업종/검색 키워드
+   - 예: "자본금 5천만원으로 상가 찾아줘" → maxDeposit: 5000, areaName: 컨텍스트에서
+   - 예: "보증금 3천, 월세 200 이하" → maxDeposit: 3000, maxMonthlyRent: 200
+
 
 [규칙]
 - 액션이 필요없는 일반 대화는 빈 배열 []

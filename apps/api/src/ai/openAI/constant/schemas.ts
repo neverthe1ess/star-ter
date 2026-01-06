@@ -33,6 +33,7 @@ export const FINAL_RESPONSE_SCHEMA_FOR_ACTION = {
                 'compare.areas', // 상권 비교
                 'rent.calculate', // 임대료 계산
                 'report.generate', // 리포트 생성
+                'real_estate.recommend', // 매물 추천
               ],
               description: '실행할 액션 유형',
             },
@@ -84,6 +85,11 @@ export const FINAL_RESPONSE_SCHEMA_FOR_ACTION = {
                   required: ['area', 'deposit', 'rent'],
                   additionalProperties: false,
                 },
+                // 새 필드 (real_estate.recommend)
+                maxDeposit: { type: ['number', 'null'] },
+                maxMonthlyRent: { type: ['number', 'null'] },
+                minSize: { type: ['number', 'null'] },
+                keywords: { type: ['string', 'null'] },
               },
               required: [
                 'lat',
@@ -100,6 +106,10 @@ export const FINAL_RESPONSE_SCHEMA_FOR_ACTION = {
                 'timeFilter',
                 'compareTargets',
                 'rentParams',
+                'maxDeposit',
+                'maxMonthlyRent',
+                'minSize',
+                'keywords',
               ],
               additionalProperties: false,
             },

@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Download, Navigation, Maximize, ChevronDown, ChevronRight } from 'lucide-react';
+import { Download, Navigation, Maximize, ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useMapStore } from '../../stores/useMapStore';
 import { useReportStore } from '../../stores/useReportStore';
 import { IndustryData } from '../../mocks/industry';
@@ -30,6 +31,7 @@ export default function AnalysisHeader({
 }: AnalysisHeaderProps) {
   const { selectedArea, hasHydrated } = useMapStore();
   const { openReport } = useReportStore();
+  const router = useRouter();
   const [isIndustryModalOpen, setIsIndustryModalOpen] = useState(false);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -124,6 +126,19 @@ export default function AnalysisHeader({
 
       {/* 우측: 액션 버튼들 */}
       <div className="flex items-center gap-4 relative">
+        {/* AI 코치 버튼 */}
+        <button 
+          onClick={() => router.push('/assistant')}
+          className="group relative flex items-center gap-2 px-5 py-2.5 bg-gray-900 rounded-xl font-semibold text-sm text-white hover:bg-gray-800 transition-all shadow-lg active:scale-95 overflow-hidden"
+        >
+          {/* 반짝이는 애니메이션 배경 */}
+          <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
+          <span className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-purple-500/10 animate-pulse" />
+          
+          <Sparkles size={18} className="text-yellow-400 animate-pulse relative z-10" />
+          <span className="relative z-10 font-bold">AI 코치</span>
+        </button>
+
         <button 
           onClick={() => setIsIndustryModalOpen(!isIndustryModalOpen)}
           disabled={!selectedArea?.code}

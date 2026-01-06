@@ -5,6 +5,7 @@ import AnalysisMap from '@/components/analysis/AnalysisMap';
 import { useMapStore } from '@/stores/useMapStore';
 import ActionInfoBar from './ActionInfoBar';
 import type { AssistantAction, FrontendActionType, ActionPayload } from '@/types/assistant-types';
+import { RealEstateItem } from '@/types/map-store-types';
 import { StoreLocation } from '@/hooks/useStoreMarkers';
 import { convertSeoulCodeToDbCode } from '@/utils/industry-code-map';
 
@@ -198,7 +199,7 @@ const ACTION_HANDLERS: Partial<Record<FrontendActionType, ActionHandler>> = {
 // AI 어시스턴트용 지도 섹션
 // -----------------------------------------
 export default function AssistantMapSection({ action }: AssistantMapSectionProps) {
-  const { selectArea, moveToLocation } = useMapStore();
+  const { selectArea, moveToLocation, center } = useMapStore();
   const [isLoading, setIsLoading] = useState(false);
   const prevActionRef = useRef<AssistantAction | null>(null);
   
@@ -214,16 +215,14 @@ export default function AssistantMapSection({ action }: AssistantMapSectionProps
   const [industryCode, setIndustryCode] = useState<string | undefined>(undefined);
   const [storeMarkers, setStoreMarkers] = useState<StoreLocation[]>([]);
 
+  // 부동산 매물 마커 표시용 상태
+  const [realEstateList, setRealEstateList] = useState<RealEstateItem[]>([]);
+  const { setSelectedRealEstateItem, hoveredRealEstateItemId, selectedRealEstateItem } = useMapStore();
+
   /**
    * 업종별 매장 위치 API 호출
-   * 
-   * 💡 흐름:
-   * 1. Seoul API 코드 (예: CS100007) → DB 코드 (I21006) 변환
-   * 2. /store/locations?industryCode=I21006 호출
-   * 3. 응답 데이터를 storeMarkers 상태에 저장
    */
   const fetchStoreLocations = useCallback(async (seoulCode: string, areaCode?: string, level?: string) => {
-    // Seoul API 코드 → DB 코드 변환
     const dbCode = convertSeoulCodeToDbCode(seoulCode);
     if (!dbCode) {
       console.warn(`[AssistantMapSection] 업종 코드 변환 실패: ${seoulCode}`);
@@ -257,10 +256,46 @@ export default function AssistantMapSection({ action }: AssistantMapSectionProps
     }
   }, []);
 
+  const fetchRealEstate = useCallback(async (
+    lat: number, 
+    lng: number, 
+    filters: { maxDeposit?: number; maxMonthlyRent?: number; minSize?: number; keywords?: string }
+  ) => {
+    try {
+      // 반경 약 2km (0.02도) 검색
+      const delta = 0.02;
+      const params = new URLSearchParams({
+        minx: (lng - delta).toString(),
+        miny: (lat - delta).toString(),
+        maxx: (lng + delta).toString(),
+        maxy: (lat + delta).toString(),
+      });
+
+      if (filters.maxDeposit) params.append('maxDeposit', filters.maxDeposit.toString());
+      if (filters.maxMonthlyRent) params.append('maxMonthlyRent', filters.maxMonthlyRent.toString());
+      if (filters.minSize) params.append('minSize', filters.minSize.toString());
+      if (filters.keywords) params.append('keywords', filters.keywords);
+
+      console.log(`[AssistantMapSection] 부동산 매물 조회: ${params.toString()}`);
+      const res = await fetch(`${API_BASE_URL}/real-estate?${params.toString()}`);
+      
+      if (res.ok) {
+        const data = await res.json();
+        console.log(`[AssistantMapSection] ${data.length}개 매물 조회됨`);
+        setRealEstateList(data);
+      } else {
+        console.error('[AssistantMapSection] 부동산 API 오류:', res.status);
+        setRealEstateList([]);
+      }
+    } catch (error) {
+      console.error('[AssistantMapSection] 부동산 조회 실패:', error);
+      setRealEstateList([]);
+    }
+  }, []);
+
   // 업종 코드 변경 시 매장 위치 조회
   useEffect(() => {
     if (industryCode) {
-      // action payload에서 지역 정보 추출
       const { areaCode, level } = action?.payload || {};
       fetchStoreLocations(industryCode, areaCode, level);
     } else {
@@ -270,9 +305,13 @@ export default function AssistantMapSection({ action }: AssistantMapSectionProps
 
   // 액션 변경 감지 → 핸들러 실행
   useEffect(() => {
-    // 같은 액션이면 무시
     if (!action || action === prevActionRef.current) return;
     prevActionRef.current = action;
+
+    // 디버깅: recommendRealEstate 액션 페이로드 확인
+    if (action.type === 'recommendRealEstate') {
+      console.log('[AssistantMapSection] recommendRealEstate payload:', action.payload);
+    }
     
     // filterPopulation 액션일 때 레이어 활성화
     if (action.type === 'filterPopulation') {
@@ -289,11 +328,47 @@ export default function AssistantMapSection({ action }: AssistantMapSectionProps
       setIndustryCode(action.payload.industryCode);
     }
 
-    const handler = ACTION_HANDLERS[action.type];
+    const handlers: Partial<Record<FrontendActionType, ActionHandler>> = {
+      ...ACTION_HANDLERS,
+      recommendRealEstate: async (payload, { moveToLocation }) => {
+        // 부동산 매물 표시 시 업종 마커 초기화 (마커 충돌 방지)
+        setStoreMarkers([]);
+        setIndustryCode(undefined);
+        
+        let lat = payload.lat;
+        let lng = payload.lng;
+        if (payload.coordinates) {
+          [lat, lng] = payload.coordinates;
+        }
+
+        // fallback: AI가 위치를 지정하지 않은 경우 현재 지도 중심점 사용
+        if (!lat || !lng) {
+          if (center) {
+            lat = center.lat;
+            lng = center.lng;
+            console.log('[AssistantMapSection] 위치 미지정 → 현재 지도 중심 사용:', center);
+          } else {
+            // 기본값: 서울 시청
+            lat = 37.5665;
+            lng = 126.9780;
+            console.log('[AssistantMapSection] 위치 미지정 → 서울 시청 기본값 사용');
+          }
+        }
+
+        moveToLocation({ lat, lng }, payload.areaName || '매물 추천', 3);
+        await fetchRealEstate(lat, lng, {
+          maxDeposit: payload.maxDeposit,
+          maxMonthlyRent: payload.maxMonthlyRent,
+          minSize: payload.minSize,
+          keywords: payload.keywords,
+        });
+      }
+    };
+
+    const handler = handlers[action.type];
     if (handler) {
       let isCancelled = false;
       
-      // 비동기로 로딩 상태 설정 (requestAnimationFrame 사용)
       requestAnimationFrame(() => {
         if (!isCancelled) setIsLoading(true);
       });
@@ -305,7 +380,7 @@ export default function AssistantMapSection({ action }: AssistantMapSectionProps
       
       return () => { isCancelled = true; };
     }
-  }, [action, selectArea, moveToLocation]);
+  }, [action, selectArea, moveToLocation, fetchStoreLocations, fetchRealEstate]);
 
   return (
     <div className="relative h-full flex flex-col p-4 bg-white">
@@ -316,11 +391,18 @@ export default function AssistantMapSection({ action }: AssistantMapSectionProps
             showPopulationLayer={showPopulationLayer}
             populationFilters={populationFilters}
             storeMarkers={storeMarkers}
+            realEstateData={realEstateList}
+            onMarkerClick={setSelectedRealEstateItem}
+            hoveredItemId={hoveredRealEstateItemId}
           />
         </div>
 
         {/* Dynamic Island 스타일 정보바 (하단) */}
-        <ActionInfoBar action={action} isLoading={isLoading} />
+        <ActionInfoBar 
+          action={action} 
+          isLoading={isLoading} 
+          selectedRealEstateItem={selectedRealEstateItem} 
+        />
       </div>
     </div>
   );

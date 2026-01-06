@@ -16,7 +16,9 @@ export type BackendActionType =
   | 'population.filter' // 유동인구 필터
   | 'compare.areas' // 상권 비교
   | 'rent.calculate' // 임대료 계산
-  | 'report.generate'; // 리포트 생성
+  | 'rent.calculate' // 임대료 계산
+  | 'report.generate' // 리포트 생성
+  | 'real_estate.recommend'; // 매물 추천
 
 // -----------------------------------------
 // 프론트엔드 액션 타입 (UI가 처리하는 형태)
@@ -31,7 +33,9 @@ export type FrontendActionType =
   | 'filterPopulation' // 유동인구 레이어 필터
   | 'openAnalysisPanel' // 분석 패널 열기
   | 'calculateRent' // 임대료 계산
-  | 'generateReport'; // 리포트 생성
+  | 'calculateRent' // 임대료 계산
+  | 'generateReport' // 리포트 생성
+  | 'recommendRealEstate'; // 매물 추천
 
 // -----------------------------------------
 // 액션 페이로드 (모든 액션이 공유하는 데이터)
@@ -66,6 +70,12 @@ export interface ActionPayload {
     nameB?: string;
   };
   rentParams?: { area: number; deposit: number; rent: number };
+
+  // Real Estate Recommendation
+  maxDeposit?: number;
+  maxMonthlyRent?: number;
+  minSize?: number;
+  keywords?: string;
 }
 
 // -----------------------------------------

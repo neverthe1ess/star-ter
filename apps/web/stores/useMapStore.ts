@@ -55,6 +55,8 @@ export const useMapStore = create<MapStore>()(
       setFilteredClusterCoords: (coords) =>
         set({ filteredClusterCoords: coords }),
       setInfoBarOpen: (isOpen) => set({ isInfoBarOpen: isOpen }),
+      isBottomBarOpen: true,
+      setBottomBarOpen: (isOpen) => set({ isBottomBarOpen: isOpen }),
 
       // 신규: 지역 선택 핸들러 (랜딩페이지 및 지도 클릭 대응)
       selectArea: (area: SelectedArea, fullData?: InfoBarData) => {

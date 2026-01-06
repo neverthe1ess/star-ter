@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   TrendingUp, 
   Users, 
@@ -8,10 +8,16 @@ import {
   Scale, 
   Calculator, 
   FileText,
-  MapPin
+  MapPin,
+  Building,
+  Star,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { useRevenueRanking, RankItem } from '@/hooks/useRevenueRanking';
+import { useRealEstateBookmark } from '@/hooks/useRealEstateBookmark';
 import type { AssistantAction, FrontendActionType } from '@/types/assistant-types';
+import type { RealEstateItem } from '@/types/map-store-types';
 
 // -----------------------------------------
 // ActionInfoBar Props
@@ -19,6 +25,7 @@ import type { AssistantAction, FrontendActionType } from '@/types/assistant-type
 interface ActionInfoBarProps {
   action: AssistantAction | null;
   isLoading?: boolean;
+  selectedRealEstateItem?: RealEstateItem | null;
 }
 
 // -----------------------------------------
@@ -33,6 +40,7 @@ const ACTION_ICONS: Record<FrontendActionType, React.ReactNode> = {
   openAnalysisPanel: <BarChart3 className="w-4 h-4" />,
   calculateRent: <Calculator className="w-4 h-4" />,
   generateReport: <FileText className="w-4 h-4" />,
+  recommendRealEstate: <Building className="w-4 h-4" />,
 };
 
 // -----------------------------------------
@@ -47,6 +55,7 @@ const ACTION_TITLES: Record<FrontendActionType, string> = {
   openAnalysisPanel: '상권 분석',
   calculateRent: '임대료 분석',
   generateReport: '리포트 생성',
+  recommendRealEstate: '추천 매물',
 };
 
 // -----------------------------------------
@@ -520,9 +529,115 @@ function ReportView({ areaName }: { areaName?: string }) {
 }
 
 // -----------------------------------------
+// 부동산 매물 상세 뷰
+// -----------------------------------------
+function RealEstateView({ item }: { item?: RealEstateItem | null }) {
+  // 즐겨찾기 훅 사용
+  const { toggleBookmark, isBookmarked, loading } = useRealEstateBookmark();
+
+  // DB는 천원(1000원) 단위로 저장
+  // 천원 → 만원: / 10
+  // 1억원 = 100,000,000원 = 100,000 (천원 단위)
+  function formatMoney(value: number | null): string {
+    if (!value) return '0';
+    
+    // 먼저 만원 단위로 변환 (천원 → 만원: / 10)
+    const manWon = value / 10;
+    
+    // 1억 이상 (10000만원 이상)
+    if (manWon >= 10000) {
+      const eok = Math.floor(manWon / 10000);
+      const man = Math.floor(manWon % 10000);
+      return `${eok}억${man > 0 ? ` ${man.toLocaleString()}만` : ''}`;
+    }
+    
+    // 만원 단위로 표시
+    return `${Math.floor(manWon).toLocaleString()}만`;
+  }
+
+  if (!item) {
+    return (
+      <div className="flex items-center justify-center h-full py-2">
+        <p className="text-sm text-gray-500 text-center animate-pulse">
+          지도에서 마커를 클릭하여 <br/> 상세 정보를 확인하세요
+        </p>
+      </div>
+    );
+  }
+
+  const bookmarked = isBookmarked(item.id);
+
+  return (
+    <div className="space-y-3">
+      {/* 가격 정보 + 즐겨찾기 버튼 */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded">
+            {item.floor}층
+          </span>
+          <h3 className="text-lg font-bold text-gray-900">
+             보증금 {formatMoney(item.deposit)} / 월 {formatMoney(item.monthlyrent)}
+          </h3>
+        </div>
+        {/* 즐겨찾기 버튼 */}
+        <button
+          onClick={() => toggleBookmark(item.id)}
+          disabled={loading}
+          className={`p-2 rounded-full transition-all duration-200 ${
+            bookmarked 
+              ? 'bg-yellow-100 text-yellow-500 hover:bg-yellow-200' 
+              : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-yellow-500'
+          } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          title={bookmarked ? '즐겨찾기 해제' : '즐겨찾기 추가'}
+        >
+          <Star 
+            className={`w-5 h-5 transition-transform ${loading ? 'animate-pulse' : ''}`} 
+            fill={bookmarked ? 'currentColor' : 'none'}
+          />
+        </button>
+      </div>
+
+      {/* 상세 스펙 */}
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        <div className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
+          <span className="text-gray-500">전용면적</span>
+          <span className="font-bold text-gray-800">{item.size}평</span>
+        </div>
+        <div className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
+          <span className="text-gray-500">권리금</span>
+          <span className="font-bold text-gray-800">
+            {item.premium ? `${formatMoney(item.premium)}` : '없음'}
+          </span>
+        </div>
+        <div className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
+          <span className="text-gray-500">관리비</span>
+          <span className="font-bold text-gray-800">
+             {item.maintenancefee ? `${formatMoney(item.maintenancefee)}원` : '-'}
+          </span>
+        </div>
+         <div className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
+          <span className="text-gray-500">입주가능일</span>
+          <span className="font-bold text-gray-800">
+             {item.ismoveindate ? item.moveindate : '즉시 가능'}
+          </span>
+        </div>
+      </div>
+
+      {/* 매물 이름/설명 */}
+      {item.title && (
+        <p className="text-xs text-gray-500 line-clamp-1 border-t border-gray-100 pt-2 mt-1">
+          {item.title}
+        </p>
+      )}
+    </div>
+  );
+}
+
+
+// -----------------------------------------
 // 액션별 컨텐츠 렌더링
 // -----------------------------------------
-function ActionContent({ action }: { action: AssistantAction }) {
+function ActionContent({ action, selectedRealEstateItem }: { action: AssistantAction; selectedRealEstateItem?: RealEstateItem | null }) {
   const { type, payload } = action;
 
   switch (type) {
@@ -562,6 +677,9 @@ function ActionContent({ action }: { action: AssistantAction }) {
     case 'generateReport':
       return <ReportView areaName={payload.areaName} />;
 
+    case 'recommendRealEstate':
+      return <RealEstateView item={selectedRealEstateItem} />;
+
     default:
       return <p className="text-sm text-gray-500">정보 없음</p>;
   }
@@ -570,7 +688,9 @@ function ActionContent({ action }: { action: AssistantAction }) {
 // -----------------------------------------
 // 메인 ActionInfoBar 컴포넌트
 // -----------------------------------------
-export default function ActionInfoBar({ action, isLoading }: ActionInfoBarProps) {
+export default function ActionInfoBar({ action, isLoading, selectedRealEstateItem }: ActionInfoBarProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  
   if (!action) return null;
 
   const icon = ACTION_ICONS[action.type];
@@ -578,28 +698,46 @@ export default function ActionInfoBar({ action, isLoading }: ActionInfoBarProps)
 
   return (
     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 w-[92%] max-w-lg">
-      <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-xl border border-gray-100 px-6 py-5 transition-all duration-300">
+      <div className={`bg-white/95 backdrop-blur-xl rounded-3xl shadow-xl border border-gray-100 px-6 transition-all duration-300 ${isCollapsed ? 'py-3' : 'py-5'}`}>
         {/* 헤더 */}
-        <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
+        <div className={`flex items-center gap-3 ${isCollapsed ? '' : 'mb-4 pb-3 border-b border-gray-100'}`}>
           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white shadow-sm">
             {icon}
           </div>
           <span className="text-base font-bold text-gray-800">{title}</span>
-          {isLoading && (
-            <div className="ml-auto flex gap-1.5">
+          
+          {/* 로딩 인디케이터 */}
+          {isLoading && !isCollapsed && (
+            <div className="flex gap-1.5">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" />
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
           )}
+          
+          {/* 접기/펼치기 버튼 */}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="ml-auto p-2 rounded-full hover:bg-gray-100 transition-colors"
+            aria-label={isCollapsed ? '펼치기' : '접기'}
+          >
+            {isCollapsed ? (
+              <ChevronUp className="w-5 h-5 text-gray-500" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-gray-500" />
+            )}
+          </button>
         </div>
 
-        {/* 컨텐츠 - 세로 레이아웃 */}
-        <div className="min-h-[80px]">
-          <ActionContent action={action} />
-        </div>
+        {/* 컨텐츠 - 접힌 상태가 아닐 때만 표시 */}
+        {!isCollapsed && (
+          <div className="min-h-[80px]">
+            <ActionContent action={action} selectedRealEstateItem={selectedRealEstateItem} />
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
 

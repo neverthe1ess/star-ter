@@ -91,7 +91,10 @@ export interface MapStore {
   // 신규: 리스트 호버 상태
   hoveredRealEstateItemId: string | null;
   // 신규: 클러스터 필터링 좌표 (클릭한 클러스터의 좌표)
+  // 신규: 클러스터 필터링 좌표 (클릭한 클러스터의 좌표)
   filteredClusterCoords: { lat: number; lng: number } | null;
+  // 신규: 하단 바 상태
+  isBottomBarOpen: boolean;
 
   hasHydrated: boolean;
 
@@ -112,6 +115,7 @@ export interface MapStore {
   setFilteredClusterCoords: (
     coords: { lat: number; lng: number } | null,
   ) => void;
+  setBottomBarOpen: (isOpen: boolean) => void;
 
   // 상권/행정구역 선택 (줌 레벨 자동 설정)
   selectArea: (area: SelectedArea, fullData?: InfoBarData) => void;

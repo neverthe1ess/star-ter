@@ -4,4 +4,8 @@ export type QueryParams = {
   areaCdList: string[];
   categoryCode?: string;
   limit?: number;
+  maxDeposit?: number;
+  maxMonthlyRent?: number;
+  minSize?: number;
+  keywords?: string;
 };

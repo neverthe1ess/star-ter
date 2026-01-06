@@ -155,79 +155,126 @@ export default function BottomMenuBox({
     }
   };
 
+  const { isBottomBarOpen, setBottomBarOpen } = useMapStore();
   const content = renderContent();
 
   return (
-    <section className="w-full flex flex-col items-center mb-8">
+    <section className="w-full flex flex-col items-center mb-8 pointer-events-none">
+      <div className="pointer-events-auto flex flex-col items-center gap-2">
       {content && <ModalCard>{content}</ModalCard>}
-      <div className="flex items-center justify-center gap-4 rounded-2xl bg-white/80 px-4 py-3 shadow-md ring-1 ring-black/5">
-        {items.map(({ label, value }) => (
-          <PillButton
-            key={value}
-            label={label}
-            onClick={() => {
-              if (value === 'none') {
-                setActive('none');
-                setLocationA({ name: '' });
-                setLocationB({ name: '' });
-                onSelectCategory(null);
-                setSelectedIndustryCodes(null);
-                population.setShowLayer(false);
-                if (onToggleReport) onToggleReport(false);
-                return;
-              }
+      
+      <div className="flex items-center justify-center gap-4 rounded-2xl bg-white/90 px-4 py-3 shadow-lg ring-1 ring-black/5 backdrop-blur-sm transition-all duration-300">
+        <button
+          onClick={() => setBottomBarOpen(!isBottomBarOpen)}
+          className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors"
+          aria-label={isBottomBarOpen ? '메뉴 닫기' : '메뉴 열기'}
+        >
+          {isBottomBarOpen ? (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+              className="w-5 h-5 text-gray-600"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+              />
+            </svg>
+          ) : (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+              className="w-5 h-5 text-gray-600"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4.5 15.75l7.5-7.5 7.5 7.5"
+              />
+            </svg>
+          )}
+        </button>
 
-              if (active === value) {
-                if (value === 'report' && isReportOpen && onToggleReport) {
-                  onToggleReport(false);
-                }
-                modalClose();
-                return;
-              }
+        {isBottomBarOpen && (
+          <div className="flex items-center gap-2 animate-fadeIn">
+            <div className="w-px h-5 bg-gray-200 mx-1" />
+            {items.map(({ label, value }) => (
+              <PillButton
+                key={value}
+                label={label}
+                onClick={() => {
+                  if (value === 'none') {
+                    setActive('none');
+                    setLocationA({ name: '' });
+                    setLocationB({ name: '' });
+                    onSelectCategory(null);
+                    setSelectedIndustryCodes(null);
+                    population.setShowLayer(false);
+                    if (onToggleReport) onToggleReport(false);
+                    return;
+                  }
 
-              // 보고서 클릭 처리
-              if (value === 'report') {
-                const token = localStorage.getItem('accessToken');
-                if (!token) {
-                  useModalStore.getState().openModal({
-                    type: 'confirm',
-                    title: '로그인 필요',
-                    content: (
-                      <div className="text-center py-4">
-                        <p className="mb-2 text-gray-700">
-                          보고서 기능은 로그인이 필요한 서비스입니다.
-                        </p>
-                        <p className="text-base font-bold text-gray-900">
-                          로그인 페이지로 이동하시겠습니까?
-                        </p>
-                      </div>
-                    ),
-                    confirmText: '로그인하기',
-                    onConfirm: () => {
-                      window.location.href = '/login';
-                    },
-                  });
-                  return;
-                }
-                setActive('report');
-                setLocationA({ name: '' });
-                setLocationB({ name: '' });
-                return;
-              }
+                  if (active === value) {
+                    if (value === 'report' && isReportOpen && onToggleReport) {
+                      onToggleReport(false);
+                    }
+                    modalClose();
+                    return;
+                  }
 
-              setActive(value as ActiveType);
-              if (onToggleReport) onToggleReport(false);
+                  // 보고서 클릭 처리
+                  if (value === 'report') {
+                    const token = localStorage.getItem('accessToken');
+                    if (!token) {
+                      useModalStore.getState().openModal({
+                        type: 'confirm',
+                        title: '로그인 필요',
+                        content: (
+                          <div className="text-center py-4">
+                            <p className="mb-2 text-gray-700">
+                              보고서 기능은 로그인이 필요한 서비스입니다.
+                            </p>
+                            <p className="text-base font-bold text-gray-900">
+                              로그인 페이지로 이동하시겠습니까?
+                            </p>
+                          </div>
+                        ),
+                        confirmText: '로그인하기',
+                        onConfirm: () => {
+                          window.location.href = '/login';
+                        },
+                      });
+                      return;
+                    }
+                    setActive('report');
+                    setLocationA({ name: '' });
+                    setLocationB({ name: '' });
+                    return;
+                  }
 
-              setLocationA({ name: '' });
-              setLocationB({ name: '' });
+                  setActive(value as ActiveType);
+                  if (onToggleReport) onToggleReport(false);
 
-              if (value === 'compare') {
-                setInfoBarOpen(false);
-                setIsOpen(false);
-              }
-            }}
-          />
-        ))}
+                  setLocationA({ name: '' });
+                  setLocationB({ name: '' });
+
+                  if (value === 'compare') {
+                    setInfoBarOpen(false);
+                    setIsOpen(false);
+                  }
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
       </div>
     </section>
   );
