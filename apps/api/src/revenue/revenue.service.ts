@@ -641,4 +641,76 @@ export class RevenueService {
     if (quarter === 1) return `${year - 1}4`;
     return `${year}${quarter - 1}`;
   }
+
+  /**
+   * 성장하는 상권 랭킹 - 전분기 대비 매출 증가율 기준
+   */
+  async getGrowthRanking(
+    level: RevenueLevel = 'commercial',
+  ): Promise<RevenueRankingResponseDto> {
+    const modelConfig = modelMap[level];
+    if (!modelConfig) {
+      throw new BadRequestException(`Invalid level: ${level}`);
+    }
+
+    const client = (this.prisma as any)[modelConfig.modelName] as PrismaModel;
+    const currentQ = await this.getLatestQuarter(client, modelConfig.modelName);
+    const prevQ = this.getPreviousQuarter(currentQ);
+
+    // Current quarter data
+    const currentData = await client.groupBy({
+      by: [modelConfig.codeField],
+      where: { stdr_yyqu_cd: currentQ },
+      _sum: { thsmon_selng_amt: true },
+    });
+
+    // Previous quarter data
+    const prevData = await client.groupBy({
+      by: [modelConfig.codeField],
+      where: { stdr_yyqu_cd: prevQ },
+      _sum: { thsmon_selng_amt: true },
+    });
+
+    // Get name mapping
+    const nameResult = await client.findMany({
+      where: { stdr_yyqu_cd: currentQ },
+      select: { [modelConfig.codeField]: true, [modelConfig.nameField]: true },
+      distinct: [modelConfig.codeField],
+    });
+
+    const nameMap = new Map<string, string>();
+    nameResult.forEach((row: any) => {
+      nameMap.set(row[modelConfig.codeField], row[modelConfig.nameField]);
+    });
+
+    // Calculate growth rate
+    const prevMap = new Map<string, number>();
+    prevData.forEach((row: any) => {
+      prevMap.set(
+        row[modelConfig.codeField],
+        Number(row._sum.thsmon_selng_amt || 0),
+      );
+    });
+
+    const items = currentData
+      .map((row: any) => {
+        const code = row[modelConfig.codeField];
+        const currentAmt = Number(row._sum.thsmon_selng_amt || 0);
+        const prevAmt = prevMap.get(code) || 0;
+        const growthRate =
+          prevAmt > 0 ? ((currentAmt - prevAmt) / prevAmt) * 100 : 0;
+
+        return {
+          code,
+          name: nameMap.get(code) || code,
+          amount: currentAmt,
+          count: 0,
+          fluctuationRate: Number(growthRate.toFixed(1)),
+        };
+      })
+      .sort((a: any, b: any) => b.fluctuationRate - a.fluctuationRate)
+      .slice(0, 10);
+
+    return { level, items };
+  }
 }

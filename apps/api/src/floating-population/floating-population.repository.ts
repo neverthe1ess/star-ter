@@ -346,4 +346,118 @@ export class FloatingPopulationRepository {
     if (quarter === 1) return `${year - 1}4`;
     return `${year}${quarter - 1}`;
   }
+
+  /**
+   * MZ세대(10-30대) 비중 기준 랭킹
+   */
+  async findMZRanking(
+    level: 'gu' | 'dong' | 'commercial' = 'commercial',
+  ): Promise<PopulationRankingItemDto[]> {
+    const configMap = {
+      gu: {
+        table: 'foot_traffic_gu',
+        codeField: 'signgu_cd',
+        nameField: 'signgu_cd_nm',
+      },
+      dong: {
+        table: 'foot_traffic_dong',
+        codeField: 'adstrd_cd',
+        nameField: 'adstrd_cd_nm',
+      },
+      commercial: {
+        table: 'foot_traffic_commercial',
+        codeField: 'trdar_cd',
+        nameField: 'trdar_cd_nm',
+      },
+    };
+    const cfg = configMap[level];
+
+    const sql = `
+      SELECT 
+        ${cfg.codeField} as code,
+        ${cfg.nameField} as name,
+        (COALESCE(agrde_10_flpop_co, 0) + COALESCE(agrde_20_flpop_co, 0) + COALESCE(agrde_30_flpop_co, 0)) as mz_pop,
+        tot_flpop_co as total_pop,
+        CASE WHEN tot_flpop_co > 0 
+          THEN ROUND((COALESCE(agrde_10_flpop_co, 0) + COALESCE(agrde_20_flpop_co, 0) + COALESCE(agrde_30_flpop_co, 0))::numeric / tot_flpop_co * 100, 1)
+          ELSE 0 
+        END as mz_ratio
+      FROM ${cfg.table}
+      WHERE stdr_yyqu_cd = (SELECT MAX(stdr_yyqu_cd) FROM ${cfg.table})
+      ORDER BY mz_ratio DESC, mz_pop DESC
+      LIMIT 10
+    `;
+
+    try {
+      const results = await this.prisma.$queryRawUnsafe<any[]>(sql);
+      return results.map((r) => ({
+        code: r.code,
+        name: r.name,
+        amount: Number(r.mz_pop),
+        count: 0,
+        fluctuationRate: Number(r.mz_ratio), // MZ 비중을 fluctuationRate로 활용
+      }));
+    } catch (e) {
+      this.logger.error('Failed MZ ranking query', e);
+      return [];
+    }
+  }
+
+  /**
+   * 성별 비중 기준 랭킹
+   */
+  async findGenderRanking(
+    level: 'gu' | 'dong' | 'commercial' = 'commercial',
+    gender: 'male' | 'female' = 'female',
+  ): Promise<PopulationRankingItemDto[]> {
+    const configMap = {
+      gu: {
+        table: 'foot_traffic_gu',
+        codeField: 'signgu_cd',
+        nameField: 'signgu_cd_nm',
+      },
+      dong: {
+        table: 'foot_traffic_dong',
+        codeField: 'adstrd_cd',
+        nameField: 'adstrd_cd_nm',
+      },
+      commercial: {
+        table: 'foot_traffic_commercial',
+        codeField: 'trdar_cd',
+        nameField: 'trdar_cd_nm',
+      },
+    };
+    const cfg = configMap[level];
+    const genderCol = gender === 'male' ? 'ml_flpop_co' : 'fml_flpop_co';
+
+    const sql = `
+      SELECT 
+        ${cfg.codeField} as code,
+        ${cfg.nameField} as name,
+        ${genderCol} as gender_pop,
+        tot_flpop_co as total_pop,
+        CASE WHEN tot_flpop_co > 0 
+          THEN ROUND(${genderCol}::numeric / tot_flpop_co * 100, 1)
+          ELSE 0 
+        END as gender_ratio
+      FROM ${cfg.table}
+      WHERE stdr_yyqu_cd = (SELECT MAX(stdr_yyqu_cd) FROM ${cfg.table})
+      ORDER BY gender_ratio DESC, gender_pop DESC
+      LIMIT 10
+    `;
+
+    try {
+      const results = await this.prisma.$queryRawUnsafe<any[]>(sql);
+      return results.map((r) => ({
+        code: r.code,
+        name: r.name,
+        amount: Number(r.gender_pop),
+        count: 0,
+        fluctuationRate: Number(r.gender_ratio), // 성별 비중을 fluctuationRate로 활용
+      }));
+    } catch (e) {
+      this.logger.error('Failed gender ranking query', e);
+      return [];
+    }
+  }
 }
