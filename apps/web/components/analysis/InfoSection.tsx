@@ -3,9 +3,10 @@
 import React from 'react';
 import CategoryTabs from './CategoryTabs';
 import AnalysisHeader from './AnalysisHeader';
-import { BarChart3, Users, MapPin, Sparkles, CreditCard, Coins, TrendingUp } from 'lucide-react';
+import { BarChart3, Users, MapPin } from 'lucide-react';
 import TimePopulationChart from './TimePopulationChart';
-import RevenuePatternChart from './RevenuePatternChart';
+import RevenueStructure from './RevenueStructure';
+import StartupCostAnalysis from './StartupCostAnalysis';
 
 import { useMapStore } from '../../stores/useMapStore';
 import { SummaryReportResponse } from '../../types/api-responses';
@@ -16,11 +17,16 @@ export default function InfoSection() {
   const [data, setData] = React.useState<SummaryReportResponse | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [selectedIndustry, setSelectedIndustry] = React.useState<{
+    code: string;
+    name: string;
+  } | null>(null);
 
   React.useEffect(() => {
     if (!selectedArea?.code) {
       setData(null);
       setError(null);
+      setSelectedIndustry(null);
       return;
     }
 
@@ -28,7 +34,11 @@ export default function InfoSection() {
       setIsLoading(true);
       setError(null);
       try {
-        const url = `/api/report/summary?regionCode=${selectedArea.code}&industryCode=CS100001&industryName=${encodeURIComponent('한식 음식점')}&regionName=${encodeURIComponent(selectedArea.name)}`;
+        // 현재 선택된 업종이 있으면 해당 업종으로 조회, 없으면 기본값 CS100001로 조회 후 topIndustries에서 최고 매출 업종 선택
+        const industryCode = selectedIndustry?.code || 'CS100001';
+        const industryName = selectedIndustry?.name || '한식음식점';
+        
+        const url = `/api/report/summary?regionCode=${selectedArea.code}&industryCode=${industryCode}&industryName=${encodeURIComponent(industryName)}&regionName=${encodeURIComponent(selectedArea.name)}`;
         const res = await fetch(url);
 
         if (!res.ok) {
@@ -42,6 +52,12 @@ export default function InfoSection() {
 
         const json = await res.json();
         setData(json);
+        
+        // 처음 로드 시 topIndustries에서 1위 업종을 자동 선택
+        if (!selectedIndustry && json.topIndustries?.length > 0) {
+          const top = json.topIndustries[0];
+          setSelectedIndustry({ code: top.industryCode, name: top.industryName });
+        }
       } catch (err) {
         console.error('Failed to fetch summary report:', err);
         setError(
@@ -55,7 +71,7 @@ export default function InfoSection() {
     };
 
     fetchData();
-  }, [selectedArea?.code, selectedArea?.name]);
+  }, [selectedArea?.code, selectedArea?.name, selectedIndustry]);
 
   if (!hasHydrated) return null;
 
@@ -77,7 +93,11 @@ export default function InfoSection() {
     <div className="relative h-full flex flex-col p-6 bg-white">
       <div className="relative flex-1 rounded-2xl overflow-hidden border border-gray-100 shadow-inner flex flex-col bg-white">
         {/* 헤더 */}
-        <AnalysisHeader locationInfo={data?.locationInfo} meta={data?.meta} />
+        <AnalysisHeader 
+          locationInfo={data?.locationInfo} 
+          meta={data?.meta} 
+          currentIndustry={selectedIndustry || undefined}
+        />
 
         {/* 카테고리 탭 */}
         <CategoryTabs activeTab={activeTab} onTabChange={setActiveTab} />
@@ -108,76 +128,13 @@ export default function InfoSection() {
                   </div>
                 )}
 
+                {/* 매출 분석 */}
                 {activeTab === 'revenue' && data.revenueAnalysis && (
-                  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700">
-                    {/* 매출 핵심 지표 카드 */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-6 bg-white rounded-3xl border border-gray-100 shadow-sm group hover:border-blue-200 transition-all">
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="p-2 bg-blue-50 text-blue-600 rounded-xl group-hover:scale-110 transition-transform">
-                            <CreditCard size={18} />
-                          </div>
-                          <span className="text-[13px] font-black text-gray-400 uppercase tracking-wider">객단가</span>
-                        </div>
-                        <p className="text-2xl font-black text-gray-900 tracking-tight">
-                          {data.revenueAnalysis.avgTransactionPrice.toLocaleString()}
-                          <span className="text-sm font-bold text-gray-400 ml-1">원</span>
-                        </p>
-                      </div>
-                      <div className="p-6 bg-white rounded-3xl border border-gray-100 shadow-sm group hover:border-emerald-200 transition-all">
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl group-hover:scale-110 transition-transform">
-                            <Coins size={18} />
-                          </div>
-                          <span className="text-[13px] font-black text-gray-400 uppercase tracking-wider">평균 결제건수</span>
-                        </div>
-                        <p className="text-2xl font-black text-gray-900 tracking-tight">
-                          {data.revenueAnalysis.totalTransactionCount.toLocaleString()}
-                          <span className="text-sm font-bold text-gray-400 ml-1">건/월</span>
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* 주중/주말 비중 섹션 */}
-                    <div className="p-6 bg-white rounded-3xl border border-gray-100 shadow-sm">
-                      <div className="flex items-center justify-between mb-8">
-                        <h3 className="text-sm font-black text-gray-900 flex items-center gap-2">
-                          <TrendingUp size={16} className="text-blue-600" />
-                          주중 · 주말 매출 비중
-                        </h3>
-                        <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md border border-blue-100">
-                          {data.revenueAnalysis.weekdayComparison.weekday > data.revenueAnalysis.weekdayComparison.weekend ? '주중 집중형' : '주말 집중형'}
-                        </span>
-                      </div>
-                      
-                      <div className="relative h-4 w-full bg-gray-100 rounded-full overflow-hidden flex">
-                        <div 
-                          className="h-full bg-blue-600 transition-all duration-1000 ease-out"
-                          style={{ width: `${data.revenueAnalysis.weekdayComparison.weekday}%` }}
-                        />
-                        <div 
-                          className="h-full bg-indigo-300 transition-all duration-1000 ease-out"
-                          style={{ width: `${data.revenueAnalysis.weekdayComparison.weekend}%` }}
-                        />
-                      </div>
-                      <div className="flex justify-between mt-3 px-1">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-bold text-gray-400 uppercase">주중</span>
-                          <span className="text-sm font-black text-blue-600">{data.revenueAnalysis.weekdayComparison.weekday}%</span>
-                        </div>
-                        <div className="flex flex-col items-end">
-                          <span className="text-[10px] font-bold text-gray-400 uppercase">주말</span>
-                          <span className="text-sm font-black text-indigo-400">{data.revenueAnalysis.weekdayComparison.weekend}%</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 패턴 차트 */}
-                    <RevenuePatternChart 
-                      dailyRatio={data.revenueAnalysis.dailyRatio}
-                      timePeriodRatio={data.revenueAnalysis.timePeriodRatio}
-                    />
-                  </div>
+                  <RevenueStructure 
+                    data={data}
+                    selectedIndustry={selectedIndustry}
+                    onIndustrySelect={(code, name) => setSelectedIndustry({ code, name })}
+                  />
                 )}
 
                 {(activeTab === 'industry' || activeTab === 'risk') &&
@@ -208,37 +165,9 @@ export default function InfoSection() {
                     </div>
                   )}
 
-                {(activeTab === 'cost' || activeTab === 'risk') &&
-                  data.conclusion && (
-                    <div className="animate-in zoom-in-95 duration-300 space-y-4">
-                      <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm space-y-4">
-                        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                          <Sparkles size={18} className="text-amber-600" />
-                          최종 전략 제언
-                        </h3>
-                        <div className="space-y-3">
-                          {data.conclusion.map((item, idx) => (
-                            <div
-                              key={idx}
-                              className="flex gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors group"
-                            >
-                              <div className="w-8 h-8 shrink-0 flex items-center justify-center bg-amber-100 text-amber-700 rounded-lg font-bold text-xs group-hover:scale-110 transition-transform">
-                                {idx + 1}
-                              </div>
-                              <div>
-                                <p className="text-xs text-amber-600 font-bold mb-0.5">
-                                  {item.category}
-                                </p>
-                                <p className="text-sm text-gray-700 font-medium leading-relaxed">
-                                  {item.content}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                {activeTab === 'cost' && data.revenueAnalysis && (
+                  <StartupCostAnalysis data={data} />
+                )}
               </div>
             </div>
           ) : (

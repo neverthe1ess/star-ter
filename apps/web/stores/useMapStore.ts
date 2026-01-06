@@ -24,6 +24,7 @@ export const useMapStore = create<MapStore>()(
       overlayMode: 'revenue',
       viewMode: 'analysis',
       selectedIndustryCodes: null,
+      selectedIndustryName: null,
       markers: [],
       highlightedAreaName: null,
       selectedArea: null,
@@ -43,6 +44,7 @@ export const useMapStore = create<MapStore>()(
       setViewMode: (mode) => set({ viewMode: mode }),
       setSelectedIndustryCodes: (codes) =>
         set({ selectedIndustryCodes: codes }),
+      setSelectedIndustryName: (name) => set({ selectedIndustryName: name }),
       setHighlightedAreaName: (name) => set({ highlightedAreaName: name }),
       setHasHydrated: (state) => set({ hasHydrated: state }),
       setSelectedRealEstateItem: (item) =>
@@ -148,6 +150,8 @@ export const useMapStore = create<MapStore>()(
         center: state.center,
         zoom: state.zoom,
         overlayMode: state.overlayMode,
+        selectedIndustryCodes: state.selectedIndustryCodes,
+        selectedIndustryName: state.selectedIndustryName,
         selectedArea: state.selectedArea,
         highlightedAreaName: state.highlightedAreaName,
         searchedLocation: state.searchedLocation,

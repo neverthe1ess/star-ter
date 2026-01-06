@@ -17,9 +17,17 @@ interface AnalysisHeaderProps {
   meta?: {
     radius: number;
   };
+  currentIndustry?: {
+    code: string;
+    name: string;
+  };
 }
 
-export default function AnalysisHeader({ locationInfo, meta }: AnalysisHeaderProps) {
+export default function AnalysisHeader({ 
+  locationInfo, 
+  meta, 
+  currentIndustry
+}: AnalysisHeaderProps) {
   const { selectedArea, hasHydrated } = useMapStore();
   const { openReport } = useReportStore();
   const [isIndustryModalOpen, setIsIndustryModalOpen] = useState(false);

@@ -159,6 +159,44 @@ export class ReportRepository {
     }
   }
 
+  async getTopIndustriesBySales(regionCode: string) {
+    const area = await this.resolveArea(regionCode);
+    if (!area) return [];
+
+    const orderBy = [
+      { stdr_yyqu_cd: 'desc' as const },
+      { thsmon_selng_amt: 'desc' as const },
+    ];
+    const select = {
+      svc_induty_cd: true,
+      svc_induty_cd_nm: true,
+      thsmon_selng_amt: true,
+    };
+
+    if (area.type === 'dong') {
+      return this.prisma.salesDong.findMany({
+        where: { adstrd_cd: area.code },
+        orderBy,
+        take: 10,
+        select,
+      });
+    } else if (area.type === 'commercial') {
+      return this.prisma.salesCommercial.findMany({
+        where: { trdar_cd: area.code },
+        orderBy,
+        take: 10,
+        select,
+      });
+    } else {
+      return this.prisma.salesBackarea.findMany({
+        where: { trdar_cd: area.code },
+        orderBy,
+        take: 10,
+        select,
+      });
+    }
+  }
+
   private async resolveArea(code: string): Promise<{
     type: 'dong' | 'commercial' | 'backarea';
     code: string;

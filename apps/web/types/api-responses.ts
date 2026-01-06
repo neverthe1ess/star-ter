@@ -126,4 +126,12 @@ export interface SummaryReportResponse {
       ratio: number;
     }[];
   };
+
+  // 11) 매출 TOP 업종
+  topIndustries: {
+    rank: number;
+    industryCode: string;
+    industryName: string;
+    salesAmount: number;
+  }[];
 }
