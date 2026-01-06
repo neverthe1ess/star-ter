@@ -107,15 +107,29 @@ export const useRevenueRanking = ({
         ? { lat: result.lat, lng: result.lng }
         : { lat: 37.5665, lng: 126.9780 }; // 서울 중심 기본 좌표
       
-      // 상권 코드가 있으면 폴리곤 데이터 가져오기
+      // 코드가 있으면 타입에 따라 폴리곤 데이터 가져오기
       let polygonData: number[][][][] | number[][][] | number[][] | undefined;
-      if (code && targetType === 'commercial') {
+      if (code) {
         try {
-          const polygonRes = await fetch(`${API_BASE_URL}/polygon/commercial/code?code=${code}`);
-          if (polygonRes.ok) {
-            const polygonJson = await polygonRes.json();
-            if (polygonJson?.polygons?.coordinates) {
-              polygonData = polygonJson.polygons.coordinates;
+          let polygonEndpoint = '';
+          if (targetType === 'commercial') {
+            polygonEndpoint = `${API_BASE_URL}/polygon/commercial/code?code=${code}`;
+          } else if (targetType === 'dong') {
+            polygonEndpoint = `${API_BASE_URL}/polygon/dong/code?code=${code}`;
+          } else if (targetType === 'gu') {
+            polygonEndpoint = `${API_BASE_URL}/polygon/gu/code?code=${code}`;
+          }
+          
+          if (polygonEndpoint) {
+            const polygonRes = await fetch(polygonEndpoint);
+            if (polygonRes.ok) {
+              const polygonJson = await polygonRes.json();
+              // 상권은 polygons.coordinates, 행정구역은 polygons 직접 사용
+              if (polygonJson?.polygons?.coordinates) {
+                polygonData = polygonJson.polygons.coordinates;
+              } else if (polygonJson?.polygons) {
+                polygonData = polygonJson.polygons;
+              }
             }
           }
         } catch (err) {
