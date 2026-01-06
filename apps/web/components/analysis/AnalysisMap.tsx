@@ -8,7 +8,6 @@ import { usePolygonData } from '../../hooks/usePolygonData';
 import { usePopulationLayer } from '../../hooks/usePopulationLayer';
 import { usePopulationVisual } from '../../hooks/usePopulationVisual';
 import { useMapStore } from '../../stores/useMapStore';
-import { useBuildingMarkers } from '../../hooks/useBuildingMarkers';
 import { useSeoulBoundary } from '../../hooks/useSeoulBoundary';
 
 initProj4();
@@ -23,7 +22,6 @@ export default function AnalysisMap() {
 
   // 폴리곤 데이터 로드 (클릭 핸들러 없음)
   usePolygonData(map, () => {}, null, null);
-  useBuildingMarkers(map, null);
   useSeoulBoundary(map);
 
   // 스토어 → 지도 동기화

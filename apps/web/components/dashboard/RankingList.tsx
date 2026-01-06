@@ -71,8 +71,8 @@ export default function RankingList({
     adminLevel,
   });
 
-  // Auto-select first item on load
-  const [hasSelected, setHasSelected] = React.useState(false);
+  // // Auto-select first item on load
+  // const [hasSelected, setHasSelected] = React.useState(false);
 
 
 
