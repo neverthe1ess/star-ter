@@ -177,9 +177,11 @@ export default function RankingList({
         ) : items.length > 0 ? (
           <>
             {items.slice(0, 10).map((item, index) => (
-              <div key={item.code}
-              onMouseEnter={() => setHoveredItem(item)}
-              onMouseLeave={() => setHoveredItem(null)}>
+              <div
+                key={item.code}
+                onMouseEnter={() => setHoveredItem(item)}
+                onMouseLeave={() => setHoveredItem(null)}
+              >
                 <RankNavItem
                   item={item}
                   rank={index + 1}
@@ -191,15 +193,7 @@ export default function RankingList({
                     item.fluctuationRate ??
                     getFluctuationFromChangeType(item.changeType)
                   }
-                  formatAmount={(val) => {
-                    if (themeType === 'POPULATION') {
-                      return `약 ${val.toLocaleString()}명`;
-                    }
-                    return `약 ${(val / 100000000).toLocaleString(undefined, {
-                      minimumFractionDigits: 1,
-                      maximumFractionDigits: 1,
-                    })}억원`;
-                  }}
+                  formatAmount={formatAmount}
                 />
               </div>
             ))}
