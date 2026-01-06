@@ -54,7 +54,7 @@ export default function InfoSection() {
   if (!hasHydrated) {
     return (
       <div className="relative h-full flex flex-col p-6 bg-white">
-        <div className="relative flex-1 rounded-2xl overflow-hidden border-4 border-gray-100 shadow-inner flex flex-col bg-white">
+        <div className="relative flex-1 rounded-2xl overflow-hidden border-1 border-gray-100 shadow-inner flex flex-col bg-white">
           <div className="h-24 animate-pulse bg-gray-50 border-b border-gray-100" />
           <div className="h-12 animate-pulse bg-gray-50 border-b border-gray-100" />
           <div className="flex-1 overflow-y-auto bg-gray-50/30 p-6 space-y-4">
@@ -74,7 +74,7 @@ export default function InfoSection() {
 
   return (
     <div className="relative h-full flex flex-col p-6 bg-white">
-      <div className="relative flex-1 rounded-2xl overflow-hidden border-4 border-gray-100 shadow-inner flex flex-col bg-white">
+      <div className="relative flex-1 rounded-2xl overflow-hidden border-1 border-gray-100 shadow-inner flex flex-col bg-white">
         {/* 헤더 */}
         <AnalysisHeader />
 

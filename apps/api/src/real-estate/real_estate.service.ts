@@ -97,6 +97,42 @@ export class RealEstateService {
     return results.map((item) => this.toResponseDto(item));
   }
 
+  async getRealEstateByUser(userId: string): Promise<RealEstateResponseDto[]> {
+    const results = await this.prisma.real_estate_info.findMany({
+      where: {
+        user_id: userId,
+      },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        roadaddress: true,
+        centerlatitude: true,
+        centerlongitude: true,
+        title: true,
+        deposit: true,
+        monthlyrent: true,
+        maintenancefee: true,
+        premium: true,
+        areaprice: true,
+        size: true,
+        floor: true,
+        groundfloor: true,
+        businesslargecodename: true,
+        businessmiddlecodename: true,
+        nearsubwaystation: true,
+        ismoveindate: true,
+        previewphotourl: true,
+        createddateutc: true,
+      },
+      orderBy: {
+        createddateutc: 'desc',
+      },
+    });
+
+    return results.map((item) => this.toResponseDto(item));
+  }
+
   private buildBBoxFilter(
     query: GetRealEstateQueryDto,
   ): Prisma.real_estate_infoWhereInput {

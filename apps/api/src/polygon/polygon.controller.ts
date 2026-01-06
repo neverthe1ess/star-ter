@@ -67,4 +67,12 @@ export class PolygonController {
   getSeoulSidoPolygon(): Promise<AdminPolygonResponse | null> {
     return this.polygonService.getSeoulSidoPolygon();
   }
+
+  @Get('commercial/code')
+  getCommercialPolygonByCode(
+    @Query('code') code: string,
+  ): Promise<CommercialPolygonResponse | null> {
+    if (!code) return Promise.resolve(null);
+    return this.polygonService.getCommercialPolygonByCode(code);
+  }
 }

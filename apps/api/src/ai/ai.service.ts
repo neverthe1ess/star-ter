@@ -63,11 +63,7 @@ export class AiService {
       this.getTables(message),
     ]);
 
-    console.log('table:', tables);
-
-    if (tables.length === 0) {
-      return [];
-    }
+    if (tables.length === 0) return [];
 
     const query = await getRecommendCommercialAreasQuery(
       message,
@@ -75,9 +71,7 @@ export class AiService {
       areaList,
       tables,
     );
-
-    console.log('query:', getText(query));
-
+    console.log('Generated SQL:', getText(query));
     const result = await this.aiRepository.runSql(getText(query));
     return result;
   }

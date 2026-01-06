@@ -107,12 +107,35 @@ export const useRevenueRanking = ({
         ? { lat: result.lat, lng: result.lng }
         : { lat: 37.5665, lng: 126.9780 }; // 서울 중심 기본 좌표
       
+      // 상권 코드가 있으면 폴리곤 데이터 가져오기
+      let polygonData: number[][][][] | number[][][] | number[][] | undefined;
+      if (code && targetType === 'commercial') {
+        try {
+          const polygonRes = await fetch(`${API_BASE_URL}/polygon/commercial/code?code=${code}`);
+          if (polygonRes.ok) {
+            const polygonJson = await polygonRes.json();
+            if (polygonJson?.polygons?.coordinates) {
+              polygonData = polygonJson.polygons.coordinates;
+            }
+          }
+        } catch (err) {
+          console.error('Failed to fetch polygon data:', err);
+        }
+      }
+      
       selectArea({
         name: name,
         coords: coords,
         type: targetType,
         code: code,
-      });
+      }, polygonData ? { 
+        commercialName: name,
+        commercialCode: code,
+        x: coords.lng,
+        y: coords.lat,
+        polygons: polygonData,
+        level: targetType,
+      } : undefined);
     } finally {
       setIsMoving(false);
     }

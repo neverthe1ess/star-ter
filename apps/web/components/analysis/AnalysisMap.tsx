@@ -2,9 +2,8 @@
 
 import { useRef, useEffect } from 'react';
 import { initProj4 } from '../../utils/map-utils';
-import { KakaoMarker } from '../../types/map-types';
+import { KakaoMarker, KakaoPolygon } from '../../types/map-types';
 import { useKakaoMap } from '../../hooks/useKakaoMap';
-import { usePolygonData } from '../../hooks/usePolygonData';
 import { usePopulationLayer } from '../../hooks/usePopulationLayer';
 import { usePopulationVisual } from '../../hooks/usePopulationVisual';
 import { useMapStore } from '../../stores/useMapStore';
@@ -15,14 +14,76 @@ initProj4();
 export default function AnalysisMap() {
   const mapRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<KakaoMarker[]>([]);
+  const polygonRef = useRef<KakaoPolygon | null>(null);
 
   const { map } = useKakaoMap(mapRef);
-  const { center, zoom, markers, setZoom, setCenter, clearMarkers, isMoving } = useMapStore();
+  const { center, zoom, markers, setZoom, setCenter, clearMarkers, isMoving, selectedArea } = useMapStore();
   const population = usePopulationVisual();
 
-  // 폴리곤 데이터 로드 (클릭 핸들러 없음)
-  usePolygonData(map, () => {}, null, null);
+  // 서울 경계만 표시
   useSeoulBoundary(map);
+
+  // 선택된 지역 폴리곤만 그리기
+  useEffect(() => {
+    if (!map) return;
+
+    // 기존 폴리곤 제거
+    if (polygonRef.current) {
+      polygonRef.current.setMap(null);
+      polygonRef.current = null;
+    }
+
+    // selectedArea에 폴리곤 데이터가 있으면 그리기
+    const polygonData = selectedArea?.fullData?.polygons;
+    if (!polygonData) return;
+
+    try {
+      // 폴리곤 좌표 변환
+      let path: { lat: number; lng: number }[][] = [];
+      
+      // MultiPolygon 또는 Polygon 형식 처리
+      if (Array.isArray(polygonData)) {
+        const firstElement = polygonData[0];
+        if (Array.isArray(firstElement)) {
+          const secondElement = firstElement[0];
+          if (Array.isArray(secondElement)) {
+            const thirdElement = secondElement[0];
+            if (Array.isArray(thirdElement)) {
+              // MultiPolygon: number[][][][]
+              path = (polygonData as number[][][][]).map((polygon) =>
+                polygon[0].map((coord) => ({ lng: coord[0], lat: coord[1] }))
+              );
+            } else {
+              // Polygon: number[][][]
+              path = [(polygonData as number[][][])[0].map((coord) => ({ lng: coord[0], lat: coord[1] }))];
+            }
+          } else {
+            // Simple ring: number[][]
+            path = [(polygonData as number[][]).map((coord) => ({ lng: coord[0], lat: coord[1] }))];
+          }
+        }
+      }
+
+      if (path.length === 0) return;
+
+      // 카카오맵 폴리곤 생성 (첫 번째 링만 사용)
+      const kakaoPath = path[0].map((coord) => new window.kakao.maps.LatLng(coord.lat, coord.lng));
+
+      const polygon = new window.kakao.maps.Polygon({
+        path: kakaoPath,
+        strokeWeight: 3,
+        strokeColor: '#3B82F6',
+        strokeOpacity: 1,
+        fillColor: '#3B82F6',
+        fillOpacity: 0.2,
+      });
+
+      polygon.setMap(map);
+      polygonRef.current = polygon;
+    } catch (error) {
+      console.error('Failed to draw polygon:', error);
+    }
+  }, [map, selectedArea]);
 
   // 스토어 → 지도 동기화
   useEffect(() => {

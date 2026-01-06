@@ -12,10 +12,12 @@ import {
   Home,
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import Script from 'next/script';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { realEstateService } from '@/services/real-estate/real-estate.service';
+import { uploadService } from '@/services/upload/upload.service';
 import { BUSINESS_CATEGORIES } from '../constants';
 
 // 카카오 맵 SDK 타입 정의
@@ -68,6 +70,7 @@ declare global {
 export default function RegisterPage() {
   const router = useRouter();
   const [kakaoLoaded, setKakaoLoaded] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState({
     // 기본 정보
     name: '',
@@ -101,6 +104,40 @@ export default function RegisterPage() {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 파일 크기 체크 (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('파일 크기는 5MB 이하여야 합니다.');
+      return;
+    }
+
+    // 이미지 타입 체크
+    if (!file.type.match(/^image\/(jpeg|jpg|png|gif|webp)$/)) {
+      toast.error('이미지 파일만 업로드 가능합니다.');
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      toast.loading('이미지 업로드 중...');
+
+      const result = await uploadService.uploadImage(file);
+
+      setFormData((prev) => ({ ...prev, previewphotourl: result.url }));
+      toast.dismiss();
+      toast.success('이미지가 업로드되었습니다!');
+    } catch (error) {
+      toast.dismiss();
+      const err = error as Error;
+      toast.error(err.message || '이미지 업로드에 실패했습니다.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -595,22 +632,46 @@ export default function RegisterPage() {
                 </div>
               </section>
 
-              {/* 사진 URL */}
+              {/* 사진 업로드 */}
               <section>
                 <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
                   <Building2 className="h-5 w-5 text-gray-400" />
                   사진
                 </h2>
-                <div>
-                  <label className={labelClass}>대표 이미지 URL</label>
-                  <input
-                    type="url"
-                    name="previewphotourl"
-                    value={formData.previewphotourl}
-                    onChange={handleChange}
-                    placeholder="https://example.com/image.jpg"
-                    className={inputClass}
-                  />
+                <div className="space-y-4">
+                  <div>
+                    <label className={labelClass}>대표 이미지</label>
+                    <div className="mt-2">
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                        onChange={handleImageUpload}
+                        disabled={isUploading}
+                        className="block w-full text-sm text-gray-500
+                          file:mr-4 file:py-2 file:px-4
+                          file:rounded-lg file:border-0
+                          file:text-sm file:font-semibold
+                          file:bg-blue-50 file:text-blue-700
+                          hover:file:bg-blue-100
+                          disabled:opacity-50 disabled:cursor-not-allowed"
+                      />
+                      <p className="mt-1 text-sm text-gray-400">
+                        JPG, PNG, GIF, WEBP (최대 5MB)
+                      </p>
+                    </div>
+                  </div>
+                  {formData.previewphotourl && (
+                    <div className="mt-4">
+                      <p className="text-sm text-gray-600 mb-2">미리보기:</p>
+                      <Image
+                        src={formData.previewphotourl}
+                        alt="미리보기"
+                        width={320}
+                        height={240}
+                        className="rounded-lg border border-gray-200 object-cover"
+                      />
+                    </div>
+                  )}
                 </div>
               </section>
 
