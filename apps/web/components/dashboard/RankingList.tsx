@@ -14,6 +14,7 @@ import { RankItem } from '@/hooks/useRevenueRanking';
 
 interface RankingListProps {
   onSelect: (item: RankingItem) => void;
+  onHover?: (item: RankingItem | null) => void; // Hover 시 부모에게 알림
   themeType: ThemeType;
   themeValue: ThemeValue;
   ageGroup?: string;
@@ -39,6 +40,7 @@ const getFluctuationFromChangeType = (changeType?: string): number => {
 
 export default function RankingList({
   onSelect,
+  onHover,
   themeType,
   themeValue,
   ageGroup,
@@ -63,6 +65,21 @@ export default function RankingList({
     });
   };
 
+  // RankItem -> RankingItem 변환 헬퍼 함수
+  const toRankingItem = (item: RankItem, rank: number): RankingItem => ({
+    id: item.code,
+    rank,
+    name: item.name,
+    category: '상권',
+    revenue: item.amount,
+    fluctuation: item.fluctuationRate ?? getFluctuationFromChangeType(item.changeType),
+    volume: 0,
+    stores: item.count,
+    isFavorite: favorites.has(item.code),
+    code: item.code,
+    metricType: themeType === 'POPULATION' ? 'POPULATION' : 'REVENUE',
+  });
+
   // Use Theme Ranking Hook
   const { items, isLoading, handleSelect } = useThemeRanking({
     themeType,
@@ -72,34 +89,34 @@ export default function RankingList({
     adminLevel,
   });
 
-  // Auto-select first item on load
-  const [hasSelected, setHasSelected] = React.useState(false);
+  // 리스트 로드 시 첫 번째 아이템을 기본으로 표시
+  React.useEffect(() => {
+    if (items.length > 0 && !hoveredItem) {
+      onHover?.(toRankingItem(items[0], 1));
+    }
+  }, [items]);
+
+  // Hover 디바운스 처리 (800ms)
+  React.useEffect(() => {
+    if (hoveredItem) {
+      const timer = setTimeout(() => {
+        const index = items.findIndex((i) => i.code === hoveredItem.code);
+        if (index !== -1) {
+          onHover?.(toRankingItem(hoveredItem, index + 1));
+        }
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [hoveredItem, items, favorites, themeType]);
 
   const handleItemClick = async (item: RankItem) => {
     if (adminLevel === 'gu') return;
-    // Map API item to RankingItem format for DetailPanel
-    const rankingItem: RankingItem = {
-      id: item.code,
-      rank: 0,
-      name: item.name,
-      category: '상권',
-      revenue: item.amount, // This holds Population Count for Population Theme
-      fluctuation:
-        item.fluctuationRate ?? getFluctuationFromChangeType(item.changeType),
-      volume: 0,
-      stores: item.count,
-      isFavorite: favorites.has(item.code),
-      code: item.code,
-      metricType: themeType === 'POPULATION' ? 'POPULATION' : 'REVENUE',
-    };
-
-    onSelect(rankingItem);
-    // 주소 검색 및 스토어 업데이트 (코드와 레벨 정보 추가 전달)
+    
+    onSelect(toRankingItem(item, 0));
     await handleSelect(item.name, item.code, adminLevel);
-
-    // 분석 페이지로 이동
     router.push('/analysis');
   };
+
 
   // 테마별 표시 라벨
   const getMetricLabel = () => {
@@ -179,8 +196,9 @@ export default function RankingList({
             {items.slice(0, 10).map((item, index) => (
               <div
                 key={item.code}
-                onMouseEnter={() => setHoveredItem(item)}
-                onMouseLeave={() => setHoveredItem(null)}
+                onMouseEnter={() => {
+                  setHoveredItem(item);
+                }}
               >
                 <RankNavItem
                   item={item}
