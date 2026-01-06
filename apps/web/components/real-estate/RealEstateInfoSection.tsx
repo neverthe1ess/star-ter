@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   Building2,
   MapPin,
@@ -9,9 +9,14 @@ import {
   ChevronLeft,
   Filter,
   ChevronDown,
+  Sparkles,
 } from 'lucide-react';
 import { useMapStore } from '../../stores/useMapStore';
 import { RealEstateItem } from '../../types/map-store-types';
+import {
+  fetchRealEstateAiSummary,
+  formatRealEstateMetrics,
+} from '../../services/ai.service';
 
 type SortOption = 'latest' | 'deposit' | 'monthlyrent' | 'premium' | 'size';
 
@@ -34,6 +39,11 @@ export default function RealEstateInfoSection() {
 
   const [sortBy, setSortBy] = useState<SortOption>('latest');
   const [isSortOpen, setIsSortOpen] = useState(false);
+
+  // AI 요약 상태
+  const [aiSummary, setAiSummary] = useState<string>('');
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const aiRequestRef = useRef<number>(0);
 
   const handleBack = () => {
     setSelectedRealEstateItem(null);
@@ -76,6 +86,39 @@ export default function RealEstateInfoSection() {
         return sorted; // 기본 순서 유지 (최신순은 API에서 처리됨)
     }
   }, [filteredList, sortBy]);
+
+  // AI 요약 호출 (디바운스 1.5초)
+  useEffect(() => {
+    if (displayList.length === 0) {
+      setAiSummary('');
+      return;
+    }
+
+    const requestId = ++aiRequestRef.current;
+    setIsAiLoading(true);
+
+    const timer = setTimeout(async () => {
+      try {
+        const metrics = formatRealEstateMetrics(displayList);
+        const summary = await fetchRealEstateAiSummary(metrics);
+
+        if (requestId === aiRequestRef.current) {
+          setAiSummary(summary);
+        }
+      } catch (error) {
+        console.error('AI 요약 호출 실패:', error);
+        if (requestId === aiRequestRef.current) {
+          setAiSummary('');
+        }
+      } finally {
+        if (requestId === aiRequestRef.current) {
+          setIsAiLoading(false);
+        }
+      }
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [displayList]);
 
   // 상세 뷰 (Overlay)
   if (selectedRealEstateItem) {
@@ -176,6 +219,43 @@ export default function RealEstateInfoSection() {
             </div>
           )}
         </div>
+
+        {/* AI 요약 박스 */}
+        {displayList.length > 0 && (
+          <div className="p-4 border-b border-gray-100">
+            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+              <div className="flex gap-3">
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                  {isAiLoading ? (
+                    <Sparkles className="w-4 h-4 text-blue-600 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4 text-blue-600" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-gray-900 mb-1">
+                    AI 부동산 요약
+                  </p>
+                  {isAiLoading ? (
+                    <div className="space-y-2 animate-pulse">
+                      <div className="h-3 bg-blue-200/50 rounded w-3/4"></div>
+                      <div className="h-3 bg-blue-200/50 rounded w-full"></div>
+                      <div className="h-3 bg-blue-200/50 rounded w-5/6"></div>
+                    </div>
+                  ) : aiSummary ? (
+                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+                      {aiSummary}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      요약을 생성하고 있습니다...
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 리스트 목록 */}
         <div className="flex-1 overflow-y-auto bg-gray-50/50 p-4 space-y-4">
