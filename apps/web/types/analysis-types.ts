@@ -100,6 +100,7 @@ export interface AnalysisCardProps {
   regionCode?: string;
   isStoreExpanded?: boolean;
   onStoreExpand?: (expanded: boolean) => void;
+  variant?: 'map' | 'analysis';
 }
 
 export interface StoreTabContentProps {

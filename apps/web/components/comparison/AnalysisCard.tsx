@@ -25,6 +25,7 @@ export default function AnalysisCard({
   regionCode, 
   isStoreExpanded,
   onStoreExpand,
+  variant = 'map',
 }: AnalysisCardProps) {
   const [data, setData] = useState<AnalysisData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -66,7 +67,11 @@ export default function AnalysisCard({
   };
 
   return (
-    <div className="bg-white/60 rounded-3xl shadow-xl p-5 w-[90vw] sm:w-[25vw] min-w-[280px] h-[64vh] min-h-[350px] flex flex-col relative animate-fade-in-up backdrop-blur-sm">
+    <div className={`rounded-3xl shadow-xl p-5 w-[90vw] sm:w-[25vw] min-w-[280px] h-[64vh] min-h-[350px] flex flex-col relative animate-fade-in-up ${
+      variant === 'analysis' 
+        ? 'bg-white border-2 border-gray-200' 
+        : 'bg-white/60 backdrop-blur-sm'
+    }`}>
       <div className="text-center mb-4">
         <h3 className="text-lg font-bold text-gray-900 flex items-center justify-center gap-2">
           <span className="truncate max-w-[60%] block" title={title}>
