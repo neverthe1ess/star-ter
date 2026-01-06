@@ -341,4 +341,52 @@ export class MarketRepository {
     `;
     return result as BuildingStore[];
   }
+
+  /**
+   * 업종 코드로 점포 위치 조회 (bbox 필터링 지원)
+   *
+   * 💡 DB 컬럼명 (prisma/models/building_store.prisma 참조):
+   *   - longitude: 경도 (lng)
+   *   - latitude: 위도 (lat)
+   *   - store_name: 점포명
+   *   - road_name_address: 도로명 주소
+   *   - business_category_small_code: 소분류 업종 코드 (예: I21006 치킨)
+   *
+   * @param industryCode DB 업종 코드 (예: 'I21006' 치킨, 'I201' 한식)
+   * @param bbox 선택적 바운딩 박스 (minLng, minLat, maxLng, maxLat)
+   * @param limit 최대 반환 개수 (기본 100)
+   * @returns 점포 위치 배열 [{lng, lat, name, address}]
+   */
+  async findStoresByIndustryCode({
+    industryCode,
+    bbox,
+    limit = 100,
+  }: {
+    industryCode: string;
+    bbox?: { minLng: number; minLat: number; maxLng: number; maxLat: number };
+    limit?: number;
+  }): Promise<{ lng: number; lat: number; name: string; address: string }[]> {
+    // bbox가 있으면 공간 필터 추가
+    const bboxFilter = bbox
+      ? Prisma.sql`AND longitude >= ${bbox.minLng} AND longitude <= ${bbox.maxLng} 
+                   AND latitude >= ${bbox.minLat} AND latitude <= ${bbox.maxLat}`
+      : Prisma.empty;
+
+    // 업종 코드 prefix 매칭 (I201 → I20101, I20102 등)
+    const result = await this.prisma.$queryRaw<
+      { lng: number; lat: number; name: string; address: string }[]
+    >`
+      SELECT 
+        longitude as lng,
+        latitude as lat,
+        store_name as name,
+        road_name_address as address
+      FROM seoul_commercial_store_info
+      WHERE business_category_small_code LIKE ${industryCode + '%'}
+      ${bboxFilter}
+      LIMIT ${limit}
+    `;
+
+    return result;
+  }
 }
