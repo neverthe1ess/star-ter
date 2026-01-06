@@ -62,9 +62,10 @@ export default function AnalysisMap({
   // 업종별 매장 마커 렌더링 (치킨, 카페 등)
   useStoreMarkers(map, storeMarkers, onStoreMarkerClick);
   const {
+    center,       // 지도 중심 좌표 (center 상태값)
     zoom,
     setZoom,
-    setCenter,
+    setCenter,    // center 상태를 업데이트하는 함수
     clearMarkers,
     isMoving,
     selectedArea,
