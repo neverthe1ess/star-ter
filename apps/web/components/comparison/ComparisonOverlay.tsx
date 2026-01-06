@@ -67,18 +67,29 @@ export default function ComparisonOverlay({
 
   if (!isVisible) return null;
 
+  // /analysis 페이지에서는 배경 흐림 효과 적용
+  const isAnalysisPage = pathname === '/analysis';
+
   return (
     <div 
       className={`fixed inset-0 z-50 flex items-center justify-center animate-fade-in p-4 overflow-visible ${
         isResizing ? '' : 'transition-all duration-300 ease-in-out'
-      }`}
+      } ${isAnalysisPage ? 'bg-black/40 backdrop-blur-sm' : ''}`}
       style={{ paddingRight: hasSidebar && isOpen ? `${width + 32}px` : '16px' }} 
+      onClick={isAnalysisPage ? onClose : undefined}
     >
       
-      <div className="relative flex flex-row gap-6 items-start justify-center flex-wrap">
+      <div 
+        className="relative flex flex-row gap-6 items-start justify-center flex-wrap"
+        onClick={(e) => e.stopPropagation()}
+      >
         <button 
           onClick={onClose}
-          className="absolute -top-3 -right-3 sm:-right-10 sm:-top-6 text-white bg-blue-500/50 hover:bg-blue-500 rounded-full p-2 shadow-lg transition-transform transform hover:scale-110 z-[60]"
+          className={`absolute z-[60] rounded-full p-2 shadow-lg transition-transform transform hover:scale-110 ${
+            isAnalysisPage 
+              ? '-top-4 -right-4 text-gray-500 bg-white hover:bg-gray-100 border border-gray-200' 
+              : '-top-3 -right-3 sm:-right-10 sm:-top-6 text-white bg-blue-500/50 hover:bg-blue-500'
+          }`}
           title="닫기"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -105,6 +116,7 @@ export default function ComparisonOverlay({
           isStoreExpanded={isStoreExpanded}
           onStoreExpand={setIsStoreExpanded}
           regionCode={dataA.regionCode}
+          variant={isAnalysisPage ? 'analysis' : 'map'}
         />
         <AnalysisCard
           title={dataB.title}
@@ -124,6 +136,7 @@ export default function ComparisonOverlay({
           isStoreExpanded={isStoreExpanded}
           onStoreExpand={setIsStoreExpanded}
           regionCode={dataB.regionCode}
+          variant={isAnalysisPage ? 'analysis' : 'map'}
         />
       </div>
     </div>
