@@ -51,10 +51,7 @@ export default function AppHeader({ className = '' }: AppHeaderProps) {
             <Home className="h-4 w-4" /> 홈
           </Link>
           <Link href="#" className="flex items-center gap-1 hover:text-gray-900">
-            <PieChart className="h-4 w-4" /> 상권분석
-          </Link>
-          <Link href="#" className="flex items-center gap-1 hover:text-gray-900">
-            <MessageSquare className="h-4 w-4" /> 커뮤니티
+            <PieChart className="h-4 w-4" /> AI 상권분석
           </Link>
           <button
             onClick={handleRealEstateClick}

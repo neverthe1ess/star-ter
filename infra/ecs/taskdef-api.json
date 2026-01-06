@@ -29,6 +29,22 @@
         {
           "name": "OPENAI_API_KEY",
           "valueFrom": "${AWS_ARN_OPENAI_API_KEY}"
+        },
+        {
+          "name": "AWS_ACCESS_KEY_ID",
+          "valueFrom": "${AWS_ARN_AWS_ACCESS_KEY_ID}"
+        },
+        {
+          "name": "AWS_SECRET_ACCESS_KEY",
+          "valueFrom": "${AWS_ARN_AWS_SECRET_ACCESS_KEY}"
+        },
+        {
+          "name": "AWS_REGION",
+          "valueFrom": "${AWS_ARN_AWS_REGION}"
+        },
+        {
+          "name": "AWS_S3_BUCKET",
+          "valueFrom": "${AWS_ARN_AWS_S3_BUCKET}"
         }
       ],
       "essential": true,
