@@ -420,6 +420,10 @@ export class ReportService {
               : '데이터 부족',
         },
       ],
+      weeklyFlow: ftDays.map((d) => ({
+        day: d.name,
+        value: d.value,
+      })),
       competitionAnalysis: [
         {
           category: '동종 업종 밀집',
