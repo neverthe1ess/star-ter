@@ -3,9 +3,10 @@
 import React from 'react';
 import CategoryTabs from './CategoryTabs';
 import AnalysisHeader from './AnalysisHeader';
-import { BarChart3, Users, MapPin, Sparkles } from 'lucide-react';
+import { BarChart3, Users, MapPin } from 'lucide-react';
 import TimePopulationChart from './TimePopulationChart';
 import RevenueStructure from './RevenueStructure';
+import StartupCostAnalysis from './StartupCostAnalysis';
 
 import { useMapStore } from '../../stores/useMapStore';
 import { SummaryReportResponse } from '../../types/api-responses';
@@ -164,37 +165,9 @@ export default function InfoSection() {
                     </div>
                   )}
 
-                {(activeTab === 'cost' || activeTab === 'risk') &&
-                  data.conclusion && (
-                    <div className="animate-in zoom-in-95 duration-300 space-y-4">
-                      <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm space-y-4">
-                        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                          <Sparkles size={18} className="text-amber-600" />
-                          최종 전략 제언
-                        </h3>
-                        <div className="space-y-3">
-                          {data.conclusion.map((item, idx) => (
-                            <div
-                              key={idx}
-                              className="flex gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors group"
-                            >
-                              <div className="w-8 h-8 shrink-0 flex items-center justify-center bg-amber-100 text-amber-700 rounded-lg font-bold text-xs group-hover:scale-110 transition-transform">
-                                {idx + 1}
-                              </div>
-                              <div>
-                                <p className="text-xs text-amber-600 font-bold mb-0.5">
-                                  {item.category}
-                                </p>
-                                <p className="text-sm text-gray-700 font-medium leading-relaxed">
-                                  {item.content}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                {activeTab === 'cost' && data.revenueAnalysis && (
+                  <StartupCostAnalysis data={data} />
+                )}
               </div>
             </div>
           ) : (

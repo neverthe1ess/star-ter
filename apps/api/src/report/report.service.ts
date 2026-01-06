@@ -40,7 +40,7 @@ export class ReportService {
         seenCodes.add(item.svc_induty_cd);
         return true;
       })
-      .slice(0, 3)
+      .slice(0, 10)
       .map((item, idx) => ({
         rank: idx + 1,
         industryCode: item.svc_induty_cd,

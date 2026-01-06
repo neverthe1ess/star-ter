@@ -34,7 +34,7 @@ export default function RevenueStructure({
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            {data.topIndustries.slice(0, 2).map((item) => {
+            {data.topIndustries.map((item) => {
               const isActive = selectedIndustry?.code === item.industryCode;
               // 금액 포맷: 1억 이상이면 억 단위, 아니면 만원 단위
               const salesDisplay = item.salesAmount >= 100000000
