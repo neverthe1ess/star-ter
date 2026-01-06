@@ -19,7 +19,7 @@ export class ReportService {
       area,
       industry,
       income,
-      topIndustries,
+      topIndustriesRaw,
       areaDetails,
     ] = await Promise.all([
       this.repository.getLatestSales(regionCode, industryCode),
@@ -28,9 +28,25 @@ export class ReportService {
       this.repository.getAreaName(regionCode),
       this.repository.getIndustryName(industryCode),
       this.repository.getLatestIncome(regionCode),
-      this.repository.getTopIndustriesInArea(regionCode),
+      this.repository.getTopIndustriesBySales(regionCode),
       this.repository.getAreaDetails(regionCode),
     ]);
+
+    // 매출 TOP 업종 가공 (중복 업종 제거)
+    const seenCodes = new Set<string>();
+    const topIndustries = topIndustriesRaw
+      .filter((item) => {
+        if (seenCodes.has(item.svc_induty_cd)) return false;
+        seenCodes.add(item.svc_induty_cd);
+        return true;
+      })
+      .slice(0, 3)
+      .map((item, idx) => ({
+        rank: idx + 1,
+        industryCode: item.svc_induty_cd,
+        industryName: item.svc_induty_cd_nm,
+        salesAmount: Number(item.thsmon_selng_amt),
+      }));
 
     // 지역 또는 산업 정보가 완전히 없는 경우에만 에러를 던지고,
     // 최소한의 정보(fallbackName 등)가 있으면 분석을 최대한 진행합니다.
@@ -202,9 +218,9 @@ export class ReportService {
     // 8) 경쟁/상권 구조
     const avgIncome = income?.mt_avrg_income_amt || 0;
     const linkedIndustries = topIndustries
-      .filter((i) => i.svc_induty_cd_nm !== industryName)
+      .filter((i) => i.industryName !== industryName)
       .slice(0, 3)
-      .map((i) => i.svc_induty_cd_nm)
+      .map((i) => i.industryName)
       .join(', ');
 
     // 4) 연령대 분포 계산 및 보정 (합계 100% 보장)
@@ -473,7 +489,11 @@ export class ReportService {
     };
 
     const result: SummaryReportResponse = {
-      ...(baseResult as Omit<SummaryReportResponse, 'revenueAnalysis'>),
+      ...(baseResult as Omit<
+        SummaryReportResponse,
+        'revenueAnalysis' | 'topIndustries'
+      >),
+      topIndustries,
       revenueAnalysis: {
         monthlyTotal: Math.floor(avgRevenue),
         avgTransactionPrice:

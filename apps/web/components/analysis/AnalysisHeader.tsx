@@ -16,9 +16,17 @@ interface AnalysisHeaderProps {
   meta?: {
     radius: number;
   };
+  currentIndustry?: {
+    code: string;
+    name: string;
+  };
 }
 
-export default function AnalysisHeader({ locationInfo, meta }: AnalysisHeaderProps) {
+export default function AnalysisHeader({ 
+  locationInfo, 
+  meta, 
+  currentIndustry
+}: AnalysisHeaderProps) {
   const { selectedArea, hasHydrated } = useMapStore();
   const { openReport } = useReportStore();
   
@@ -80,7 +88,7 @@ export default function AnalysisHeader({ locationInfo, meta }: AnalysisHeaderPro
         </div>
       </div>
 
-      {/* 우측: 액션 버튼들 */}
+      {/* 우측: 보고서 버튼 */}
       <div className="flex items-center gap-4">
         <button 
           onClick={() => {
@@ -88,8 +96,8 @@ export default function AnalysisHeader({ locationInfo, meta }: AnalysisHeaderPro
               openReport({
                 regionCode: selectedArea.code,
                 regionName: selectedArea.name,
-                industryCode: 'CS100001',
-                industryName: '한식 음식점',
+                industryCode: currentIndustry?.code || 'CS100001',
+                industryName: currentIndustry?.name || '한식음식점',
               });
             }
           }}
