@@ -10,6 +10,7 @@ import { useMapStore } from '../../stores/useMapStore';
 import { useSeoulBoundary } from '../../hooks/useSeoulBoundary';
 import { useRealEstateMarkers } from '../../hooks/useRealEstateMarkers';
 import { RealEstateItem } from '../../types/map-store-types';
+import polylabel from '@mapbox/polylabel';
 
 initProj4();
 
@@ -96,6 +97,16 @@ export default function AnalysisMap({
         rings = polygonData as number[][][];
       }
 
+      const [lng, lat] = polylabel(rings, 1.0);
+      const centerPoint = convertCoord(lng, lat);
+
+      const position = new window.kakao.maps.LatLng(
+        centerPoint.getLat(),
+        centerPoint.getLng(),
+      );
+      map.setCenter(position);
+      map.setLevel(zoom);
+
       rings.forEach((ring) => {
         const path: KakaoLatLng[] = ring.map((c: number[]) =>
           convertCoord(c[0], c[1]),
@@ -106,7 +117,7 @@ export default function AnalysisMap({
           strokeWeight: 3,
           strokeColor: '#3B82F6',
           strokeOpacity: 1,
-          fillColor: '#3B82F6',
+          fillColor: '#ffffff',
           fillOpacity: 0.3,
         });
 
@@ -116,45 +127,7 @@ export default function AnalysisMap({
     } catch (error) {
       console.error('Failed to draw polygon:', error);
     }
-  }, [map, selectedArea]);
-
-  useEffect(() => {
-    if (!map || !center) return;
-
-    markersRef.current.forEach((m) => m.setMap(null));
-    markersRef.current = [];
-
-    markers.forEach((data) => {
-      const position = new window.kakao.maps.LatLng(
-        data.coords.lat,
-        data.coords.lng,
-      );
-
-      if (data.style === 'pulse') {
-        const content = document.createElement('div');
-        content.className = 'custom-map-marker';
-        content.innerHTML =
-          '<div class="marker-pin"></div><div class="marker-pulse"></div>';
-
-        const overlay = new window.kakao.maps.CustomOverlay({
-          position,
-          content,
-          map,
-          yAnchor: 0.5,
-          zIndex: 3,
-        });
-        markersRef.current.push(overlay as unknown as KakaoMarker);
-      } else {
-        const marker = new window.kakao.maps.Marker({ position, map });
-        markersRef.current.push(marker);
-      }
-    });
-
-    map.setCenter(new window.kakao.maps.LatLng(center.lat, center.lng));
-    if (zoom > 0) {
-      map.setLevel(zoom);
-    }
-  }, [center, zoom, markers, map]);
+  }, [map, selectedArea, zoom]);
 
   usePopulationLayer(
     map,
