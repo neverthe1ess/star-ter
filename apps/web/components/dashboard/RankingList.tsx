@@ -167,7 +167,7 @@ export default function RankingList({
   return (
     <div className="flex flex-col bg-white h-full">
       {/* List Header */}
-      <div className="grid grid-cols-11 gap-4 border-b border-gray-100 px-6 py-3 text-xs font-semibold text-gray-500 bg-gray-50/80 rounded-t-xl">
+      <div className="grid grid-cols-11 gap-4 border-b border-gray-100 px-6 py-3 text-base font-semibold text-gray-500 bg-gray-50/80 rounded-t-xl">
         <div className="col-span-4 pl-12">순위 / 상권명</div>
         <div className="col-span-3 text-right">{getMetricLabel()}</div>
         <div className="col-span-2 text-right">{getFluctuationLabel()}</div>
@@ -221,7 +221,7 @@ export default function RankingList({
                 onClick={() =>
                   setVisibleCount((prev) => Math.min(prev + 10, items.length))
                 }
-                className="w-full py-3 mt-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-all"
+                className="w-full py-3 mt-2 text-lg font-medium text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-all"
               >
                 더 보기 ({Math.min(10, items.length - visibleCount)}개 더)
               </button>
@@ -229,7 +229,7 @@ export default function RankingList({
           </>
         ) : (
           <div className="flex flex-col items-center justify-center py-10 text-center">
-            <p className="text-gray-500 text-sm font-medium">
+            <p className="text-gray-500 text-lg font-medium">
               데이터가 없습니다.
             </p>
           </div>
