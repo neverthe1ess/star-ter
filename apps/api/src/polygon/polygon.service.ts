@@ -417,7 +417,9 @@ export class PolygonService {
   }
 
   // 행정동 코드로 단일 폴리곤 조회
-  async getDongPolygonByCode(code: string): Promise<AdminPolygonResponse | null> {
+  async getDongPolygonByCode(
+    code: string,
+  ): Promise<AdminPolygonResponse | null> {
     try {
       const result = await this.prisma.adminAreaDong.findFirst({
         where: { adstrd_cd: code },
