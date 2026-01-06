@@ -165,7 +165,7 @@ export default function AiInputSection() {
         <div className="flex flex-col items-center gap-2 text-center">
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Sparkles className="h-6 w-6 text-blue-600 fill-blue-100" />
-            <span>어떤 상관을 찾아드릴까요?</span>
+            <span>어떤 상권을 찾아드릴까요?</span>
           </h1>
           <p className="text-gray-500 text-sm">
             찾고싶은 상권을 질문하세요.
