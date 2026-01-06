@@ -25,7 +25,7 @@ export default function WeeklyPopulationChart({
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-xs transition-all hover:shadow-sm">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-[14px] font-bold text-gray-800 flex items-center gap-2">
+        <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
           <span className="w-1.5 h-1.5 bg-rose-400 rounded-full"></span>
           요일별 방문 비중 상세
         </h3>
@@ -50,7 +50,7 @@ export default function WeeklyPopulationChart({
             >
               <div className="w-full relative flex items-end justify-center flex-1">
                 {/* 데이터 레이블 (hover 시 표시) */}
-                <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-bold text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded pointer-events-none whitespace-nowrap z-10">
+                <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded pointer-events-none whitespace-nowrap z-10">
                   {d.value.toLocaleString()}명
                 </div>
 
@@ -63,7 +63,7 @@ export default function WeeklyPopulationChart({
                 />
               </div>
               <span
-                className={`text-[11px] font-bold ${isWeekend ? 'text-red-500' : 'text-gray-500'}`}
+                className={`text-xs font-bold ${isWeekend ? 'text-red-500' : 'text-gray-500'}`}
               >
                 {d.day}
               </span>

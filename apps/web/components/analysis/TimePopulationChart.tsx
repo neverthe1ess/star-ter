@@ -104,11 +104,11 @@ export default function TimePopulationChart({
               <div className={`p-1.5 ${metric.bgColor} rounded-lg`}>
                 {metric.icon}
               </div>
-              <span className="text-[11px] font-bold text-gray-500 uppercase tracking-tight">
+              <span className="text-sm font-bold text-gray-500 uppercase tracking-tight">
                 {metric.label}
               </span>
             </div>
-            <p className="text-[16px] font-extrabold text-gray-900 tracking-tight">
+            <p className="text-xl font-extrabold text-gray-900 tracking-tight">
               {metric.value}
             </p>
           </div>
@@ -118,14 +118,14 @@ export default function TimePopulationChart({
       {/* 3. 차트 영역 */}
       <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-xs transition-all hover:shadow-sm">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-[14px] font-bold text-gray-800 flex items-center gap-2">
+          <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
             <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
             시간대별 방문 비중 상세
           </h3>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
-              <span className="text-[10px] font-bold text-gray-500">
+              <span className="text-xs font-bold text-gray-500">
                 방문 비중(%)
               </span>
             </div>
@@ -133,7 +133,7 @@ export default function TimePopulationChart({
         </div>
 
         {!hasData ? (
-          <div className="flex items-center justify-center h-48 text-gray-300 text-[13px] font-medium border-2 border-dashed border-gray-50 rounded-xl">
+          <div className="flex items-center justify-center h-48 text-gray-300 text-sm font-medium border-2 border-dashed border-gray-50 rounded-xl">
             데이터 수집 중입니다.
           </div>
         ) : (
@@ -165,7 +165,7 @@ export default function TimePopulationChart({
                     y={yScale(tick)}
                     textAnchor="end"
                     alignmentBaseline="middle"
-                    className="fill-gray-400 text-[10px] font-bold"
+                    className="fill-gray-400 text-xs font-bold"
                   >
                     {tick.toFixed(0)}%
                   </text>
@@ -179,7 +179,7 @@ export default function TimePopulationChart({
                   x={xScale(i)}
                   y={chartHeight - 5}
                   textAnchor="middle"
-                  className="fill-gray-400 text-[10px] font-bold"
+                  className="fill-gray-400 text-xs font-bold"
                 >
                   {d.timeRange}
                 </text>
