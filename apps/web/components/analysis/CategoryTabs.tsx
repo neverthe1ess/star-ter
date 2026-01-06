@@ -44,7 +44,7 @@ export default function CategoryTabs({
               key={tab.id}
               onClick={() => onTabChange?.(tab.id)}
               className={`
-                flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-bold transition-all whitespace-nowrap active:scale-95
+                flex items-center gap-1.5 px-3 py-1.5 rounded-full text-base font-bold transition-all whitespace-nowrap active:scale-95
                 ${
                   isActive
                     ? 'bg-blue-600 text-white shadow-md shadow-blue-100 border border-blue-600'
@@ -63,7 +63,7 @@ export default function CategoryTabs({
         {/* 상권 비교 버튼 */}
         <button
           onClick={() => setIsComparisonModalOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-bold transition-all whitespace-nowrap active:scale-95 bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 hover:text-emerald-700 ml-auto"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-base font-bold transition-all whitespace-nowrap active:scale-95 bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 hover:text-emerald-700 ml-auto"
         >
           <GitCompare size={14} />
           <span>상권 비교</span>
