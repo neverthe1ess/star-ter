@@ -83,7 +83,7 @@ export class AnalysisMapper {
       },
       store: {
         total: (st.stor_co as number) || 0,
-        categories: storeCategories.slice(0, 30),
+        categories: storeCategories,
         openingRate: this.calculateRate(
           st.opbiz_stor_co as number,
           st.stor_co as number,

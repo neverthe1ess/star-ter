@@ -104,7 +104,7 @@ export default function AiInputSection() {
 
     const coords = result
       ? { lat: result.lat, lng: result.lng }
-      : { lat: 37.5665, lng: 126.9780 };
+      : { lat: 37.5665, lng: 126.978 };
 
     let polygonData: number[][][][] | number[][][] | number[][] | undefined;
     if (API_BASE_URL && item.area_cd) {
@@ -165,18 +165,17 @@ export default function AiInputSection() {
         <div className="flex flex-col items-center gap-2 text-center">
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Sparkles className="h-6 w-6 text-blue-600 fill-blue-100" />
-            <span>무엇을 도와드릴까요?</span>
+            <span>어떤 상관을 찾아드릴까요?</span>
           </h1>
           <p className="text-gray-500 text-sm">
-            상권 분석, 창업 추천, 매출 예측 등 궁금한 점을 자연스럽게
-            물어보세요.
+            찾고싶은 상권을 질문하세요.
           </p>
         </div>
 
         {/* Large Chat Input */}
         <div className="w-full relative group">
           <div
-            className={`absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl blur-lg transition-opacity duration-500 ${
+            className={`absolute inset-0 bg-linear-to-r from-blue-500/20 to-purple-500/20 rounded-2xl blur-lg transition-opacity duration-500 ${
               isLoading
                 ? 'opacity-100 animate-pulse blur-2xl scale-105 -inset-2 from-blue-500/45 to-purple-500/40'
                 : 'opacity-0 group-hover:opacity-100'
@@ -190,7 +189,7 @@ export default function AiInputSection() {
             }`}
           >
             <textarea
-              placeholder="예: 강남역에서 30대 여성이 좋아하는 카페 창업하려면?"
+              placeholder="예: 예쁜 카페 차리기 좋은 곳"
               rows={1}
               value={query}
               className="w-full bg-transparent px-6 py-4 pr-14 text-base placeholder:text-gray-400 focus:outline-none resize-none overflow-hidden min-h-[60px] "

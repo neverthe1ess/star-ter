@@ -31,6 +31,7 @@ export default function ComparisonOverlay({
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'sales' | 'store' | 'population'>('sales');
   const [isStoreExpanded, setIsStoreExpanded] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(10); // 두 카드 동기화된 업종 표시 개수
 
   // /map 페이지에서만 사이드바 패딩 적용
   const hasSidebar = pathname === '/map';
@@ -115,6 +116,8 @@ export default function ComparisonOverlay({
           onScroll={handleScroll('A')}
           isStoreExpanded={isStoreExpanded}
           onStoreExpand={setIsStoreExpanded}
+          visibleCount={visibleCount}
+          onVisibleCountChange={setVisibleCount}
           regionCode={dataA.regionCode}
           variant={isAnalysisPage ? 'analysis' : 'map'}
         />
@@ -135,6 +138,8 @@ export default function ComparisonOverlay({
           onScroll={handleScroll('B')}
           isStoreExpanded={isStoreExpanded}
           onStoreExpand={setIsStoreExpanded}
+          visibleCount={visibleCount}
+          onVisibleCountChange={setVisibleCount}
           regionCode={dataB.regionCode}
           variant={isAnalysisPage ? 'analysis' : 'map'}
         />
