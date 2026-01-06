@@ -165,7 +165,7 @@ export default function TimePopulationChart({
                     y={yScale(tick)}
                     textAnchor="end"
                     alignmentBaseline="middle"
-                    className="fill-gray-400 text-xs font-bold"
+                    className="fill-gray-400 text-[9px] font-bold"
                   >
                     {tick.toFixed(0)}%
                   </text>
@@ -179,7 +179,7 @@ export default function TimePopulationChart({
                   x={xScale(i)}
                   y={chartHeight - 5}
                   textAnchor="middle"
-                  className="fill-gray-400 text-xs font-bold"
+                  className="fill-gray-400 text-[9px] font-bold"
                 >
                   {d.timeRange}
                 </text>
