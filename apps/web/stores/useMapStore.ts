@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { MapStore, SelectedArea, InfoBarData } from '../types/map-store-types';
+import {
+  MapStore,
+  SelectedArea,
+  InfoBarData,
+  RealEstateItem,
+} from '../types/map-store-types';
 
 const ZOOM_LEVELS = {
   gu: 8,
@@ -17,11 +22,16 @@ export const useMapStore = create<MapStore>()(
       isMoving: false,
       isMapIdle: true,
       overlayMode: 'revenue',
+      viewMode: 'analysis',
       selectedIndustryCodes: null,
       markers: [],
       highlightedAreaName: null,
       selectedArea: null,
       isInfoBarOpen: false,
+      selectedRealEstateItem: null,
+      realEstateList: [],
+      hoveredRealEstateItemId: null,
+      filteredClusterCoords: null,
       hasHydrated: false,
 
       setCenter: (coords) => set({ center: coords }),
@@ -30,10 +40,18 @@ export const useMapStore = create<MapStore>()(
       setIsMoving: (moving) => set({ isMoving: moving }),
       setIsMapIdle: (idle) => set({ isMapIdle: idle }),
       setOverlayMode: (mode) => set({ overlayMode: mode }),
+      setViewMode: (mode) => set({ viewMode: mode }),
       setSelectedIndustryCodes: (codes) =>
         set({ selectedIndustryCodes: codes }),
       setHighlightedAreaName: (name) => set({ highlightedAreaName: name }),
       setHasHydrated: (state) => set({ hasHydrated: state }),
+      setSelectedRealEstateItem: (item) =>
+        set({ selectedRealEstateItem: item }),
+      setRealEstateList: (list: RealEstateItem[]) =>
+        set({ realEstateList: list }),
+      setHoveredRealEstateItemId: (id) => set({ hoveredRealEstateItemId: id }),
+      setFilteredClusterCoords: (coords) =>
+        set({ filteredClusterCoords: coords }),
       setInfoBarOpen: (isOpen) => set({ isInfoBarOpen: isOpen }),
 
       // 신규: 지역 선택 핸들러 (랜딩페이지 및 지도 클릭 대응)
@@ -61,7 +79,12 @@ export const useMapStore = create<MapStore>()(
         setTimeout(() => set({ isMoving: false }), 800);
       },
 
-      clearSelection: () => set({ selectedArea: null, isInfoBarOpen: false, highlightedAreaName: null }),
+      clearSelection: () =>
+        set({
+          selectedArea: null,
+          isInfoBarOpen: false,
+          highlightedAreaName: null,
+        }),
 
       // 기존: 좌표 기반 이동 핸들러 (호환성 유지)
       moveToLocation: (coords, location, zoom = 5) => {

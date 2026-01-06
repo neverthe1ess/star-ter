@@ -8,16 +8,49 @@ import { usePopulationLayer } from '../../hooks/usePopulationLayer';
 import { usePopulationVisual } from '../../hooks/usePopulationVisual';
 import { useMapStore } from '../../stores/useMapStore';
 import { useSeoulBoundary } from '../../hooks/useSeoulBoundary';
+import { useRealEstateMarkers } from '../../hooks/useRealEstateMarkers';
+import { RealEstateItem } from '../../types/map-store-types';
 
 initProj4();
 
-export default function AnalysisMap() {
+interface BBox {
+  minx: number;
+  miny: number;
+  maxx: number;
+  maxy: number;
+}
+
+interface AnalysisMapProps {
+  onBoundsChange?: (bbox: BBox) => void;
+  realEstateData?: RealEstateItem[];
+  onMarkerClick?: (item: RealEstateItem) => void;
+  hoveredItemId?: string | null;
+}
+
+export default function AnalysisMap({
+  onBoundsChange,
+  realEstateData = [],
+  onMarkerClick,
+  hoveredItemId,
+}: AnalysisMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<KakaoMarker[]>([]);
   const polygonsRef = useRef<KakaoPolygon[]>([]);
 
   const { map } = useKakaoMap(mapRef);
-  const { center, zoom, markers, setZoom, setCenter, clearMarkers, isMoving, selectedArea } = useMapStore();
+
+  // 부동산 마커 렌더링
+  useRealEstateMarkers(map, realEstateData, onMarkerClick, hoveredItemId);
+  const {
+    center,
+    zoom,
+    markers,
+    setZoom,
+    setCenter,
+    clearMarkers,
+    isMoving,
+    selectedArea,
+  } = useMapStore();
   const population = usePopulationVisual();
 
   useSeoulBoundary(map);
@@ -29,7 +62,8 @@ export default function AnalysisMap() {
     polygonsRef.current = [];
 
     const polygonData = selectedArea?.fullData?.polygons;
-    if (!polygonData || !Array.isArray(polygonData) || polygonData.length === 0) return;
+    if (!polygonData || !Array.isArray(polygonData) || polygonData.length === 0)
+      return;
 
     try {
       let rings: number[][][] = [];
@@ -63,8 +97,10 @@ export default function AnalysisMap() {
       }
 
       rings.forEach((ring) => {
-        const path: KakaoLatLng[] = ring.map((c: number[]) => convertCoord(c[0], c[1]));
-        
+        const path: KakaoLatLng[] = ring.map((c: number[]) =>
+          convertCoord(c[0], c[1]),
+        );
+
         const polygon = new window.kakao.maps.Polygon({
           path: path,
           strokeWeight: 3,
@@ -89,13 +125,17 @@ export default function AnalysisMap() {
     markersRef.current = [];
 
     markers.forEach((data) => {
-      const position = new window.kakao.maps.LatLng(data.coords.lat, data.coords.lng);
+      const position = new window.kakao.maps.LatLng(
+        data.coords.lat,
+        data.coords.lng,
+      );
 
       if (data.style === 'pulse') {
         const content = document.createElement('div');
         content.className = 'custom-map-marker';
-        content.innerHTML = '<div class="marker-pin"></div><div class="marker-pulse"></div>';
-        
+        content.innerHTML =
+          '<div class="marker-pin"></div><div class="marker-pulse"></div>';
+
         const overlay = new window.kakao.maps.CustomOverlay({
           position,
           content,
@@ -141,20 +181,45 @@ export default function AnalysisMap() {
 
     const onDragStart = () => clearMarkers();
 
+    // Bounds 변경 시 콜백 호출 (부동산 모드용)
+    const handleBoundsChange = () => {
+      if (!onBoundsChange) return;
+      const bounds = map.getBounds();
+      const sw = bounds.getSouthWest();
+      const ne = bounds.getNorthEast();
+      onBoundsChange({
+        minx: sw.getLng(),
+        miny: sw.getLat(),
+        maxx: ne.getLng(),
+        maxy: ne.getLat(),
+      });
+    };
+
     window.kakao.maps.event.addListener(map, 'zoom_changed', syncZoom);
     window.kakao.maps.event.addListener(map, 'center_changed', syncCenter);
     window.kakao.maps.event.addListener(map, 'dragstart', onDragStart);
+    window.kakao.maps.event.addListener(map, 'idle', handleBoundsChange);
+
+    // 초기 로드 시에도 bbox 전송
+    if (onBoundsChange) {
+      handleBoundsChange();
+    }
 
     return () => {
       window.kakao.maps.event.removeListener(map, 'zoom_changed', syncZoom);
       window.kakao.maps.event.removeListener(map, 'center_changed', syncCenter);
       window.kakao.maps.event.removeListener(map, 'dragstart', onDragStart);
+      window.kakao.maps.event.removeListener(map, 'idle', handleBoundsChange);
     };
-  }, [map, isMoving, setCenter, setZoom, clearMarkers]);
+  }, [map, isMoving, setCenter, setZoom, clearMarkers, onBoundsChange]);
 
   return (
     <div className="relative w-full h-full">
-      <div ref={mapRef} id="kakao-map-analysis" className="w-full h-full bg-gray-100" />
+      <div
+        ref={mapRef}
+        id="kakao-map-analysis"
+        className="w-full h-full bg-gray-100"
+      />
     </div>
   );
 }
