@@ -102,13 +102,7 @@ body {
   -webkit-backdrop-filter: blur(20px);
 }
 
-/* Wix-style Grid Pattern */
-.bg-grid-pattern {
-  background-size: 40px 40px;
-  background-image:
-    linear-gradient(to right, #f1f5f9 1px, transparent 1px),
-    linear-gradient(to bottom, #f1f5f9 1px, transparent 1px);
-}
+
 
 /* Hide scrollbar for cleaner look */
 .no-scrollbar::-webkit-scrollbar {

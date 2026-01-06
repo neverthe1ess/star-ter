@@ -85,14 +85,14 @@ export default function AssistantChat({ onMapAction }: AssistantChatProps) {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/ai/message?message=${encodeURIComponent(userMessage.content)}`
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'}/ai/message?message=${encodeURIComponent(userMessage.content)}`
       );
       const data = await response.json();
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.response || data.message || '응답을 처리하는 중 문제가 발생했습니다.',
+        content: data.reply || data.action || '응답을 처리하는 중 문제가 발생했습니다.',
         timestamp: new Date(),
         mapAction: data.mapAction,
       };
