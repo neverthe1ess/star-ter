@@ -5,11 +5,14 @@ import MapSection from '@/components/analysis/MapSection';
 import InfoSection from '@/components/analysis/InfoSection';
 import RealEstateInfoSection from '@/components/real-estate/RealEstateInfoSection';
 import ComparisonOverlay from '@/components/comparison/ComparisonOverlay';
+import ReportOverlay from '@/components/report-overlay/ReportOverlay';
 import { useComparisonStore } from '@/stores/useComparisonStore';
+import { useReportStore } from '@/stores/useReportStore';
 import { useMapStore } from '@/stores/useMapStore';
 
 export default function AnalysisPage() {
   const { isVisible, dataA, dataB, closeComparison } = useComparisonStore();
+  const { isOpen: isReportOpen, reportRequest, closeReport } = useReportStore();
   const { viewMode } = useMapStore();
 
   return (
@@ -30,6 +33,13 @@ export default function AnalysisPage() {
           dataB={dataB}
         />
       )}
+
+      {/* 보고서 오버레이 */}
+      <ReportOverlay
+        isVisible={isReportOpen}
+        onClose={closeReport}
+        userSelection={reportRequest}
+      />
     </div>
   );
 }

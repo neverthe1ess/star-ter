@@ -3,10 +3,12 @@
 import React from 'react';
 import { Download } from 'lucide-react';
 import { useMapStore } from '../../stores/useMapStore';
+import { useReportStore } from '../../stores/useReportStore';
 
 
 export default function AnalysisHeader() {
   const { selectedArea, hasHydrated } = useMapStore();
+  const { openReport } = useReportStore();
   
   if (!hasHydrated) return <div className="h-24 animate-pulse bg-gray-50 border-b border-gray-100" />;
   
@@ -44,7 +46,20 @@ export default function AnalysisHeader() {
 
       {/* 우측: 액션 버튼들 */}
       <div className="flex items-center gap-4">
-        <button className="group flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-xl font-semibold text-sm text-gray-700 hover:border-blue-200 hover:bg-blue-50/50 hover:text-blue-700 transition-all shadow-xs active:scale-95">
+        <button 
+          onClick={() => {
+            if (selectedArea?.code && selectedArea?.name) {
+              openReport({
+                regionCode: selectedArea.code,
+                regionName: selectedArea.name,
+                industryCode: 'CS100001',
+                industryName: '한식 음식점',
+              });
+            }
+          }}
+          disabled={!selectedArea?.code}
+          className="group flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-xl font-semibold text-sm text-gray-700 hover:border-blue-200 hover:bg-blue-50/50 hover:text-blue-700 transition-all shadow-xs active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           <Download size={18} className="text-gray-400 group-hover:text-blue-500 transition-colors" />
           <span>보고서 다운로드</span>
         </button>
