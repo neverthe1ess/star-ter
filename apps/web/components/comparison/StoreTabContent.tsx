@@ -7,11 +7,16 @@ const StoreTabContent: React.FC<StoreTabContentProps> = ({
   data, 
   initialStoreCount,
   isExpanded,
-  onExpand
+  onExpand,
+  visibleCount: externalVisibleCount,
+  onVisibleCountChange
 }) => {
   const [showStoreBars, setShowStoreBars] = useState(false);
   const [localExpanded, setLocalExpanded] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+  const [localVisibleCount, setLocalVisibleCount] = useState(10); // 현재 보이는 업종 수
+
+  const visibleCount = externalVisibleCount !== undefined ? externalVisibleCount : localVisibleCount;
 
   const isContentExpanded = isExpanded !== undefined ? isExpanded : localExpanded;
 
@@ -20,6 +25,25 @@ const StoreTabContent: React.FC<StoreTabContentProps> = ({
       onExpand(!isContentExpanded);
     } else {
       setLocalExpanded(!isContentExpanded);
+    }
+  };
+
+  // 더보기 클릭 시 20개씩 추가
+  const handleShowMore = () => {
+    const newCount = visibleCount + 20;
+    if (onVisibleCountChange) {
+      onVisibleCountChange(newCount);
+    } else {
+      setLocalVisibleCount(newCount);
+    }
+  };
+
+  // 접기 클릭 시 초기 상태로
+  const handleCollapse = () => {
+    if (onVisibleCountChange) {
+      onVisibleCountChange(10);
+    } else {
+      setLocalVisibleCount(10);
     }
   };
 
@@ -83,8 +107,10 @@ const StoreTabContent: React.FC<StoreTabContentProps> = ({
           {data && data.store.categories ? (
               (() => {
                   const totalList = data.store.categories;
-                  const showCount = isContentExpanded ? totalList.length : 10;
+                  const showCount = Math.min(visibleCount, totalList.length);
                   const visibleList = totalList.slice(0, showCount);
+                  const hasMore = showCount < totalList.length;
+                  const isCollapsed = visibleCount > 10;
                   
                   const maxCount = Math.max(...totalList.map((c) => c.count)) || 1;
                   const totalStores = data.store.total || 1;
@@ -156,13 +182,27 @@ const StoreTabContent: React.FC<StoreTabContentProps> = ({
                           );
                       })}
                       
+                      {/* 더보기/접기 버튼 영역 */}
                       {totalList.length > 10 && (
-                        <button 
-                          onClick={handleExpandToggle}
-                          className="w-full py-2 text-xs text-gray-500 font-medium hover:text-blue-600 transition-colors flex items-center justify-center gap-1 mt-2 border-t border-gray-50"
-                        >
-                          {isContentExpanded ? '접기' : '더보기'}
-                        </button>
+                        <div className="flex items-center justify-center gap-2 mt-2 pt-2 border-t border-gray-50">
+                          {hasMore && (
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); handleShowMore(); }}
+                              className="flex-1 py-2 text-xs text-gray-500 font-medium hover:text-blue-600 transition-colors flex items-center justify-center gap-1"
+                            >
+                              더보기 ({showCount}/{totalList.length})
+                            </button>
+                          )}
+                          {isCollapsed && (
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); handleCollapse(); }}
+                              className="p-2 text-gray-400 hover:text-blue-600 transition-colors rounded-full hover:bg-gray-100"
+                              title="접기"
+                            >
+                              <ChevronUp size={16} />
+                            </button>
+                          )}
+                        </div>
                       )}
                     </>
                   );
