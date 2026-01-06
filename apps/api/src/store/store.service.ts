@@ -1,9 +1,12 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { MarketRepository } from '../market/market.repository';
 import {
   GetStoreQueryDto,
   StoreLevel,
   StoreResponseDto,
+  GetStoreLocationsQueryDto,
+  StoreLocationsResponseDto,
 } from './dto/store.dto';
 
 type ModelConfig = {
@@ -49,7 +52,10 @@ export class StoreService {
     },
   };
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly marketRepository: MarketRepository,
+  ) {}
 
   async getStoreStats(query: GetStoreQueryDto): Promise<StoreResponseDto> {
     const { level, code, industryCode, quarter } = query;
@@ -105,6 +111,38 @@ export class StoreService {
         closeRate: Number(row.clsbiz_rt || 0),
         closeStoreCount: Number(row.clsbiz_stor_co || 0),
       })),
+    };
+  }
+
+  /**
+   * 업종 코드로 점포 위치 조회
+   * @param query 업종 코드 및 bbox 필터
+   * @returns 점포 위치 목록
+   */
+  async getStoreLocations(
+    query: GetStoreLocationsQueryDto,
+  ): Promise<StoreLocationsResponseDto> {
+    const { industryCode, minLng, maxLng, minLat, maxLat, limit } = query;
+
+    // bbox가 모두 있으면 사용
+    const bbox =
+      minLng !== undefined &&
+      maxLng !== undefined &&
+      minLat !== undefined &&
+      maxLat !== undefined
+        ? { minLng, maxLng, minLat, maxLat }
+        : undefined;
+
+    const stores = await this.marketRepository.findStoresByIndustryCode({
+      industryCode,
+      bbox,
+      limit: limit || 100,
+    });
+
+    return {
+      industryCode,
+      count: stores.length,
+      stores,
     };
   }
 

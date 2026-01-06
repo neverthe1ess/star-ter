@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import AnalysisMap from '@/components/analysis/AnalysisMap';
 import { useMapStore } from '@/stores/useMapStore';
 import ActionInfoBar from './ActionInfoBar';
 import type { AssistantAction, FrontendActionType, ActionPayload } from '@/types/assistant-types';
+import { StoreLocation } from '@/hooks/useStoreMarkers';
+import { convertSeoulCodeToDbCode } from '@/utils/industry-code-map';
 
 // Props 타입 (공유 타입 사용)
 interface AssistantMapSectionProps {
@@ -207,6 +209,53 @@ export default function AssistantMapSection({ action }: AssistantMapSectionProps
     ageFilter?: string;
     timeFilter?: string;
   }>({});
+  
+  // 업종 마커 표시용 상태
+  const [industryCode, setIndustryCode] = useState<string | undefined>(undefined);
+  const [storeMarkers, setStoreMarkers] = useState<StoreLocation[]>([]);
+
+  /**
+   * 업종별 매장 위치 API 호출
+   * 
+   * 💡 흐름:
+   * 1. Seoul API 코드 (예: CS100007) → DB 코드 (I21006) 변환
+   * 2. /store/locations?industryCode=I21006 호출
+   * 3. 응답 데이터를 storeMarkers 상태에 저장
+   */
+  const fetchStoreLocations = useCallback(async (seoulCode: string) => {
+    // Seoul API 코드 → DB 코드 변환
+    const dbCode = convertSeoulCodeToDbCode(seoulCode);
+    if (!dbCode) {
+      console.warn(`[AssistantMapSection] 업종 코드 변환 실패: ${seoulCode}`);
+      return;
+    }
+
+    try {
+      console.log(`[AssistantMapSection] 매장 위치 조회: ${seoulCode} → ${dbCode}`);
+      const res = await fetch(`${API_BASE_URL}/store/locations?industryCode=${dbCode}&limit=1000`);
+      
+      if (res.ok) {
+        const data = await res.json();
+        console.log(`[AssistantMapSection] ${data.count}개 매장 조회됨`);
+        setStoreMarkers(data.stores || []);
+      } else {
+        console.error('[AssistantMapSection] 매장 위치 API 오류:', res.status);
+        setStoreMarkers([]);
+      }
+    } catch (error) {
+      console.error('[AssistantMapSection] 매장 위치 조회 실패:', error);
+      setStoreMarkers([]);
+    }
+  }, []);
+
+  // 업종 코드 변경 시 매장 위치 조회
+  useEffect(() => {
+    if (industryCode) {
+      fetchStoreLocations(industryCode);
+    } else {
+      setStoreMarkers([]);
+    }
+  }, [industryCode, fetchStoreLocations]);
 
   // 액션 변경 감지 → 핸들러 실행
   useEffect(() => {
@@ -222,6 +271,11 @@ export default function AssistantMapSection({ action }: AssistantMapSectionProps
         ageFilter: action.payload.ageFilter,
         timeFilter: action.payload.timeFilter,
       });
+    }
+    
+    // openAnalysisPanel 액션일 때 업종 코드 저장 (마커 표시용)
+    if (action.type === 'openAnalysisPanel' && action.payload.industryCode) {
+      setIndustryCode(action.payload.industryCode);
     }
 
     const handler = ACTION_HANDLERS[action.type];
@@ -250,6 +304,7 @@ export default function AssistantMapSection({ action }: AssistantMapSectionProps
           <AnalysisMap 
             showPopulationLayer={showPopulationLayer}
             populationFilters={populationFilters}
+            storeMarkers={storeMarkers}
           />
         </div>
 
@@ -259,4 +314,5 @@ export default function AssistantMapSection({ action }: AssistantMapSectionProps
     </div>
   );
 }
+
 

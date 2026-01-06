@@ -7,6 +7,7 @@ import { MarketRepository } from './market.repository';
 @Module({
   controllers: [MarketController],
   providers: [MarketService, MarketRepository],
-  exports: [MarketService],
+  // MarketRepository도 export해야 다른 모듈에서 사용 가능
+  exports: [MarketService, MarketRepository],
 })
 export class MarketModule {}

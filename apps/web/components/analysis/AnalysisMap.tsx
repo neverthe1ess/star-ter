@@ -9,6 +9,7 @@ import { usePopulationVisual } from '../../hooks/usePopulationVisual';
 import { useMapStore } from '../../stores/useMapStore';
 import { useSeoulBoundary } from '../../hooks/useSeoulBoundary';
 import { useRealEstateMarkers } from '../../hooks/useRealEstateMarkers';
+import { useStoreMarkers, StoreLocation } from '../../hooks/useStoreMarkers';
 import { RealEstateItem } from '../../types/map-store-types';
 import polylabel from '@mapbox/polylabel';
 
@@ -33,6 +34,9 @@ interface AnalysisMapProps {
     ageFilter?: string;
     timeFilter?: string;
   };
+  // 업종별 매장 마커 (치킨, 카페 등)
+  storeMarkers?: StoreLocation[];
+  onStoreMarkerClick?: (store: StoreLocation) => void;
 }
 
 export default function AnalysisMap({
@@ -42,6 +46,8 @@ export default function AnalysisMap({
   hoveredItemId,
   showPopulationLayer: externalShowLayer,
   populationFilters,
+  storeMarkers = [],
+  onStoreMarkerClick,
 }: AnalysisMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<KakaoMarker[]>([]);
@@ -51,6 +57,9 @@ export default function AnalysisMap({
 
   // 부동산 마커 렌더링
   useRealEstateMarkers(map, realEstateData, onMarkerClick, hoveredItemId);
+  
+  // 업종별 매장 마커 렌더링 (치킨, 카페 등)
+  useStoreMarkers(map, storeMarkers, onStoreMarkerClick);
   const {
     center,
     zoom,

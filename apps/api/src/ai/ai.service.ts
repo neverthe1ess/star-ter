@@ -168,18 +168,30 @@ export class AiService {
 
   private async getCategories(message: string) {
     const categoryResponse = await getCategoryByMessage(message);
-    if (getText(categoryResponse) === '""') return [];
-    const categories = getText(categoryResponse)
-      .split(',')
-      .map((cat) => cat.trim());
+    const categoryText = getText(categoryResponse);
+    console.log(
+      `[DEBUG] Extracted Categories for message "${message}":`,
+      categoryText,
+    );
+
+    if (categoryText === '""') return [];
+
+    const categories = categoryText.split(',').map((cat) => cat.trim());
 
     let categoryList: BusinessCategoryVectorDto[] = [];
     for (const category of categories) {
       const categoryVector = await embedText(category);
+      // console.log(`[DEBUG] Embedding for ${category} generated.`);
+
       const categoryResults = await this.aiRepository.categorySearchByVector(
         categoryVector.data[0].embedding,
         3,
       );
+      console.log(
+        `[DEBUG] Vector Search Results for "${category}":`,
+        JSON.stringify(categoryResults, null, 2),
+      );
+
       categoryList = categoryList.concat(categoryResults);
     }
     return categoryList;
