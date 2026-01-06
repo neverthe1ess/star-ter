@@ -25,6 +25,8 @@ export default function AnalysisCard({
   regionCode, 
   isStoreExpanded,
   onStoreExpand,
+  visibleCount,
+  onVisibleCountChange,
   variant = 'map',
 }: AnalysisCardProps) {
   const [data, setData] = useState<AnalysisData | null>(null);
@@ -175,6 +177,8 @@ export default function AnalysisCard({
             initialStoreCount={initialStoreCount} 
             isExpanded={isStoreExpanded}
             onExpand={onStoreExpand}
+            visibleCount={visibleCount}
+            onVisibleCountChange={onVisibleCountChange}
           />
         )}
 

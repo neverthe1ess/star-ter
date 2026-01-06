@@ -100,6 +100,8 @@ export interface AnalysisCardProps {
   regionCode?: string;
   isStoreExpanded?: boolean;
   onStoreExpand?: (expanded: boolean) => void;
+  visibleCount?: number;
+  onVisibleCountChange?: (count: number) => void;
   variant?: 'map' | 'analysis';
 }
 
@@ -108,4 +110,6 @@ export interface StoreTabContentProps {
   initialStoreCount: string;
   isExpanded?: boolean;
   onExpand?: (expanded: boolean) => void;
+  visibleCount?: number;
+  onVisibleCountChange?: (count: number) => void;
 }
