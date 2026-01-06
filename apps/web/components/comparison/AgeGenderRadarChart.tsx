@@ -133,7 +133,7 @@ export default function AgeGenderRadarChart({
         </ResponsiveContainer>
       </div>
       <div className={`mt-1 ${colors.bg} rounded-lg py-2 px-3 text-center`}>
-        <span className="text-sm text-gray-800 tracking-tight">
+        <span className="text-base text-gray-800 tracking-tight">
           <span className={`font-bold ${colors.highlight}`}>{maxGroup.label}</span>{' '}
           비율이 가장 높아요.
         </span>
