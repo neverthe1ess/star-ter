@@ -31,6 +31,7 @@ export const useMapStore = create<MapStore>()(
       selectedRealEstateItem: null,
       realEstateList: [],
       hoveredRealEstateItemId: null,
+      filteredClusterCoords: null,
       hasHydrated: false,
 
       setCenter: (coords) => set({ center: coords }),
@@ -49,6 +50,8 @@ export const useMapStore = create<MapStore>()(
       setRealEstateList: (list: RealEstateItem[]) =>
         set({ realEstateList: list }),
       setHoveredRealEstateItemId: (id) => set({ hoveredRealEstateItemId: id }),
+      setFilteredClusterCoords: (coords) =>
+        set({ filteredClusterCoords: coords }),
       setInfoBarOpen: (isOpen) => set({ isInfoBarOpen: isOpen }),
 
       // 신규: 지역 선택 핸들러 (랜딩페이지 및 지도 클릭 대응)
