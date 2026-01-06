@@ -246,7 +246,7 @@ export class FloatingPopulationRepository {
             FROM ${cfg.table}
             WHERE stdr_yyqu_cd = '${currentQ}'
             ORDER BY amount DESC
-            LIMIT 10
+            LIMIT 100
           `;
 
       try {
@@ -284,7 +284,7 @@ export class FloatingPopulationRepository {
       const results = await (this.prisma as any)[cfg.model].findMany({
         where: { stdr_yyqu_cd: currentQ },
         orderBy: { [metricField]: 'desc' },
-        take: 10,
+        take: 100,
       });
 
       items = results.map((r: any) => ({
@@ -385,7 +385,7 @@ export class FloatingPopulationRepository {
       FROM ${cfg.table}
       WHERE stdr_yyqu_cd = (SELECT MAX(stdr_yyqu_cd) FROM ${cfg.table})
       ORDER BY mz_ratio DESC, mz_pop DESC
-      LIMIT 10
+      LIMIT 100
     `;
 
     try {
@@ -443,7 +443,7 @@ export class FloatingPopulationRepository {
       FROM ${cfg.table}
       WHERE stdr_yyqu_cd = (SELECT MAX(stdr_yyqu_cd) FROM ${cfg.table})
       ORDER BY gender_ratio DESC, gender_pop DESC
-      LIMIT 10
+      LIMIT 100
     `;
 
     try {

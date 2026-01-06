@@ -51,6 +51,7 @@ export default function RankingList({
   // Favorites State
   const [favorites, setFavorites] = React.useState<Set<string>>(new Set());
   const [hoveredItem, setHoveredItem] = useState<RankItem | null>(null);
+  const [visibleCount, setVisibleCount] = React.useState(10);
 
   const toggleFavorite = (e: React.MouseEvent, code: string) => {
     e.stopPropagation();
@@ -72,7 +73,8 @@ export default function RankingList({
     name: item.name,
     category: '상권',
     revenue: item.amount,
-    fluctuation: item.fluctuationRate ?? getFluctuationFromChangeType(item.changeType),
+    fluctuation:
+      item.fluctuationRate ?? getFluctuationFromChangeType(item.changeType),
     volume: 0,
     stores: item.count,
     isFavorite: favorites.has(item.code),
@@ -111,12 +113,11 @@ export default function RankingList({
 
   const handleItemClick = async (item: RankItem) => {
     if (adminLevel === 'gu') return;
-    
+
     onSelect(toRankingItem(item, 0));
     await handleSelect(item.name, item.code, adminLevel);
     router.push('/analysis');
   };
-
 
   // 테마별 표시 라벨
   const getMetricLabel = () => {
@@ -193,7 +194,7 @@ export default function RankingList({
           </div>
         ) : items.length > 0 ? (
           <>
-            {items.slice(0, 10).map((item, index) => (
+            {items.slice(0, visibleCount).map((item, index) => (
               <div
                 key={item.code}
                 onMouseEnter={() => {
@@ -215,6 +216,16 @@ export default function RankingList({
                 />
               </div>
             ))}
+            {visibleCount < items.length && (
+              <button
+                onClick={() =>
+                  setVisibleCount((prev) => Math.min(prev + 10, items.length))
+                }
+                className="w-full py-3 mt-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-all"
+              >
+                더 보기 ({Math.min(10, items.length - visibleCount)}개 더)
+              </button>
+            )}
           </>
         ) : (
           <div className="flex flex-col items-center justify-center py-10 text-center">
