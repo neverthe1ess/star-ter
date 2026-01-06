@@ -77,6 +77,7 @@ export interface MapStore {
   overlayMode: OverlayMode;
   viewMode: ViewMode;
   selectedIndustryCodes: string[] | null;
+  selectedIndustryName: string | null;
   markers: MapMarker[];
   highlightedAreaName: string | null;
 
@@ -104,6 +105,7 @@ export interface MapStore {
   setOverlayMode: (mode: OverlayMode) => void;
   setViewMode: (mode: ViewMode) => void;
   setSelectedIndustryCodes: (codes: string[] | null) => void;
+  setSelectedIndustryName: (name: string | null) => void;
   setHighlightedAreaName: (name: string | null) => void;
   setHasHydrated: (state: boolean) => void;
   setSelectedRealEstateItem: (item: RealEstateItem | null) => void;
