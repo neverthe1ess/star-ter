@@ -75,8 +75,6 @@ export default function RankingList({
   // Auto-select first item on load
   const [hasSelected, setHasSelected] = React.useState(false);
 
-
-
   const handleItemClick = async (item: RankItem) => {
     if (adminLevel === 'gu') return;
     // Map API item to RankingItem format for DetailPanel
@@ -86,7 +84,8 @@ export default function RankingList({
       name: item.name,
       category: '상권',
       revenue: item.amount, // This holds Population Count for Population Theme
-      fluctuation: item.fluctuationRate ?? getFluctuationFromChangeType(item.changeType),
+      fluctuation:
+        item.fluctuationRate ?? getFluctuationFromChangeType(item.changeType),
       volume: 0,
       stores: item.count,
       isFavorite: favorites.has(item.code),
@@ -102,16 +101,58 @@ export default function RankingList({
     router.push('/analysis');
   };
 
-  const metricLabel =
-    themeType === 'POPULATION' ? '유동인구 (명)' : '매출 (분기)';
+  // 테마별 표시 라벨
+  const getMetricLabel = () => {
+    switch (themeType) {
+      case 'MZ':
+        return '유동인구 (MZ)';
+      case 'GENDER':
+        return '유동인구 (성별)';
+      case 'GROWTH':
+        return '매출 (분기)';
+      case 'POPULATION':
+        return '유동인구 (명)';
+      default:
+        return '매출 (분기)';
+    }
+  };
+
+  // 테마별 금액/인구수 포맷팅
+  const formatAmount = (val: number) => {
+    if (
+      themeType === 'POPULATION' ||
+      themeType === 'MZ' ||
+      themeType === 'GENDER'
+    ) {
+      return `약 ${val.toLocaleString()}명`;
+    }
+    return `약 ${(val / 100000000).toLocaleString(undefined, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    })}억원`;
+  };
+
+  // 테마별 등락률 라벨
+  const getFluctuationLabel = () => {
+    switch (themeType) {
+      case 'MZ':
+        return 'MZ비중';
+      case 'GENDER':
+        return '성별비중';
+      case 'GROWTH':
+        return '성장률';
+      default:
+        return '등락률';
+    }
+  };
 
   return (
     <div className="flex flex-col bg-white h-full">
       {/* List Header */}
       <div className="grid grid-cols-11 gap-4 border-b border-gray-100 px-6 py-3 text-xs font-semibold text-gray-500 bg-gray-50/80 rounded-t-xl">
         <div className="col-span-4 pl-12">순위 / 상권명</div>
-        <div className="col-span-3 text-right">{metricLabel}</div>
-        <div className="col-span-2 text-right">등락률</div>
+        <div className="col-span-3 text-right">{getMetricLabel()}</div>
+        <div className="col-span-2 text-right">{getFluctuationLabel()}</div>
         <div className="col-span-2 text-right pr-2">상권 상태</div>
       </div>
 

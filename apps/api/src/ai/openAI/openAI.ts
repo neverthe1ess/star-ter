@@ -161,7 +161,7 @@ export function getRecommendCommercialAreasQuery(
             지역레벨(시/자치구/행정동/상권)에 대한 언급이 없을 경우 area_level는 commercial로 해주세요
             시점에 대한 얘기가 없을 경우 stdr_yyqu_cd는 20253으로 해주세요.
             area_cd를 select할때 테이블.area_cd 형식으로 작성해주세요.
-
+            
             출력문에는 SQL 쿼리문만 작성해주세요. 부가 설명이나 다른 텍스트는 포함하지 마세요.
             sql을 구분짓기 위한 표기도 하지마세요 오직 쿼리문만 출력하세요.
 
@@ -178,6 +178,7 @@ export function getRecommendCommercialAreasQuery(
             #최종 출력 예시
             with sales_rank as (select area_cd,
                                   area_nm,
+                                  area_level,
                                   thsmon_selng_amt
                           from v_sales
                           where svc_induty_cd = 'CS100008'
@@ -187,6 +188,7 @@ export function getRecommendCommercialAreasQuery(
                           limit 1),
             foot_traffic_rank as (select area_cd,
                                         area_nm,
+                                        area_level,
                                         tot_flpop_co
                                   from v_foot_traffic
                                   where stdr_yyqu_cd = '20253'
@@ -194,19 +196,20 @@ export function getRecommendCommercialAreasQuery(
                                   order by tot_flpop_co desc),
             residential_population as (select area_cd,
                                               area_nm,
+                                              area_level,
                                               agrde_20_flpop_co + agrde_30_flpop_co as young_population
                                       from v_foot_traffic
                                       where stdr_yyqu_cd = '20253'
                                         and area_level = 'commercial'
                                       order by young_population desc
                                       limit 1)
-            select area_cd, area_nm, '해당 업종 매출 상위 지역' as recommend_title, '분식집이 잘나가는 곳!' as recommend_reason
+            select area_cd, area_level, area_nm, '해당 업종 매출 상위 지역' as recommend_title, '분식집이 잘나가는 곳!' as recommend_reason
             from sales_rank
             union all
-            select area_cd, area_nm, '유동인구 상위 지역' as recommend_title, '사람들이 많이 모이는 활기찬 상권!' as recommend_reason
+            select area_cd, area_level, area_nm, '유동인구 상위 지역' as recommend_title, '사람들이 많이 모이는 활기찬 상권!' as recommend_reason
             from foot_traffic_rank
             union all
-            select area_cd, area_nm, '청년 유동인구 상위 지역' as recommend_title, '젊은이들이 즐겨 찾는 핫플레이스!' as recommend_reason
+            select area_cd, area_level, area_nm, '청년 유동인구 상위 지역' as recommend_title, '젊은이들이 즐겨 찾는 핫플레이스!' as recommend_reason
             from residential_population
             `,
   });

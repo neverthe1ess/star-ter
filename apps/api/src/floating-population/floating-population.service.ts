@@ -39,4 +39,19 @@ export class FloatingPopulationService {
     const items = await this.repository.findRanking(query);
     return { items };
   }
+
+  async getMZRanking(
+    level: 'gu' | 'dong' | 'commercial' = 'commercial',
+  ): Promise<PopulationRankingResponseDto> {
+    const items = await this.repository.findMZRanking(level);
+    return { items };
+  }
+
+  async getGenderRanking(
+    level: 'gu' | 'dong' | 'commercial' = 'commercial',
+    gender: 'male' | 'female' = 'female',
+  ): Promise<PopulationRankingResponseDto> {
+    const items = await this.repository.findGenderRanking(level, gender);
+    return { items };
+  }
 }

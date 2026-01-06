@@ -371,4 +371,82 @@ export class PolygonService {
 
     return result as unknown as AdminPolygonResponse;
   }
+
+  // 상권 코드로 단일 폴리곤 조회
+  async getCommercialPolygonByCode(
+    code: string,
+  ): Promise<CommercialPolygonResponse | null> {
+    try {
+      const results = await this.prisma.$queryRaw<RawCommercialArea[]>`
+        SELECT 
+          trdar_cd,
+          trdar_se_1, 
+          trdar_cd_n, 
+          signgu_cd_, 
+          adstrd_cd_, 
+          ST_AsGeoJSON(ST_Simplify(geom,0.0001)) as geom 
+        FROM seoul_commercial_area_grid
+        WHERE trdar_cd = ${code}
+        LIMIT 1
+      `;
+
+      if (results.length === 0) return null;
+
+      const row = results[0];
+      return {
+        properties: {
+          commercialType: row.trdar_se_1,
+          commercialName: row.trdar_cd_n,
+          guCode: row.signgu_cd_,
+          dongCode: row.adstrd_cd_,
+        },
+        code: row.trdar_cd,
+        revenue: 0,
+        residentPopulation: 0,
+        openingStores: 0,
+        closingStores: 0,
+        polygons: JSON.parse(row.geom) as {
+          type: string;
+          coordinates: number[][][][] | number[][][] | number[][];
+        },
+      } as CommercialPolygonResponse;
+    } catch (error) {
+      console.error('Failed to fetch commercial polygon by code:', error);
+      return null;
+    }
+  }
+
+  // 행정동 코드로 단일 폴리곤 조회
+  async getDongPolygonByCode(
+    code: string,
+  ): Promise<AdminPolygonResponse | null> {
+    try {
+      const result = await this.prisma.adminAreaDong.findFirst({
+        where: { adstrd_cd: code },
+      });
+
+      if (!result) return null;
+
+      return result as unknown as AdminPolygonResponse;
+    } catch (error) {
+      console.error('Failed to fetch dong polygon by code:', error);
+      return null;
+    }
+  }
+
+  // 자치구 코드로 단일 폴리곤 조회
+  async getGuPolygonByCode(code: string): Promise<AdminPolygonResponse | null> {
+    try {
+      const result = await this.prisma.adminAreaGu.findFirst({
+        where: { signgu_cd: code },
+      });
+
+      if (!result) return null;
+
+      return result as unknown as AdminPolygonResponse;
+    } catch (error) {
+      console.error('Failed to fetch gu polygon by code:', error);
+      return null;
+    }
+  }
 }

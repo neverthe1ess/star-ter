@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Search, Home, PieChart, MessageSquare, Building2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 import RankingList from './RankingList';
 import DetailPanel from './DetailPanel';
 import AiInputSection from './AiInputSection';
-import FilterSelect from '@/components/ui/FilterSelect';
+import TabChips from '@/components/ui/TabChips';
 import { RankingItem } from './mock-data';
 import { useAuth } from '@/hooks/useAuth';
 import { useModalStore } from '@/stores/useModalStore';
@@ -19,18 +19,45 @@ export default function DashboardLayout() {
   const { isLoggedIn } = useAuth();
   const { openModal } = useModalStore();
   const [selectedItem, setSelectedItem] = useState<RankingItem | null>(null);
-  const [activeTab, setActiveTab] = useState<ThemeType>('INDUSTRY');
-  const [themeValue, setThemeValue] = useState<ThemeValue>('CS100001');
+  const [activeTab, setActiveTab] = useState<ThemeType>('MZ');
+  const [selectedCategory, setSelectedCategory] = useState<string>('I2'); // 대분류
+  const [themeValue, setThemeValue] = useState<ThemeValue>('CS100001'); // 소분류
   const [ageGroup, setAgeGroup] = useState<string>('total');
   const [timeSlot, setTimeSlot] = useState<string>('total');
   const [adminLevel, setAdminLevel] = useState<AdminLevel>('commercial');
-  const [detailWidth, setDetailWidth] = useState(35); // 퍼센트 (기본값: 35%)
+  const [detailWidth, setDetailWidth] = useState(35);
   const [isResizing, setIsResizing] = useState(false);
 
-  // Clear selection when dashboard is fresh (e.g., back from analysis)
+  // Clear selection when dashboard is fresh
   React.useEffect(() => {
     setSelectedItem(null);
   }, []);
+
+  // 대분류 옵션 (INDUSTRY_THEMES)
+  const CATEGORY_OPTIONS = IndustryData.map((c) => ({
+    label: c.name,
+    value: c.code,
+  }));
+
+  // 선택된 대분류의 소분류 옵션
+  const SUB_CATEGORY_OPTIONS = useMemo(() => {
+    const category = IndustryData.find((c) => c.code === selectedCategory);
+    return (
+      category?.children?.map((child) => ({
+        label: child.name,
+        value: child.code,
+      })) || []
+    );
+  }, [selectedCategory]);
+
+  // 대분류 변경 시 첫 번째 소분류로 자동 선택
+  const handleCategoryChange = (categoryCode: string) => {
+    setSelectedCategory(categoryCode);
+    const category = IndustryData.find((c) => c.code === categoryCode);
+    if (category?.children?.length) {
+      setThemeValue(category.children[0].code as ThemeValue);
+    }
+  };
 
   const AGE_OPTIONS = [
     { label: '전체 연령', value: 'total' },
@@ -43,13 +70,13 @@ export default function DashboardLayout() {
   ];
 
   const TIME_OPTIONS = [
-    { label: '전체 시간', value: 'total' },
-    { label: '00시 ~ 06시', value: '00' },
-    { label: '06시 ~ 11시', value: '06' },
-    { label: '11시 ~ 14시', value: '11' },
-    { label: '14시 ~ 17시', value: '14' },
-    { label: '17시 ~ 21시', value: '17' },
-    { label: '21시 ~ 24시', value: '21' },
+    { label: '전체', value: 'total' },
+    { label: '새벽', value: '00' },
+    { label: '오전', value: '06' },
+    { label: '점심', value: '11' },
+    { label: '오후', value: '14' },
+    { label: '저녁', value: '17' },
+    { label: '야간', value: '21' },
   ];
 
   const INDUSTRY_THEMES: { label: string; value: ThemeValue }[] =
@@ -59,6 +86,7 @@ export default function DashboardLayout() {
     }));
 
   const POPULATION_LEVEL_OPTIONS: { label: string; value: AdminLevel }[] = [
+    { label: '상권', value: 'commercial' },
     { label: '행정동', value: 'dong' },
     { label: '자치구', value: 'gu' },
   ];
@@ -72,12 +100,17 @@ export default function DashboardLayout() {
   const handleTabChange = (tab: ThemeType) => {
     setActiveTab(tab);
     if (tab === 'POPULATION') {
-      setThemeValue('MZ');
       if (adminLevel === 'commercial') {
         setAdminLevel('dong');
       }
-    } else {
+    } else if (tab === 'GENDER') {
+      setThemeValue('female');
+      setAdminLevel('commercial');
+    } else if (tab === 'INDUSTRY') {
       setThemeValue(INDUSTRY_THEMES[0].value);
+      setAdminLevel('commercial');
+    } else {
+      // MZ, GROWTH - no sub-filter needed
       setAdminLevel('commercial');
     }
   };
@@ -102,7 +135,7 @@ export default function DashboardLayout() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-white">
+    <div className="flex flex-col bg-white">
       {/* 1. Global Header */}
       <header className="flex h-16 items-center justify-between border-b border-gray-200 px-6">
         <div className="flex items-center gap-8">
@@ -143,9 +176,21 @@ export default function DashboardLayout() {
               className="w-full rounded-full bg-gray-100 py-2 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-blue-100"
             />
           </div>
-          <button className="flex h-9 w-24 items-center justify-center rounded bg-blue-600 text-sm font-bold text-white hover:bg-blue-700">
-            로그인
-          </button>
+          {isLoggedIn ? (
+            <button
+              onClick={() => router.push('/user')}
+              className="flex h-9 w-24 items-center justify-center rounded bg-gray-600 text-sm font-bold text-white hover:bg-gray-700"
+            >
+              마이페이지
+            </button>
+          ) : (
+            <button
+              onClick={() => router.push('/login')}
+              className="flex h-9 w-24 items-center justify-center rounded bg-blue-600 text-sm font-bold text-white hover:bg-blue-700"
+            >
+              로그인
+            </button>
+          )}
         </div>
       </header>
 
@@ -160,7 +205,8 @@ export default function DashboardLayout() {
           e.preventDefault();
           // 퍼센트로 변환: (전체 너비 - 마우스 X) / 전체 너비 * 100
           const containerWidth = document.body.clientWidth;
-          const newWidthPercent = ((containerWidth - e.clientX) / containerWidth) * 100;
+          const newWidthPercent =
+            ((containerWidth - e.clientX) / containerWidth) * 100;
           // 최소 20%, 최대 60%로 제한
           if (newWidthPercent > 20 && newWidthPercent < 60) {
             setDetailWidth(newWidthPercent);
@@ -169,66 +215,100 @@ export default function DashboardLayout() {
         onMouseUp={() => setIsResizing(false)}
         onMouseLeave={() => setIsResizing(false)}
       >
-        <section className="flex-1 flex flex-col min-w-[400px] border-r border-gray-200 h-full">
-          {/* Tabs */}
-          <div className="flex gap-2 p-4 pb-0 shrink-0">
-            <button
-              onClick={() => handleTabChange('INDUSTRY')}
-              className={`flex-1 rounded-xl py-3 text-sm font-bold transition-all ${
-                activeTab === 'INDUSTRY'
-                  ? 'bg-gray-900 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-              }`}
-            >
-              업종별
-            </button>
-            <button
-              onClick={() => handleTabChange('POPULATION')}
-              className={`flex-1 rounded-xl py-3 text-sm font-bold transition-all ${
-                activeTab === 'POPULATION'
-                  ? 'bg-gray-900 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-              }`}
-            >
-              유동인구
-            </button>
+        <section className="flex-1 flex flex-col min-w-100 border-r border-gray-200 h-full">
+          {/* Main Tabs - 토스증권 스타일 */}
+          <div className="flex items-center gap-6 px-4 pt-4 border-b border-gray-100">
+            <TabChips
+              value={activeTab}
+              onChange={handleTabChange}
+              options={[
+                { label: 'MZ핫플', value: 'MZ' as ThemeType },
+                { label: '성별', value: 'GENDER' as ThemeType },
+                { label: '성장상권', value: 'GROWTH' as ThemeType },
+                { label: '업종별', value: 'INDUSTRY' as ThemeType },
+                { label: '유동인구', value: 'POPULATION' as ThemeType },
+              ]}
+              variant="primary"
+            />
+
+            {/* Level Filter (right aligned) */}
+            <div className="flex items-center gap-2 ml-auto pb-2">
+              <TabChips
+                value={adminLevel}
+                onChange={(v) => setAdminLevel(v as AdminLevel)}
+                options={
+                  activeTab === 'POPULATION'
+                    ? POPULATION_LEVEL_OPTIONS
+                    : INDUSTRY_LEVEL_OPTIONS
+                }
+                variant="secondary"
+              />
+            </div>
           </div>
 
-          {/* Sub-selector */}
-          <div className="flex gap-2 px-4 py-3 items-center shrink-0">
-            {activeTab === 'POPULATION' ? (
-              <>
-                <FilterSelect
+          {/* Sub Filters - 탭별 조건 */}
+          {activeTab === 'POPULATION' && (
+            <>
+              {/* 연령 선택 */}
+              <div className="px-4 py-3 border-b border-gray-50">
+                <TabChips
                   value={ageGroup}
                   onChange={setAgeGroup}
                   options={AGE_OPTIONS}
+                  variant="secondary"
                 />
-                <FilterSelect
+              </div>
+              {/* 시간대 선택 */}
+              <div className="px-4 py-2 bg-gray-50">
+                <TabChips
                   value={timeSlot}
                   onChange={setTimeSlot}
                   options={TIME_OPTIONS}
+                  variant="secondary"
                 />
-              </>
-            ) : (
-              <FilterSelect
+              </div>
+            </>
+          )}
+
+          {activeTab === 'INDUSTRY' && (
+            <>
+              {/* 대분류 선택 */}
+              <div className="px-4 py-3 border-b border-gray-50">
+                <TabChips
+                  value={selectedCategory}
+                  onChange={handleCategoryChange}
+                  options={CATEGORY_OPTIONS}
+                  variant="secondary"
+                />
+              </div>
+              {/* 소분류 선택 */}
+              {SUB_CATEGORY_OPTIONS.length > 0 && (
+                <div className="px-4 py-2 bg-gray-50">
+                  <TabChips
+                    value={themeValue}
+                    onChange={(v) => setThemeValue(v as ThemeValue)}
+                    options={SUB_CATEGORY_OPTIONS}
+                    variant="secondary"
+                    showScrollButtons
+                  />
+                </div>
+              )}
+            </>
+          )}
+
+          {activeTab === 'GENDER' && (
+            <div className="px-4 py-3 border-b border-gray-50">
+              <TabChips
                 value={themeValue}
                 onChange={(v) => setThemeValue(v as ThemeValue)}
-                options={INDUSTRY_THEMES}
+                options={[
+                  { label: '남성', value: 'male' },
+                  { label: '여성', value: 'female' },
+                ]}
+                variant="secondary"
               />
-            )}
-
-            {/* Level Selector */}
-            <FilterSelect
-              value={adminLevel}
-              onChange={(v) => setAdminLevel(v as AdminLevel)}
-              options={
-                activeTab === 'POPULATION'
-                  ? POPULATION_LEVEL_OPTIONS
-                  : INDUSTRY_LEVEL_OPTIONS
-              }
-              className="ml-auto"
-            />
-          </div>
+            </div>
+          )}
 
           <div className="flex-1 overflow-hidden relative">
             <RankingList
