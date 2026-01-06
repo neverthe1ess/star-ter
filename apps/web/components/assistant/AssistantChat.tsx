@@ -63,8 +63,22 @@ export default function AssistantChat({ onAction }: AssistantChatProps) {
     setIsLoading(true);
 
     try {
+      // 최근 10개 메시지를 히스토리로 전송 (꼬리 질문 지원)
+      const historyForApi = messages
+        .filter(m => m.role === 'user' || m.role === 'assistant')
+        .slice(-10)
+        .map(m => ({ role: m.role, content: m.content }));
+      
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'}/ai/message?message=${encodeURIComponent(userMessage.content)}`
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'}/ai/message`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: userMessage.content,
+            history: historyForApi,
+          }),
+        }
       );
       const data = await response.json();
 

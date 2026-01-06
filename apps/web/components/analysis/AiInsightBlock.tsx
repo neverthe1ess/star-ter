@@ -23,7 +23,6 @@ export default function AiInsightBlock({
     population: '인구 유동 특성',
     revenue: '매출 수익 구조',
     industry: '업종 분석',
-    risk: '경쟁 리스크 분석',
   };
 
   useEffect(() => {

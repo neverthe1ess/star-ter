@@ -23,6 +23,7 @@ export class AiService {
     private readonly aiToolsService: AiToolsService,
   ) {}
 
+  // 기존 단일 메시지 처리 함수 (하위 호환성 유지)
   async getAIMessage(message: string): Promise<string> {
     const [categories, areaList] = await Promise.all([
       this.getCategories(message),
@@ -55,6 +56,66 @@ export class AiService {
 
     // Structured Outputs: output_text에 JSON 문자열 ({ reply, actions }) 반환
     return getText(analyzeResult);
+  }
+
+  // 대화 히스토리 포함 메시지 처리 함수 (꼬리 질문 지원)
+  private readonly MAX_HISTORY_LENGTH = 10;
+  //TODO: 원래는 getAIMessage를 쓰려고 하였으나, 변경이 많이 필요하여 별도의 함수로 재생성 미안하다 정훈아
+  async getAIMessageWithHistory(
+    message: string,
+    history: Array<{ role: 'user' | 'assistant'; content: string }>,
+  ): Promise<string> {
+    const [categories, areaList] = await Promise.all([
+      this.getCategories(message),
+      this.buildAreaList(message),
+    ]);
+
+    // 입력 배열 구성 (히스토리 포함)
+    const input: ResponseInputItem[] = [];
+
+    // 이전 대화 히스토리 추가 (최대 10개, 너무 길면 토큰 초과 방지)
+    if (history && history.length > 0) {
+      const recentHistory = history.slice(-this.MAX_HISTORY_LENGTH);
+      for (const msg of recentHistory) {
+        input.push({
+          role: msg.role,
+          content: msg.content,
+        });
+      }
+    }
+
+    // 현재 사용자 메시지 추가
+    input.push({ role: 'user', content: message });
+
+    const toolCallResponse = await toolCallAi(message, categories, areaList);
+    input.push(...toolCallResponse.output);
+
+    for (const toolCall of toolCallResponse.output) {
+      if (toolCall.type !== 'function_call') continue;
+      const toolResult = await this.aiToolsService.run(
+        toolCall.name,
+        toolCall.arguments,
+      );
+
+      if (toolResult === undefined) {
+        continue;
+      }
+
+      input.push({
+        type: 'function_call_output',
+        call_id: toolCall.call_id,
+        output: JSON.stringify(toolResult, safeBigIntStringify),
+      });
+    }
+
+    const analyzeResult = await analyzeResults(input);
+
+    // 디버깅: LLM 응답 출력
+    const responseText = getText(analyzeResult);
+    console.log('[AI Response]', responseText);
+
+    // Structured Outputs: output_text에 JSON 문자열 ({ reply, actions }) 반환
+    return responseText;
   }
 
   async getAreaByMessage(message: string) {
@@ -107,18 +168,30 @@ export class AiService {
 
   private async getCategories(message: string) {
     const categoryResponse = await getCategoryByMessage(message);
-    if (getText(categoryResponse) === '""') return [];
-    const categories = getText(categoryResponse)
-      .split(',')
-      .map((cat) => cat.trim());
+    const categoryText = getText(categoryResponse);
+    console.log(
+      `[DEBUG] Extracted Categories for message "${message}":`,
+      categoryText,
+    );
+
+    if (categoryText === '""') return [];
+
+    const categories = categoryText.split(',').map((cat) => cat.trim());
 
     let categoryList: BusinessCategoryVectorDto[] = [];
     for (const category of categories) {
       const categoryVector = await embedText(category);
+      // console.log(`[DEBUG] Embedding for ${category} generated.`);
+
       const categoryResults = await this.aiRepository.categorySearchByVector(
         categoryVector.data[0].embedding,
         3,
       );
+      console.log(
+        `[DEBUG] Vector Search Results for "${category}":`,
+        JSON.stringify(categoryResults, null, 2),
+      );
+
       categoryList = categoryList.concat(categoryResults);
     }
     return categoryList;

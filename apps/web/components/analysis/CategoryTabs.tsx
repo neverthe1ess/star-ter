@@ -6,7 +6,6 @@ import {
   TrendingUp,
   Building2,
   DollarSign,
-  AlertTriangle,
   GitCompare,
 } from 'lucide-react';
 import ComparisonModal from './ComparisonModal';
@@ -22,7 +21,6 @@ const tabs: Tab[] = [
   { id: 'revenue', label: '매출 수익 구조', icon: <TrendingUp size={14} /> },
   { id: 'industry', label: '업종 분석', icon: <Building2 size={14} /> },
   { id: 'cost', label: '창업 비용 손익', icon: <DollarSign size={14} /> },
-  { id: 'risk', label: '경쟁 리스크 분석', icon: <AlertTriangle size={14} /> },
 ];
 
 interface CategoryTabsProps {

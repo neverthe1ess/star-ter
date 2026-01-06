@@ -252,16 +252,30 @@ function PopulationView({ genderFilter, ageFilter, timeFilter }: {
 }
 
 // -----------------------------------------
-// 분석 뷰 (개업률/폐업률 카드) - API 연결
+// 분석 뷰 (업종별 상세 정보 + 창업 인사이트) - API 연결
 // -----------------------------------------
-function AnalysisView({ areaName, lat, lng, level }: { 
+function AnalysisView({ areaName, lat, lng, level, industryCode }: { 
   areaName?: string; 
   lat?: number; 
   lng?: number;
   level?: string;
+  industryCode?: string;
 }) {
-  const [openingRate, setOpeningRate] = React.useState<number>(0);
-  const [closureRate, setClosureRate] = React.useState<number>(0);
+  const [data, setData] = React.useState<{
+    openingRate: number;
+    closureRate: number;
+    storeCount: number;
+    franchiseCount: number;
+    quarterlyRevenue: number;
+    similarStoreCount: number;
+  }>({
+    openingRate: 0,
+    closureRate: 0,
+    storeCount: 0,
+    franchiseCount: 0,
+    quarterlyRevenue: 0,
+    similarStoreCount: 0,
+  });
   const [isLoading, setIsLoading] = React.useState(true);
   
   React.useEffect(() => {
@@ -276,18 +290,36 @@ function AnalysisView({ areaName, lat, lng, level }: {
       longitude: String(lng),
     });
     if (level) params.set('level', level);
+    if (industryCode) params.set('industryCode', industryCode);
     
     fetch(`${API_BASE_URL}/market/analytics?${params.toString()}`)
       .then(res => res.json())
-      .then(data => {
-        setOpeningRate(data.vitality?.openingRate || 0);
-        setClosureRate(data.vitality?.closureRate || 0);
+      .then(response => {
+        setData({
+          openingRate: response.vitality?.openingRate || 0,
+          closureRate: response.vitality?.closureRate || 0,
+          storeCount: response.storeCount || 0,
+          franchiseCount: response.franchiseCount || 0,
+          quarterlyRevenue: response.revenue?.quarterly || 0,
+          similarStoreCount: response.similarStoreCount || 0,
+        });
       })
       .catch(err => console.error('Analytics fetch error:', err))
       .finally(() => setIsLoading(false));
-  }, [lat, lng, level]);
+  }, [lat, lng, level, industryCode]);
   
-  const isHealthy = openingRate > closureRate;
+  // 창업 추천 점수 계산 (0-100)
+  const startupScore = React.useMemo(() => {
+    const survivalRate = 100 - data.closureRate;
+    const growthRate = data.openingRate;
+    const competitionPenalty = Math.min(data.storeCount * 2, 30); // 경쟁이 많으면 감점
+    const score = Math.max(0, Math.min(100, survivalRate * 0.5 + growthRate * 0.3 + (30 - competitionPenalty)));
+    return Math.round(score);
+  }, [data]);
+  
+  const scoreLabel = startupScore >= 70 ? '추천' : startupScore >= 40 ? '보통' : '주의';
+  const scoreColor = startupScore >= 70 ? 'text-green-600' : startupScore >= 40 ? 'text-yellow-600' : 'text-red-600';
+  const scoreBg = startupScore >= 70 ? 'bg-green-50' : startupScore >= 40 ? 'bg-yellow-50' : 'bg-red-50';
   
   if (isLoading) {
     return (
@@ -299,31 +331,58 @@ function AnalysisView({ areaName, lat, lng, level }: {
   }
   
   return (
-    <div className="space-y-4">
-      {/* 개업/폐업 카드 - 가로 크게 */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 text-center">
-          <p className="text-xs text-green-600 font-medium mb-1">📈 개업률</p>
-          <p className="text-2xl font-bold text-green-700">{openingRate.toFixed(1)}%</p>
+    <div className="space-y-3">
+      {/* 상단: 창업 추천 점수 */}
+      <div className={`${scoreBg} rounded-xl p-3 flex items-center justify-between`}>
+        <div>
+          <p className="text-xs text-gray-500 font-medium">
+            {industryCode ? '🍗 업종별 창업 추천' : '📊 전체 업종 평균'}
+          </p>
+          <p className="font-bold text-gray-800">{areaName || '상권 분석'}</p>
         </div>
-        <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-4 text-center">
-          <p className="text-xs text-red-600 font-medium mb-1">📉 폐업률</p>
-          <p className="text-2xl font-bold text-red-700">{closureRate.toFixed(1)}%</p>
+        <div className="text-center">
+          <p className={`text-2xl font-bold ${scoreColor}`}>{startupScore}</p>
+          <p className={`text-xs font-medium ${scoreColor}`}>{scoreLabel}</p>
         </div>
       </div>
       
-      {/* 상권 정보 */}
-      <div className={`rounded-xl p-3 flex items-center justify-between ${isHealthy ? 'bg-green-50' : 'bg-red-50'}`}>
-        <div>
-          <p className="font-bold text-gray-800">{areaName || '상권 분석'}</p>
-          <p className={`text-sm ${isHealthy ? 'text-green-600' : 'text-red-600'}`}>
-            {isHealthy ? '✓ 건강한 상권입니다' : '⚠ 주의가 필요한 상권입니다'}
-          </p>
+      {/* 중단: 핵심 지표 4개 */}
+      <div className="grid grid-cols-4 gap-2">
+        <div className="bg-white rounded-lg p-2 text-center border border-gray-100">
+          <p className="text-lg font-bold text-gray-800">{data.storeCount}</p>
+          <p className="text-[10px] text-gray-500">점포수</p>
         </div>
-        <span className={`text-3xl ${isHealthy ? '' : ''}`}>
-          {isHealthy ? '👍' : '⚠️'}
-        </span>
+        <div className="bg-white rounded-lg p-2 text-center border border-gray-100">
+          <p className="text-lg font-bold text-blue-600">{data.franchiseCount}</p>
+          <p className="text-[10px] text-gray-500">프랜차이즈</p>
+        </div>
+        <div className="bg-white rounded-lg p-2 text-center border border-gray-100">
+          <p className="text-lg font-bold text-green-600">{data.openingRate.toFixed(1)}%</p>
+          <p className="text-[10px] text-gray-500">개업률</p>
+        </div>
+        <div className="bg-white rounded-lg p-2 text-center border border-gray-100">
+          <p className="text-lg font-bold text-red-500">{data.closureRate.toFixed(1)}%</p>
+          <p className="text-[10px] text-gray-500">폐업률</p>
+        </div>
       </div>
+      
+      {/* 하단: 분기 매출 + 인사이트 */}
+      {data.quarterlyRevenue > 0 && (
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-3 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-gray-500">분기 매출 추정</p>
+            <p className="text-lg font-bold text-gray-800">
+              {(data.quarterlyRevenue / 100000000).toFixed(1)}억원
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-gray-500">경쟁 강도</p>
+            <p className={`text-sm font-bold ${data.storeCount > 15 ? 'text-red-500' : data.storeCount > 8 ? 'text-yellow-500' : 'text-green-500'}`}>
+              {data.storeCount > 15 ? '치열 🔥' : data.storeCount > 8 ? '보통 ⚡' : '낮음 ✅'}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -485,7 +544,7 @@ function ActionContent({ action }: { action: AssistantAction }) {
       return <PopulationView genderFilter={payload.genderFilter} ageFilter={payload.ageFilter} timeFilter={payload.timeFilter} />;
 
     case 'openAnalysisPanel':
-      return <AnalysisView areaName={payload.areaName} lat={payload.coordinates?.[0]} lng={payload.coordinates?.[1]} level={payload.level} />;
+      return <AnalysisView areaName={payload.areaName} lat={payload.coordinates?.[0]} lng={payload.coordinates?.[1]} level={payload.level} industryCode={payload.industryCode} />;
 
     case 'compare':
       return (

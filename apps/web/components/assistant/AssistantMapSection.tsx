@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import AnalysisMap from '@/components/analysis/AnalysisMap';
 import { useMapStore } from '@/stores/useMapStore';
 import ActionInfoBar from './ActionInfoBar';
 import type { AssistantAction, FrontendActionType, ActionPayload } from '@/types/assistant-types';
+import { StoreLocation } from '@/hooks/useStoreMarkers';
+import { convertSeoulCodeToDbCode } from '@/utils/industry-code-map';
 
 // Props 타입 (공유 타입 사용)
 interface AssistantMapSectionProps {
@@ -124,11 +126,72 @@ const ACTION_HANDLERS: Partial<Record<FrontendActionType, ActionHandler>> = {
   },
 
   // 새 기능 핸들러 (Phase 3에서 구현)
-  showRanking: async () => { console.log('showRanking: TODO'); },
-  filterPopulation: async () => { console.log('filterPopulation: TODO'); },
-  openAnalysisPanel: async () => { console.log('openAnalysisPanel: TODO'); },
-  calculateRent: async () => { console.log('calculateRent: TODO'); },
-  generateReport: async () => { console.log('generateReport: TODO'); },
+  showRanking: async (payload, { moveToLocation }) => { 
+    // 랭킹은 특정 위치 없이도 동작하지만, 좌표가 있으면 이동
+    if (payload.coordinates) {
+      const [lat, lng] = payload.coordinates;
+      moveToLocation({ lat, lng }, payload.areaName || '랭킹', 4);
+    }
+  },
+  filterPopulation: async (payload, { moveToLocation }) => { 
+    // 좌표가 있으면 해당 위치로 이동
+    if (payload.coordinates) {
+      const [lat, lng] = payload.coordinates;
+      moveToLocation({ lat, lng }, payload.areaName || '유동인구', 3); // 줌 3으로 히트맵 잘 보이게
+    } else if (payload.lat && payload.lng) {
+      moveToLocation({ lat: payload.lat, lng: payload.lng }, payload.areaName || '유동인구', 3);
+    }
+    // 좌표가 없어도 레이어는 AssistantMapSection에서 활성화됨
+    console.log('[filterPopulation] 유동인구 레이어 활성화됨. 줌 레벨 1~4에서 히트맵 표시.');
+  },
+  openAnalysisPanel: async (payload, { moveToLocation, selectArea }) => { 
+    // 분석 패널 열기 + 지도 이동 + 영역 선택
+    if (payload.coordinates) {
+      const [lat, lng] = payload.coordinates;
+      moveToLocation({ lat, lng }, payload.areaName || '분석 위치', 4);
+      
+      // 상권 코드가 있으면 영역도 선택
+      if (payload.code || payload.areaCode) {
+        const code = payload.code || payload.areaCode;
+        try {
+          const res = await fetch(`${API_BASE_URL}/polygon/commercial/code?code=${code}`);
+          if (res.ok) {
+            const data = await res.json();
+            selectArea(
+              {
+                name: data.commercialName || payload.areaName || '상권',
+                coords: { lat: data.y || lat, lng: data.x || lng },
+                type: payload.level || 'commercial',
+                code: code,
+              },
+              {
+                polygons: data.polygons?.coordinates || data.polygons,
+                level: payload.level || 'commercial',
+                x: data.x,
+                y: data.y,
+              }
+            );
+          }
+        } catch (error) {
+          console.error('Failed to fetch area for analysis:', error);
+        }
+      }
+    } else if (payload.lat && payload.lng) {
+      moveToLocation({ lat: payload.lat, lng: payload.lng }, payload.areaName || '분석 위치', 4);
+    }
+  },
+  calculateRent: async (payload, { moveToLocation }) => { 
+    if (payload.coordinates) {
+      const [lat, lng] = payload.coordinates;
+      moveToLocation({ lat, lng }, payload.areaName || '임대료 분석', 4);
+    }
+  },
+  generateReport: async (payload, { moveToLocation }) => { 
+    if (payload.coordinates) {
+      const [lat, lng] = payload.coordinates;
+      moveToLocation({ lat, lng }, payload.areaName || '리포트', 4);
+    }
+  },
 };
 
 // -----------------------------------------
@@ -138,12 +201,82 @@ export default function AssistantMapSection({ action }: AssistantMapSectionProps
   const { selectArea, moveToLocation } = useMapStore();
   const [isLoading, setIsLoading] = useState(false);
   const prevActionRef = useRef<AssistantAction | null>(null);
+  
+  // 유동인구 레이어 상태
+  const [showPopulationLayer, setShowPopulationLayer] = useState(false);
+  const [populationFilters, setPopulationFilters] = useState<{
+    genderFilter?: 'Male' | 'Female' | 'Total';
+    ageFilter?: string;
+    timeFilter?: string;
+  }>({});
+  
+  // 업종 마커 표시용 상태
+  const [industryCode, setIndustryCode] = useState<string | undefined>(undefined);
+  const [storeMarkers, setStoreMarkers] = useState<StoreLocation[]>([]);
+
+  /**
+   * 업종별 매장 위치 API 호출
+   * 
+   * 💡 흐름:
+   * 1. Seoul API 코드 (예: CS100007) → DB 코드 (I21006) 변환
+   * 2. /store/locations?industryCode=I21006 호출
+   * 3. 응답 데이터를 storeMarkers 상태에 저장
+   */
+  const fetchStoreLocations = useCallback(async (seoulCode: string) => {
+    // Seoul API 코드 → DB 코드 변환
+    const dbCode = convertSeoulCodeToDbCode(seoulCode);
+    if (!dbCode) {
+      console.warn(`[AssistantMapSection] 업종 코드 변환 실패: ${seoulCode}`);
+      return;
+    }
+
+    try {
+      console.log(`[AssistantMapSection] 매장 위치 조회: ${seoulCode} → ${dbCode}`);
+      const res = await fetch(`${API_BASE_URL}/store/locations?industryCode=${dbCode}&limit=1000`);
+      
+      if (res.ok) {
+        const data = await res.json();
+        console.log(`[AssistantMapSection] ${data.count}개 매장 조회됨`);
+        setStoreMarkers(data.stores || []);
+      } else {
+        console.error('[AssistantMapSection] 매장 위치 API 오류:', res.status);
+        setStoreMarkers([]);
+      }
+    } catch (error) {
+      console.error('[AssistantMapSection] 매장 위치 조회 실패:', error);
+      setStoreMarkers([]);
+    }
+  }, []);
+
+  // 업종 코드 변경 시 매장 위치 조회
+  useEffect(() => {
+    if (industryCode) {
+      fetchStoreLocations(industryCode);
+    } else {
+      setStoreMarkers([]);
+    }
+  }, [industryCode, fetchStoreLocations]);
 
   // 액션 변경 감지 → 핸들러 실행
   useEffect(() => {
     // 같은 액션이면 무시
     if (!action || action === prevActionRef.current) return;
     prevActionRef.current = action;
+    
+    // filterPopulation 액션일 때 레이어 활성화
+    if (action.type === 'filterPopulation') {
+      setShowPopulationLayer(true);
+      setPopulationFilters({
+        genderFilter: action.payload.genderFilter,
+        ageFilter: action.payload.ageFilter,
+        timeFilter: action.payload.timeFilter,
+      });
+    }
+    
+    // openAnalysisPanel 액션일 때 업종 코드 저장 (마커 표시용)
+    if (action.type === 'openAnalysisPanel' && action.payload.industryCode) {
+      setIndustryCode(action.payload.industryCode);
+    }
 
     const handler = ACTION_HANDLERS[action.type];
     if (handler) {
@@ -168,7 +301,11 @@ export default function AssistantMapSection({ action }: AssistantMapSectionProps
       {/* 지도 영역 */}
       <div className="relative flex-1 rounded-2xl overflow-hidden border border-gray-100 shadow-inner">
         <div className="absolute inset-0 z-0">
-          <AnalysisMap />
+          <AnalysisMap 
+            showPopulationLayer={showPopulationLayer}
+            populationFilters={populationFilters}
+            storeMarkers={storeMarkers}
+          />
         </div>
 
         {/* Dynamic Island 스타일 정보바 (하단) */}
@@ -177,3 +314,5 @@ export default function AssistantMapSection({ action }: AssistantMapSectionProps
     </div>
   );
 }
+
+

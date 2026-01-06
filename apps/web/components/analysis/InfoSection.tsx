@@ -8,6 +8,7 @@ import TimePopulationChart from './TimePopulationChart';
 import RevenueStructure from './RevenueStructure';
 import StartupCostAnalysis from './StartupCostAnalysis';
 import CompetitionAnalysisSection from './CompetitionAnalysisSection';
+import AnalysisSkeleton from './AnalysisSkeleton';
 
 import { useMapStore } from '../../stores/useMapStore';
 import { SummaryReportResponse } from '../../types/api-responses';
@@ -96,13 +97,17 @@ export default function InfoSection() {
 
         {/* 컨텐츠 영역 (내부 스크롤) */}
         <div className="flex-1 overflow-y-auto bg-gray-50/30">
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center h-64 space-y-4">
-              <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
-              <p className="text-gray-400 text-sm font-medium animate-pulse">
-                상권 데이터를 분석하고 있습니다...
-              </p>
-            </div>
+          {isLoading && !data ? (
+            activeTab === 'industry' || activeTab === 'risk' ? (
+              <AnalysisSkeleton />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-64 space-y-4">
+                <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+                <p className="text-gray-400 text-sm font-medium animate-pulse">
+                  상권 데이터를 분석하고 있습니다...
+                </p>
+              </div>
+            )
           ) : error ? (
             <div className="flex flex-col items-center justify-center h-64 space-y-2">
               <p className="text-rose-500 font-bold">오류 발생</p>
@@ -138,6 +143,7 @@ export default function InfoSection() {
                     topic={activeTab as 'industry' | 'risk'}
                     selectedIndustry={selectedIndustry}
                     onIndustryChange={(ind) => setSelectedIndustry(ind)}
+                    isLoading={isLoading}
                   />
                 )}
 

@@ -97,23 +97,32 @@ export function analyzeResults(input: ResponseInput) {
 사용자의 질의에 맞게 응답을 생성하고, 적절한 UI 액션을 선택하세요.
 도구 호출 결과를 참고하여 최종 응답을 생성해 주세요.
 
+[중요: 액션 선택 우선순위]
+- "분석", "분석해줘", "매출", "개업률", "폐업률" 키워드 → ui.open_panel (분석 패널)
+- "순위", "TOP", "랭킹", "높은/낮은 상권" 키워드 → ranking.show (매출 랭킹)
+- "비교", "vs", "어디가 나아" 키워드 → compare.areas (상권 비교)
+- "유동인구", "방문객", "시간대" 키워드 → population.filter (유동인구)
+- "임대료", "수익", "창업비용" 키워드 → rent.calculate (임대료)
+- "리포트", "보고서" 키워드 → report.generate (리포트)
+- 위 키워드 없이 위치만 언급 → map.pan_to (지도 이동)
+
 [사용 가능한 액션 타입]
 
 1. map.pan_to - 지도를 특정 위치로 이동
-   - 사용 시점: 특정 지역/상권을 언급할 때
+   - 사용 시점: 위치만 보여달라고 할 때 (분석 요청 없음)
    - 필수: lat, lng, zoom(항상 3), areaName
-   - 예: "강남역 상권 보여줘" → map.pan_to
+   - 예: "강남역 어디야?", "홍대 위치 보여줘" → map.pan_to
 
-2. ui.open_panel - 분석 패널 열기
-   - 사용 시점: 상세 분석 결과를 보여줄 때
+2. ui.open_panel - 분석 패널 열기 ⭐ 분석 요청 시 사용
+   - 사용 시점: 특정 상권의 상세 분석, 매출 분석 요청 시
    - 필수: level(gu/dong/commercial), lat, lng, areaName, panelType(summary)
-   - 예: "강남구 분석해줘" → ui.open_panel
+   - 예: "강남역 상권 분석해줘", "역삼동 매출 분석" → ui.open_panel
 
 3. ranking.show - 매출 랭킹 표시
    - 사용 시점: 순위, TOP N, 매출 높은/낮은 상권 질문 시
    - 필수: level(gu/dong/commercial)
    - 선택: industryCode (업종 필터)
-   - 예: "매출 높은 상권 TOP5 알려줘" → ranking.show
+   - 예: "매출 높은 상권 TOP5 알려줘", "서울에서 제일 잘되는 상권은?" → ranking.show
 
 4. population.filter - 유동인구 필터
    - 사용 시점: 유동인구, 방문객, 시간대별 인구 질문 시
@@ -138,6 +147,7 @@ export function analyzeResults(input: ResponseInput) {
 [규칙]
 - 액션이 필요없는 일반 대화는 빈 배열 []
 - 가장 적합한 액션 1개만 선택
+- "분석" 키워드가 있으면 map.pan_to 대신 ui.open_panel 사용!
 - 사용하지 않는 payload 필드는 null로 설정
 `,
   });
@@ -288,7 +298,6 @@ export function getAiAnalysis(
     population: `당신은 유동인구 분석 전문가입니다. 24시간 시간대별 유동인구 데이터를 바탕으로 해당 상권의 '인구 유동 특성'을 3줄 이내로 분석해 주세요.`,
     revenue: `당신은 매출 분석 전문가입니다. 해당 상권의 '매출 수익 구조'를 바탕으로 수익성과 성장 잠재력을 3줄 이내로 요약해 주세요.`,
     industry: `당신은 업종 분석 전문가입니다. 상권 내 '업종 분석' 결과와 경쟁 환경을 바탕으로 창업 시 고려할 핵심 포인트를 3줄 이내로 진단해 주세요.`,
-    risk: `당신은 리스크 분석 전문가입니다. 해당 상권의 '경쟁 리스크 분석' 결과를 바탕으로 주의해야 할 요소와 대응 전략을 3줄 이내로 짚어주세요.`,
   };
 
   const defaultInstruction = `당신은 상권분석 전문가입니다. 주어진 데이터를 바탕으로 핵심 특징을 3줄 이내로 명확하게 요약해 주세요.`;

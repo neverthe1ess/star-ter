@@ -2,13 +2,14 @@
 
 import { useRef, useEffect } from 'react';
 import { initProj4, convertCoord } from '../../utils/map-utils';
-import { KakaoMarker, KakaoPolygon, KakaoLatLng } from '../../types/map-types';
+import { KakaoPolygon, KakaoLatLng } from '../../types/map-types';
 import { useKakaoMap } from '../../hooks/useKakaoMap';
 import { usePopulationLayer } from '../../hooks/usePopulationLayer';
 import { usePopulationVisual } from '../../hooks/usePopulationVisual';
 import { useMapStore } from '../../stores/useMapStore';
 import { useSeoulBoundary } from '../../hooks/useSeoulBoundary';
 import { useRealEstateMarkers } from '../../hooks/useRealEstateMarkers';
+import { useStoreMarkers, StoreLocation } from '../../hooks/useStoreMarkers';
 import { RealEstateItem } from '../../types/map-store-types';
 import polylabel from '@mapbox/polylabel';
 
@@ -27,6 +28,16 @@ interface AnalysisMapProps {
   onMarkerClick?: (item: RealEstateItem) => void;
   hoveredItemId?: string | null;
   showPopulationHeatmap?: boolean;
+  // 외부에서 유동인구 레이어 토글 가능
+  showPopulationLayer?: boolean;
+  populationFilters?: {
+    genderFilter?: 'Male' | 'Female' | 'Total';
+    ageFilter?: string;
+    timeFilter?: string;
+  };
+  // 업종별 매장 마커 (치킨, 카페 등)
+  storeMarkers?: StoreLocation[];
+  onStoreMarkerClick?: (store: StoreLocation) => void;
 }
 
 export default function AnalysisMap({
@@ -35,19 +46,23 @@ export default function AnalysisMap({
   onMarkerClick,
   hoveredItemId,
   showPopulationHeatmap = false,
+  showPopulationLayer: externalShowLayer,
+  populationFilters,
+  storeMarkers = [],
+  onStoreMarkerClick,
 }: AnalysisMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const markersRef = useRef<KakaoMarker[]>([]);
   const polygonsRef = useRef<KakaoPolygon[]>([]);
 
   const { map } = useKakaoMap(mapRef);
 
   // 부동산 마커 렌더링
   useRealEstateMarkers(map, realEstateData, onMarkerClick, hoveredItemId);
+  
+  // 업종별 매장 마커 렌더링 (치킨, 카페 등)
+  useStoreMarkers(map, storeMarkers, onStoreMarkerClick);
   const {
-    center,
     zoom,
-    markers,
     setZoom,
     setCenter,
     clearMarkers,
@@ -55,6 +70,12 @@ export default function AnalysisMap({
     selectedArea,
   } = useMapStore();
   const population = usePopulationVisual();
+  
+  // 외부 prop이 있으면 외부 값 사용, 없으면 내부 상태 사용
+  const effectiveShowLayer = externalShowLayer !== undefined ? externalShowLayer : (showPopulationHeatmap || population.showLayer);
+  const effectiveGenderFilter = populationFilters?.genderFilter || population.genderFilter;
+  const effectiveAgeFilter = populationFilters?.ageFilter || population.ageFilter;
+  const effectiveTimeFilter = populationFilters?.timeFilter || population.timeFilter;
 
   useSeoulBoundary(map);
 
@@ -131,13 +152,12 @@ export default function AnalysisMap({
     }
   }, [map, selectedArea, zoom]);
 
-  // 히트맵 레이어: prop으로 전달받은 showPopulationHeatmap 또는 내부 상태로 제어
   usePopulationLayer(
     map,
-    population.timeFilter,
-    population.genderFilter,
-    population.ageFilter,
-    showPopulationHeatmap || population.showLayer,
+    (effectiveTimeFilter || 'All') as '0-8' | '8-16' | '16-24' | 'All',
+    (effectiveGenderFilter || 'Total') as 'Male' | 'Female' | 'Total',
+    (effectiveAgeFilter || 'Total') as 'Total' | '10대' | '20대' | '30대' | '40대' | '50대' | '60대+',
+    effectiveShowLayer,
     population.getPopulationValue,
   );
 
