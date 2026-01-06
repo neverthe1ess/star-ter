@@ -63,7 +63,7 @@ export default function CompetitionAnalysisSection({
           <button
             key={ind.code}
             onClick={() => onIndustryChange(ind)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold transition-all whitespace-nowrap border ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-base font-bold transition-all whitespace-nowrap border ${
               selectedIndustry.code === ind.code
                 ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
                 : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300'
@@ -101,7 +101,7 @@ export default function CompetitionAnalysisSection({
         marketTrends && (
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-              <h4 className="text-sm font-bold text-gray-500 uppercase mb-3 flex items-center gap-1">
+              <h4 className="text-lg font-bold text-gray-500 uppercase mb-3 flex items-center gap-1">
                 <TrendingUp size={12} /> 시장 활성도 (개업 vs 폐업)
               </h4>
               <div className="flex items-end justify-between mb-2">
@@ -109,10 +109,10 @@ export default function CompetitionAnalysisSection({
                   <span className="text-3xl font-black text-emerald-500">
                     {marketTrends.opbizStoreCount}
                   </span>
-                  <span className="text-sm text-gray-400 font-medium ml-1">
+                  <span className="text-base text-gray-400 font-medium ml-1">
                     개소 개업
                   </span>
-                  <div className="text-xs text-emerald-600/70 font-medium mt-0.5">
+                  <div className="text-base text-emerald-600/70 font-medium mt-0.5">
                     (개업률 {marketTrends.opbizRt.toFixed(2)}%)
                   </div>
                 </div>
@@ -120,10 +120,10 @@ export default function CompetitionAnalysisSection({
                   <span className="text-3xl font-black text-rose-500">
                     {marketTrends.clsbizStoreCount}
                   </span>
-                  <span className="text-sm text-gray-400 font-medium ml-1">
+                  <span className="text-base text-gray-400 font-medium ml-1">
                     개소 폐업
                   </span>
-                  <div className="text-xs text-rose-600/70 font-medium mt-0.5">
+                  <div className="text-base text-rose-600/70 font-medium mt-0.5">
                     (폐업률 {marketTrends.clsbizRt.toFixed(2)}%)
                   </div>
                 </div>
@@ -137,7 +137,7 @@ export default function CompetitionAnalysisSection({
                 />
                 <div className="h-full bg-rose-400 flex-1 transition-all duration-1000" />
               </div>
-              <p className="mt-3 text-xs text-gray-500 text-center font-medium bg-gray-50 py-1.5 rounded-lg">
+              <p className="mt-3 text-sm text-gray-500 text-center font-medium bg-gray-50 py-1.5 rounded-lg">
                 {marketTrends.opbizStoreCount >
                 marketTrends.clsbizStoreCount ? (
                   <span className="text-emerald-600 flex items-center justify-center gap-1">
@@ -157,7 +157,7 @@ export default function CompetitionAnalysisSection({
             </div>
 
             <div className="flex flex-col bg-white p-5 rounded-2xl border border-gray-100 shadow-sm justify-between">
-              <h4 className="text-sm font-bold text-gray-500 uppercase mb-3 flex items-center gap-1">
+              <h4 className="text-lg font-bold text-gray-500 uppercase mb-3 flex items-center gap-1">
                 <Store size={12} /> 경쟁 밀집도 (점포수 증감)
               </h4>
               <div className="flex items-center gap-3 mb-4">
@@ -165,7 +165,7 @@ export default function CompetitionAnalysisSection({
                   <Store size={20} />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400 font-bold">
+                  <p className="text-base text-gray-400 font-bold">
                     신규 - 폐업 (순증감)
                   </p>
                   <p className="text-2xl font-black text-gray-900">
@@ -184,7 +184,7 @@ export default function CompetitionAnalysisSection({
                   </p>
                 </div>
               </div>
-              <p className="text-sm text-gray-500 leading-tight">
+              <p className="text-base text-gray-500 leading-tight">
                 지난 분기 동안{' '}
                 <span className="font-bold text-gray-800">
                   {marketTrends.opbizStoreCount}개
@@ -218,14 +218,14 @@ export default function CompetitionAnalysisSection({
         topIndustries &&
         topIndustries.length > 0 && (
           <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-            <h4 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <h4 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
               상권 내 주요 업종 분포 (Top 5)
             </h4>
             <div className="space-y-3">
               {topIndustries.slice(0, 5).map((ind, idx) => (
                 <div key={idx} className="group">
-                  <div className="flex items-center justify-between text-sm font-bold text-gray-600 mb-1.5">
+                  <div className="flex items-center justify-between text-base font-bold text-gray-600 mb-1.5">
                     <span className="flex items-center gap-2">
                       <span className="w-5 h-5 rounded bg-gray-100 text-gray-500 flex items-center justify-center text-[10px]">
                         {idx + 1}
@@ -263,13 +263,13 @@ export default function CompetitionAnalysisSection({
                 key={idx}
                 className="p-4 bg-gray-50/50 rounded-xl border border-gray-100/80 hover:border-indigo-100 transition-colors"
               >
-                <p className="text-sm text-indigo-600 font-bold mb-1 uppercase tracking-wider">
+                <p className="text-base text-indigo-600 font-bold mb-1 uppercase tracking-wider">
                   {item.category}
                 </p>
-                <p className="text-base text-gray-800 font-bold mb-1">
+                <p className="text-lg text-gray-800 font-bold mb-1">
                   {item.summary}
                 </p>
-                <p className="text-sm text-gray-500 leading-relaxed">
+                <p className="text-base text-gray-500 leading-relaxed">
                   {item.implication}
                 </p>
               </div>

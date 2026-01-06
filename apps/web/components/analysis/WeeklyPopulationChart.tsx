@@ -25,7 +25,7 @@ export default function WeeklyPopulationChart({
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-xs transition-all hover:shadow-sm">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+        <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
           <span className="w-1.5 h-1.5 bg-rose-400 rounded-full"></span>
           요일별 방문 비중 상세
         </h3>
