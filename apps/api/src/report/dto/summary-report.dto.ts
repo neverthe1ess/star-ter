@@ -28,6 +28,15 @@ export interface SummaryReportResponse {
     period: string;
   };
 
+  // 0) 위치/공간 정보
+  locationInfo: {
+    areaType: string; // 상권 유형 코드 (예: 'A', 'D')
+    areaTypeName: string; // 상권 유형명 (예: '발달상권', '골목상권', '행정동')
+    guName: string; // 소속 구 (예: '강남구')
+    dongName: string; // 소속 동 (예: '역삼1동')
+    area: number; // 면적 (㎡)
+  };
+
   // 1) 핵심 지표
   keyMetrics: {
     estimatedMonthlySales: {
@@ -113,4 +122,23 @@ export interface SummaryReportResponse {
     content: string;
     highlight?: string;
   }[];
+
+  // 10) 매출 분석
+  revenueAnalysis: {
+    monthlyTotal: number;
+    avgTransactionPrice: number;
+    totalTransactionCount: number;
+    weekdayComparison: {
+      weekday: number;
+      weekend: number;
+    };
+    dailyRatio: {
+      day: string;
+      ratio: number;
+    }[];
+    timePeriodRatio: {
+      timeRange: string;
+      ratio: number;
+    }[];
+  };
 }

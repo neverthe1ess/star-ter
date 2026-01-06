@@ -376,7 +376,7 @@ export class RevenueService {
         const prevRows = await client.groupBy(prevGroupByArgs);
         const prevMap = new Map<string, number>();
         prevRows.forEach((row) => {
-          const codeVal = row[modelConfig.codeField] as string;
+          const codeVal = row[modelConfig.codeField] as unknown as string;
           const sumVal = (row._sum as Record<string, unknown> | undefined)
             ?.thsmon_selng_amt;
           prevMap.set(codeVal, Number(sumVal || 0));
@@ -608,7 +608,7 @@ export class RevenueService {
     // Calculate growth rate
     const prevMap = new Map<string, number>();
     prevData.forEach((row) => {
-      const codeVal = row[modelConfig.codeField] as string;
+      const codeVal = row[modelConfig.codeField] as unknown as string;
       const sumVal = (row._sum as Record<string, unknown> | undefined)
         ?.thsmon_selng_amt;
       prevMap.set(codeVal, Number(sumVal || 0));
