@@ -206,4 +206,72 @@ export class ReportRepository {
 
     return null;
   }
+
+  async getAreaDetails(regionCode: string): Promise<{
+    areaType: string;
+    areaTypeName: string;
+    guName: string;
+    dongName: string;
+    area: number;
+  } | null> {
+    const area = await this.resolveArea(regionCode);
+    if (!area) return null;
+
+    if (area.type === 'dong') {
+      const dong = await this.prisma.areaDong.findUnique({
+        where: { adstrd_cd: area.code },
+        select: { adstrd_nm: true, relm_ar: true },
+      });
+      if (!dong) return null;
+
+      // 동 이름에서 구 이름 추출 시도 (예: "강남구 역삼1동" -> "강남구")
+      const parts = dong.adstrd_nm.split(' ');
+      return {
+        areaType: 'dong',
+        areaTypeName: '행정동',
+        guName: parts.length > 1 ? parts[0] : '',
+        dongName: dong.adstrd_nm,
+        area: dong.relm_ar || 0,
+      };
+    } else if (area.type === 'commercial') {
+      const commercial = await this.prisma.areaCommercial.findUnique({
+        where: { trdar_cd: area.code },
+        select: {
+          trdar_se_cd: true,
+          trdar_se_cd_nm: true,
+          signgu_cd_nm: true,
+          adstrd_cd_nm: true,
+          relm_ar: true,
+        },
+      });
+      if (!commercial) return null;
+
+      return {
+        areaType: commercial.trdar_se_cd,
+        areaTypeName: commercial.trdar_se_cd_nm,
+        guName: commercial.signgu_cd_nm,
+        dongName: commercial.adstrd_cd_nm,
+        area: commercial.relm_ar || 0,
+      };
+    } else {
+      // backarea
+      const backarea = await this.prisma.areaBackarea.findUnique({
+        where: { alley_trdar_cd: area.code },
+        select: {
+          signgu_cd_nm: true,
+          adstrd_cd_nm: true,
+          relm_ar: true,
+        },
+      });
+      if (!backarea) return null;
+
+      return {
+        areaType: 'backarea',
+        areaTypeName: '골목상권',
+        guName: backarea.signgu_cd_nm,
+        dongName: backarea.adstrd_cd_nm,
+        area: backarea.relm_ar || 0,
+      };
+    }
+  }
 }

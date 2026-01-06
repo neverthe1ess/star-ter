@@ -8,6 +8,15 @@ export interface SummaryReportResponse {
     period: string;
   };
 
+  // 0) 위치/공간 정보
+  locationInfo: {
+    areaType: string;
+    areaTypeName: string;
+    guName: string;
+    dongName: string;
+    area: number;
+  };
+
   // 1) 핵심 지표
   keyMetrics: {
     estimatedMonthlySales: {

@@ -1,10 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Users, MapPin, BarChart3, Sparkles } from 'lucide-react';
-import AnalysisHeader from './AnalysisHeader';
 import CategoryTabs from './CategoryTabs';
 import SummaryCards from './SummaryCards';
+import AnalysisHeader from './AnalysisHeader';
+import { Navigation, Map, Maximize, Target, MapPin, BarChart3, Sparkles, Users } from 'lucide-react';
 import TimePopulationChart from './TimePopulationChart';
 import PaymentStatus from './PaymentStatus';
 
@@ -12,7 +12,7 @@ import { useMapStore } from '../../stores/useMapStore';
 import { SummaryReportResponse } from '../../types/api-responses';
 
 export default function InfoSection() {
-  const [activeTab, setActiveTab] = React.useState('population');
+  const [activeTab, setActiveTab] = React.useState('location');
   const { selectedArea, hasHydrated } = useMapStore();
   const [data, setData] = React.useState<SummaryReportResponse | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -109,27 +109,95 @@ export default function InfoSection() {
 
               <div className="px-6 py-2 space-y-4">
                 {activeTab === 'location' && (
-                  <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <MapPin size={18} className="text-blue-600" />
-                      상권 분석 리포트 요약
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 bg-gray-50 rounded-xl">
-                        <p className="text-xs text-gray-400 font-bold mb-1 uppercase tracking-wider">
-                          주요 특징
-                        </p>
-                        <p className="text-sm text-gray-700 leading-relaxed font-medium">
-                          {data.zoneOverview?.characteristics}
-                        </p>
+                  <div className="p-8 bg-white rounded-3xl border border-gray-100 shadow-sm space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+                    <div className="flex items-center justify-between border-b border-gray-50 pb-6">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-blue-600 rounded-2xl shadow-lg shadow-blue-200">
+                          <MapPin size={28} className="text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-black text-gray-900 tracking-tight">
+                            위치 및 공간 상세 분석
+                          </h3>
+                          <p className="text-sm text-gray-400 font-bold mt-0.5">상권의 물리적 특성 및 공간 분포 정보</p>
+                        </div>
                       </div>
-                      <div className="p-4 bg-gray-50 rounded-xl">
-                        <p className="text-xs text-gray-400 font-bold mb-1 uppercase tracking-wider">
-                          방문 동기
-                        </p>
-                        <p className="text-sm text-gray-700 leading-relaxed font-medium">
-                          {data.zoneOverview?.visitMotivation}
-                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-8 mt-4">
+                      {/* 상권 유형 */}
+                      <div className="group relative p-8 bg-linear-to-br from-gray-50/50 to-white rounded-[2.5rem] border border-gray-100 hover:border-blue-200 hover:shadow-2xl hover:shadow-blue-100 transition-all duration-500 cursor-default overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/30 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-blue-100/50 transition-colors duration-500" />
+                        <div className="relative flex flex-col gap-6">
+                          <div className="flex items-center gap-4">
+                            <div className="p-3 bg-white rounded-2xl shadow-xs group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                              <Navigation size={22} className="text-blue-500" />
+                            </div>
+                            <span className="text-[15px] text-gray-400 font-black uppercase tracking-[0.2em]">상권 유형</span>
+                          </div>
+                          <p className="text-3xl font-black text-gray-900 tracking-tight group-hover:text-blue-600 transition-colors">
+                            {data.locationInfo?.areaTypeName || '정보 없음'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* 소속 지역 */}
+                      <div className="group relative p-8 bg-linear-to-br from-gray-50/50 to-white rounded-[2.5rem] border border-gray-100 hover:border-indigo-200 hover:shadow-2xl hover:shadow-indigo-100 transition-all duration-500 cursor-default overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/30 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-indigo-100/50 transition-colors duration-500" />
+                        <div className="relative flex flex-col gap-6">
+                          <div className="flex items-center gap-4">
+                            <div className="p-3 bg-white rounded-2xl shadow-xs group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                              <Map size={22} className="text-indigo-500" />
+                            </div>
+                            <span className="text-[15px] text-gray-400 font-black uppercase tracking-[0.2em]">소속 지역</span>
+                          </div>
+                          <p className="text-3xl font-black text-gray-900 tracking-tight whitespace-nowrap">
+                            {data.locationInfo?.guName} <span className="text-indigo-600 underline decoration-indigo-200 underline-offset-8 decoration-4">{data.locationInfo?.dongName}</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* 상권 면적 */}
+                      <div className="group relative p-8 bg-linear-to-br from-gray-50/50 to-white rounded-[2.5rem] border border-gray-100 hover:border-emerald-200 hover:shadow-2xl hover:shadow-emerald-100 transition-all duration-500 cursor-default overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50/30 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-emerald-100/50 transition-colors duration-500" />
+                        <div className="relative flex flex-col gap-6">
+                          <div className="flex items-center gap-4">
+                            <div className="p-3 bg-white rounded-2xl shadow-xs group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                              <Maximize size={22} className="text-emerald-500" />
+                            </div>
+                            <span className="text-[15px] text-gray-400 font-black uppercase tracking-[0.2em]">면적</span>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-baseline gap-2">
+                              <span className="text-3xl font-black text-gray-900 tracking-tighter">
+                                {data.locationInfo?.area?.toLocaleString()}
+                              </span>
+                              <span className="text-lg font-black text-gray-400 uppercase">㎡</span>
+                            </div>
+                            <p className="text-base font-black text-emerald-600 bg-emerald-50 w-fit px-3 py-1 rounded-xl mt-2 drop-shadow-sm">
+                              약 {Math.round((data.locationInfo?.area || 0) / 3.3057).toLocaleString()}평
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 분석 반경 */}
+                      <div className="group relative p-8 bg-linear-to-br from-gray-50/50 to-white rounded-[2.5rem] border border-gray-100 hover:border-amber-200 hover:shadow-2xl hover:shadow-amber-100 transition-all duration-500 cursor-default overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50/30 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-amber-100/50 transition-colors duration-500" />
+                        <div className="relative flex flex-col gap-6">
+                          <div className="flex items-center gap-4">
+                            <div className="p-3 bg-white rounded-2xl shadow-xs group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                              <Target size={22} className="text-amber-500" />
+                            </div>
+                            <span className="text-[15px] text-gray-400 font-black uppercase tracking-[0.2em]">분석 반경</span>
+                          </div>
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-black text-gray-900 tracking-tighter italic">
+                              {data.meta?.radius}
+                            </span>
+                            <span className="text-2xl font-black text-gray-300 uppercase tracking-tighter">m</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

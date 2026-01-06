@@ -20,6 +20,7 @@ export class ReportService {
       industry,
       income,
       topIndustries,
+      areaDetails,
     ] = await Promise.all([
       this.repository.getLatestSales(regionCode, industryCode),
       this.repository.getLatestFootTraffic(regionCode),
@@ -28,6 +29,7 @@ export class ReportService {
       this.repository.getIndustryName(industryCode),
       this.repository.getLatestIncome(regionCode),
       this.repository.getTopIndustriesInArea(regionCode),
+      this.repository.getAreaDetails(regionCode),
     ]);
 
     // 지역 또는 산업 정보가 완전히 없는 경우에만 에러를 던지고,
@@ -233,6 +235,13 @@ export class ReportService {
         region: areaName,
         radius: 500, // 기본값
         period: '최근 분기',
+      },
+      locationInfo: {
+        areaType: areaDetails?.areaType || '',
+        areaTypeName: areaDetails?.areaTypeName || '데이터 부족',
+        guName: areaDetails?.guName || '',
+        dongName: areaDetails?.dongName || '',
+        area: areaDetails?.area || 0,
       },
       keyMetrics: {
         estimatedMonthlySales: {
