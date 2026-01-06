@@ -1,5 +1,6 @@
 
 import React, { useState, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import AnalysisCard from './AnalysisCard';
 import { useSidebarStore } from '@/stores/useSidebarStore';
 
@@ -25,10 +26,14 @@ export default function ComparisonOverlay({
   dataA,
   dataB,
 }: ComparisonOverlayProps) {
+  const pathname = usePathname();
   const { isOpen, width, isResizing } = useSidebarStore();
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'sales' | 'store' | 'population'>('sales');
   const [isStoreExpanded, setIsStoreExpanded] = useState(false);
+
+  // /map 페이지에서만 사이드바 패딩 적용
+  const hasSidebar = pathname === '/map';
 
   const scrollRefA = useRef<HTMLDivElement>(null);
   const scrollRefB = useRef<HTMLDivElement>(null);
@@ -64,10 +69,10 @@ export default function ComparisonOverlay({
 
   return (
     <div 
-      className={`absolute inset-0 z-50 flex items-center justify-center animate-fade-in p-4 overflow-visible ${
+      className={`fixed inset-0 z-50 flex items-center justify-center animate-fade-in p-4 overflow-visible ${
         isResizing ? '' : 'transition-all duration-300 ease-in-out'
       }`}
-      style={{ paddingRight: isOpen ? `${width + 32}px` : '16px' }} 
+      style={{ paddingRight: hasSidebar && isOpen ? `${width + 32}px` : '16px' }} 
     >
       
       <div className="relative flex flex-row gap-6 items-start justify-center flex-wrap">
