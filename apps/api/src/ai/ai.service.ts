@@ -4,6 +4,7 @@ import {
   embedText,
   getCategoryByMessage,
   getLocationByMessage,
+  getMarketSummary,
   getRecommendCommercialAreasQuery,
   getTablesByMessage,
   getText,
@@ -79,6 +80,11 @@ export class AiService {
 
     const result = await this.aiRepository.runSql(getText(query));
     return result;
+  }
+
+  async getSummary(areaName: string, metrics: string) {
+    const response = await getMarketSummary(areaName, metrics);
+    return getText(response);
   }
 
   private async buildAreaList(message: string) {

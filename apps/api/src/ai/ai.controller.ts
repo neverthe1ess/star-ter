@@ -1,4 +1,4 @@
-import { Controller, Get, Logger, Query } from '@nestjs/common';
+import { Controller, Get, Logger, Query, Post, Body } from '@nestjs/common';
 import { AiService } from './ai.service';
 
 @Controller('ai')
@@ -18,5 +18,13 @@ export class AiController {
   @Get('/area')
   async getAreaByMessage(@Query('message') message: string) {
     return this.aiService.getAreaByMessage(message);
+  }
+
+  @Post('/summary')
+  async getSummary(
+    @Body('areaName') areaName: string,
+    @Body('metrics') metrics: string,
+  ) {
+    return this.aiService.getSummary(areaName, metrics);
   }
 }

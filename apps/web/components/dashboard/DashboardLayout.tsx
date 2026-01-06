@@ -24,7 +24,7 @@ export default function DashboardLayout() {
   const [ageGroup, setAgeGroup] = useState<string>('total');
   const [timeSlot, setTimeSlot] = useState<string>('total');
   const [adminLevel, setAdminLevel] = useState<AdminLevel>('commercial');
-  const [detailWidth, setDetailWidth] = useState(600);
+  const [detailWidth, setDetailWidth] = useState(35); // 퍼센트 (기본값: 35%)
   const [isResizing, setIsResizing] = useState(false);
 
   // Clear selection when dashboard is fresh (e.g., back from analysis)
@@ -158,9 +158,12 @@ export default function DashboardLayout() {
         onMouseMove={(e) => {
           if (!isResizing) return;
           e.preventDefault();
-          const newWidth = document.body.clientWidth - e.clientX;
-          if (newWidth > 200 && newWidth < 1200) {
-            setDetailWidth(newWidth);
+          // 퍼센트로 변환: (전체 너비 - 마우스 X) / 전체 너비 * 100
+          const containerWidth = document.body.clientWidth;
+          const newWidthPercent = ((containerWidth - e.clientX) / containerWidth) * 100;
+          // 최소 20%, 최대 60%로 제한
+          if (newWidthPercent > 20 && newWidthPercent < 60) {
+            setDetailWidth(newWidthPercent);
           }
         }}
         onMouseUp={() => setIsResizing(false)}
@@ -251,7 +254,7 @@ export default function DashboardLayout() {
         {/* Right: Detail Panel */}
         <aside
           className="shrink-0 bg-white shadow-[-4px_0_12px_rgba(0,0,0,0.05)] z-10"
-          style={{ width: detailWidth }}
+          style={{ width: `${detailWidth}%` }}
         >
           {selectedItem && <DetailPanel item={selectedItem} />}
         </aside>

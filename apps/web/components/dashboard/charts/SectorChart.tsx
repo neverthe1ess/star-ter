@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { formatShortNumber } from '@/utils/currency-convert-format';
 import {
   BarChart,
   Bar,
@@ -31,13 +32,15 @@ export default function SectorChart({ data }: SectorChartProps) {
         margin={{ top: 20, right: 30, left: 30, bottom: 5 }}
       >
         <defs>
-          <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#3b82f6" />
-            <stop offset="100%" stopColor="#2563eb" />
+          {/* 1위: 옅은 빨간색 (Soft Coral) */}
+          <linearGradient id="softRedGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#FF8A80" />
+            <stop offset="100%" stopColor="#FF8A80" />
           </linearGradient>
-          <linearGradient id="redGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ef4444" />
-            <stop offset="100%" stopColor="#D9515E" />
+          {/* 2위 이하: 옅은 파란색 (Soft Blue) */}
+          <linearGradient id="softBlueGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#90CAF9" />
+            <stop offset="100%" stopColor="#90CAF9" />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
@@ -58,15 +61,16 @@ export default function SectorChart({ data }: SectorChartProps) {
           }}
         />
         <Bar dataKey="value" radius={[8, 8, 0, 0]} barSize={40}>
-          {data.map((entry, index) => (
+          {data.map((_, index) => (
             <Cell
               key={`cell-${index}`}
-              fill={index === 0 ? 'url(#redGradient)' : 'url(#barGradient)'}
+              fill={index === 0 ? 'url(#softRedGradient)' : 'url(#softBlueGradient)'}
             />
           ))}
           <LabelList
             dataKey="value"
             position="top"
+            formatter={(value) => formatShortNumber(Number(value) || 0)}
             style={{ fontSize: '13px', fontWeight: 'bold', fill: '#4b5563' }}
           />
         </Bar>

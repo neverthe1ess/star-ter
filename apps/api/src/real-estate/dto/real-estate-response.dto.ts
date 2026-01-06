@@ -1,15 +1,22 @@
-export interface RealEstateResponseDto {
+export class RealEstateResponseDto {
   id: string;
-  address_name: string | null;
-  address_road_name: string | null;
-  address_x: number | null;
-  address_y: number | null;
+  name: string | null;
+  address: string | null;
+  roadaddress: string | null;
+  centerlatitude: number | null;
+  centerlongitude: number | null;
+  title: string | null;
   deposit: number | null;
-  monthly_rent: number | null;
+  monthlyrent: number | null;
+  maintenancefee: number | null;
   premium: number | null;
-  price_per_pyeong: number | null;
-  area: number | null;
-  maintenance_fee: number | null;
-  phone_number: string | null;
-  floor_info: string | null;
+  areaprice: number | null;
+  size: number | null;
+  floor: number | null;
+  groundfloor: number | null;
+  businesslargecodename: string | null;
+  businessmiddlecodename: string | null;
+  nearsubwaystation: string | null;
+  ismoveindate: boolean | null;
+  previewphotourl: string | null;
 }
