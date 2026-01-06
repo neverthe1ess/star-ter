@@ -2,6 +2,37 @@ import { useEffect, useRef } from 'react';
 import { RealEstateItem } from '../types/map-store-types';
 import { useMapStore } from '../stores/useMapStore';
 
+// Kakao Maps API 타입 정의 (로컬 전용)
+interface KakaoLatLng {
+  getLat(): number;
+  getLng(): number;
+}
+
+interface KakaoCustomOverlay {
+  setMap(map: KakaoMapInstance | null): void;
+  setZIndex(zIndex: number): void;
+}
+
+interface KakaoMapInstance {
+  getCenter(): KakaoLatLng;
+  getLevel(): number;
+}
+
+// window.kakao.maps 접근을 위한 타입 안전한 헬퍼
+function getKakaoMaps(): {
+  LatLng: new (lat: number, lng: number) => KakaoLatLng;
+  CustomOverlay: new (options: {
+    position: KakaoLatLng;
+    content: HTMLElement | string;
+    yAnchor?: number;
+    zIndex?: number;
+    clickable?: boolean;
+  }) => KakaoCustomOverlay;
+} {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (window as any).kakao.maps;
+}
+
 interface ClusterGroup {
   key: string;
   lat: number;
@@ -10,16 +41,14 @@ interface ClusterGroup {
 }
 
 interface OverlayData {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  overlay: any;
+  overlay: KakaoCustomOverlay;
   element: HTMLElement;
-  itemIds: string[]; // 클러스터의 경우 여러 개, 단일 마커의 경우 1개
+  itemIds: string[];
   isCluster: boolean;
 }
 
 export function useRealEstateMarkers(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  map: any,
+  map: KakaoMapInstance | null,
   data: RealEstateItem[],
   onMarkerClick?: (item: RealEstateItem) => void,
   hoveredItemId?: string | null,
@@ -67,14 +96,27 @@ export function useRealEstateMarkers(
       const itemIds = group.items.map((item) => item.id);
 
       if (isCluster) {
-        // 클러스터 마커 스타일 (단일 마커와 동일한 패턴)
+        // 클러스터: 1층에 가장 가까운 층의 매물을 대표로 표시
+        // |floor - 1| 최솟값을 찾음 (1층이 가장 선호)
+        const representativeItem = group.items.reduce((closest, current) => {
+          const closestDistance = Math.abs((closest.floor ?? 999) - 1);
+          const currentDistance = Math.abs((current.floor ?? 999) - 1);
+          return currentDistance < closestDistance ? current : closest;
+        }, group.items[0]);
+
+        // 클러스터 마커 스타일 (단일 마커와 유사 + 카운트 배지)
         content.className = `
-          px-3 py-2 bg-white border-2 border-blue-600 rounded-full shadow-lg
-          hover:bg-blue-50 cursor-pointer flex items-center justify-center
+          relative px-2 py-1 bg-white border border-blue-600 rounded-lg shadow-md
+          hover:bg-blue-50 cursor-pointer flex flex-col items-center
           transition-all duration-200 transform
         `;
         content.innerHTML = `
-          <span class="text-sm font-bold text-blue-600">${group.items.length}건</span>
+          <div class="absolute -top-2 -right-2 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
+            <span class="text-xs font-bold text-white">${group.items.length}</span>
+          </div>
+          <div class="text-xs font-bold text-blue-600 whitespace-nowrap">
+            ${formatMoney(representativeItem.deposit)}/${formatMoney(representativeItem.monthlyrent)}
+          </div>
         `;
 
         content.addEventListener('click', () => {
@@ -99,9 +141,9 @@ export function useRealEstateMarkers(
         });
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const overlay = new (window as any).kakao.maps.CustomOverlay({
-        position: new (window as any).kakao.maps.LatLng(group.lat, group.lng),
+      const kakaoMaps = getKakaoMaps();
+      const overlay = new kakaoMaps.CustomOverlay({
+        position: new kakaoMaps.LatLng(group.lat, group.lng),
         content: content,
         yAnchor: 1.2,
         zIndex: isCluster ? 15 : 10,
@@ -129,7 +171,7 @@ export function useRealEstateMarkers(
       const isHovered = hoveredItemId ? itemIds.includes(hoveredItemId) : false;
 
       if (isCluster) {
-        // 클러스터 마커 호버 스타일 (단일 마커와 동일)
+        // 클러스터 마커 호버 스타일 (가격 표시 div 대상)
         if (isHovered) {
           overlay.setZIndex(25);
           element.classList.add(
@@ -140,10 +182,11 @@ export function useRealEstateMarkers(
           );
           element.classList.remove('bg-white', 'hover:bg-blue-50');
 
-          const textEl = element.querySelector('span');
-          if (textEl) {
-            textEl.classList.remove('text-blue-600');
-            textEl.classList.add('text-white');
+          // 가격 텍스트 색상 변경 (배지 제외)
+          const priceEl = element.querySelector('div.text-blue-600');
+          if (priceEl) {
+            priceEl.classList.remove('text-blue-600');
+            priceEl.classList.add('text-white');
           }
         } else {
           overlay.setZIndex(15);
@@ -155,10 +198,10 @@ export function useRealEstateMarkers(
           );
           element.classList.add('bg-white', 'hover:bg-blue-50');
 
-          const textEl = element.querySelector('span');
-          if (textEl) {
-            textEl.classList.remove('text-white');
-            textEl.classList.add('text-blue-600');
+          const priceEl = element.querySelector('div.text-white');
+          if (priceEl) {
+            priceEl.classList.remove('text-white');
+            priceEl.classList.add('text-blue-600');
           }
         }
       } else {

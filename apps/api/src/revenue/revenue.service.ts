@@ -100,9 +100,22 @@ interface RevenueRankingRow {
 }
 
 interface PrismaModel {
-  findMany(args: any): Promise<any>;
-  findFirst(args: any): Promise<any>;
-  groupBy(args: any): Promise<any>;
+  findMany(args: {
+    where?: Record<string, unknown>;
+    select?: Record<string, boolean>;
+    distinct?: string[];
+  }): Promise<Record<string, unknown>[]>;
+  findFirst(args: {
+    select?: Record<string, boolean>;
+    orderBy?: Record<string, 'asc' | 'desc'>;
+  }): Promise<Record<string, unknown> | null>;
+  groupBy(args: {
+    by: string[];
+    where?: Record<string, unknown>;
+    _sum?: Record<string, boolean>;
+    orderBy?: Record<string, unknown>;
+    take?: number;
+  }): Promise<Record<string, Record<string, unknown>>[]>;
 }
 
 @Injectable()
@@ -132,7 +145,7 @@ export class RevenueService {
     const resolvedQuarter =
       quarter || (await this.getLatestQuarter(client, modelConfig.modelName));
 
-    const where: Record<string, any> = {
+    const where: Record<string, unknown> = {
       stdr_yyqu_cd: resolvedQuarter,
       [modelConfig.codeField]: code,
     };
@@ -203,7 +216,7 @@ export class RevenueService {
     const resolvedQuarter =
       quarter || (await this.getLatestQuarter(client, modelConfig.modelName));
 
-    const where: Record<string, any> = {
+    const where: Record<string, unknown> = {
       stdr_yyqu_cd: resolvedQuarter,
     };
 
@@ -362,11 +375,11 @@ export class RevenueService {
       try {
         const prevRows = await client.groupBy(prevGroupByArgs);
         const prevMap = new Map<string, number>();
-        prevRows.forEach((row: any) => {
-          prevMap.set(
-            row[modelConfig.codeField],
-            Number(row._sum.thsmon_selng_amt || 0),
-          );
+        prevRows.forEach((row) => {
+          const codeVal = row[modelConfig.codeField] as string;
+          const sumVal = (row._sum as Record<string, unknown> | undefined)
+            ?.thsmon_selng_amt;
+          prevMap.set(codeVal, Number(sumVal || 0));
         });
 
         items.forEach((item: any) => {
@@ -444,7 +457,7 @@ export class RevenueService {
     }));
 
     // 4. 결과 가공: Demographics (Radar Chart)
-    const dSum = (demographicsAgg as any)._sum;
+    const dSum = demographicsAgg._sum;
     const totalMale = Number(dSum.ml_selng_amt || 0);
     const totalFemale = Number(dSum.fml_selng_amt || 0);
     const totalGender = totalMale + totalFemale || 1;
@@ -475,7 +488,7 @@ export class RevenueService {
     // 5. 결과 가공: Population (Line Chart)
     let population: { time: string; value: number }[] = [];
     if (footTraffic) {
-      const ft = footTraffic as any;
+      const ft = footTraffic;
       population = [
         { time: '00-06', value: Number(ft.tmzon_00_06_flpop_co || 0) },
         { time: '06-11', value: Number(ft.tmzon_06_11_flpop_co || 0) },
@@ -594,11 +607,11 @@ export class RevenueService {
 
     // Calculate growth rate
     const prevMap = new Map<string, number>();
-    prevData.forEach((row: any) => {
-      prevMap.set(
-        row[modelConfig.codeField],
-        Number(row._sum.thsmon_selng_amt || 0),
-      );
+    prevData.forEach((row) => {
+      const codeVal = row[modelConfig.codeField] as string;
+      const sumVal = (row._sum as Record<string, unknown> | undefined)
+        ?.thsmon_selng_amt;
+      prevMap.set(codeVal, Number(sumVal || 0));
     });
 
     const items = currentData
@@ -618,7 +631,7 @@ export class RevenueService {
         };
       })
       .sort((a: any, b: any) => b.fluctuationRate - a.fluctuationRate)
-      .slice(0, 50);
+      .slice(0, 100);
 
     return { level, items };
   }
