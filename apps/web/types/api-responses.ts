@@ -101,6 +101,14 @@ export interface SummaryReportResponse {
     implication: string;
   }[];
 
+  // 8-1) 시장 동향 (New)
+  marketTrends: {
+    opbizRt: number; // 개업률
+    clsbizRt: number; // 폐업률
+    opbizStoreCount: number; // 개업 점포 수
+    clsbizStoreCount: number; // 폐업 점포 수
+  };
+
   // 9) 결론
   conclusion: {
     category: '운영' | '상품' | '마케팅' | '데이터 부족';
