@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Users, MapPin, BarChart3, Sparkles } from 'lucide-react';
+import { Users, BarChart3, Sparkles } from 'lucide-react';
 import AnalysisHeader from './AnalysisHeader';
 import CategoryTabs from './CategoryTabs';
 import SummaryCards from './SummaryCards';
@@ -104,37 +104,12 @@ export default function InfoSection() {
             </div>
           ) : data ? (
             <div className="flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-500">
-              {/* 요약 카드 (모든 탭에서 성격에 맞게 표시) */}
-              <SummaryCards data={data} activeTab={activeTab} />
+              {/* 요약 카드 (유동인구 탭 제외) */}
+              {activeTab !== 'population' && (
+                <SummaryCards data={data} activeTab={activeTab} />
+              )}
 
               <div className="px-6 py-2 space-y-4">
-                {activeTab === 'location' && (
-                  <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <MapPin size={18} className="text-blue-600" />
-                      상권 분석 리포트 요약
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 bg-gray-50 rounded-xl">
-                        <p className="text-xs text-gray-400 font-bold mb-1 uppercase tracking-wider">
-                          주요 특징
-                        </p>
-                        <p className="text-sm text-gray-700 leading-relaxed font-medium">
-                          {data.zoneOverview?.characteristics}
-                        </p>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-xl">
-                        <p className="text-xs text-gray-400 font-bold mb-1 uppercase tracking-wider">
-                          방문 동기
-                        </p>
-                        <p className="text-sm text-gray-700 leading-relaxed font-medium">
-                          {data.zoneOverview?.visitMotivation}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 {activeTab === 'population' && (
                   <div className="animate-in zoom-in-95 duration-300">
                     <TimePopulationChart
@@ -145,63 +120,67 @@ export default function InfoSection() {
                 )}
 
                 {activeTab === 'revenue' && (
-                  <div className="animate-in zoom-in-95 duration-300">
+                  <div className="animate-in zoom-in-95 duration-300 space-y-4">
                     <PaymentStatus data={data} />
                   </div>
                 )}
 
                 {(activeTab === 'industry' || activeTab === 'risk') &&
                   data.competitionAnalysis && (
-                    <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm space-y-4">
-                      <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                        <BarChart3 size={18} className="text-emerald-600" />
-                        업종 및 경쟁 분석 인사이트
-                      </h3>
-                      {data.competitionAnalysis.map((item, idx) => (
-                        <div
-                          key={idx}
-                          className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100/50"
-                        >
-                          <p className="text-xs text-emerald-600 font-bold mb-1 uppercase tracking-wider">
-                            {item.category}
-                          </p>
-                          <p className="text-sm text-gray-700 font-bold mb-1">
-                            {item.summary}
-                          </p>
-                          <p className="text-[13px] text-gray-500 leading-relaxed">
-                            {item.implication}
-                          </p>
-                        </div>
-                      ))}
+                    <div className="animate-in zoom-in-95 duration-300 space-y-4">
+                      <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm space-y-4">
+                        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                          <BarChart3 size={18} className="text-emerald-600" />
+                          업종 및 경쟁 분석 인사이트
+                        </h3>
+                        {data.competitionAnalysis.map((item, idx) => (
+                          <div
+                            key={idx}
+                            className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100/50"
+                          >
+                            <p className="text-xs text-emerald-600 font-bold mb-1 uppercase tracking-wider">
+                              {item.category}
+                            </p>
+                            <p className="text-sm text-gray-700 font-bold mb-1">
+                              {item.summary}
+                            </p>
+                            <p className="text-[13px] text-gray-500 leading-relaxed">
+                              {item.implication}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
 
                 {(activeTab === 'cost' || activeTab === 'risk') &&
                   data.conclusion && (
-                    <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm space-y-4">
-                      <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                        <Sparkles size={18} className="text-amber-600" />
-                        최종 전략 제언
-                      </h3>
-                      <div className="space-y-3">
-                        {data.conclusion.map((item, idx) => (
-                          <div
-                            key={idx}
-                            className="flex gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors group"
-                          >
-                            <div className="w-8 h-8 shrink-0 flex items-center justify-center bg-amber-100 text-amber-700 rounded-lg font-bold text-xs group-hover:scale-110 transition-transform">
-                              {idx + 1}
+                    <div className="animate-in zoom-in-95 duration-300 space-y-4">
+                      <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm space-y-4">
+                        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                          <Sparkles size={18} className="text-amber-600" />
+                          최종 전략 제언
+                        </h3>
+                        <div className="space-y-3">
+                          {data.conclusion.map((item, idx) => (
+                            <div
+                              key={idx}
+                              className="flex gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors group"
+                            >
+                              <div className="w-8 h-8 shrink-0 flex items-center justify-center bg-amber-100 text-amber-700 rounded-lg font-bold text-xs group-hover:scale-110 transition-transform">
+                                {idx + 1}
+                              </div>
+                              <div>
+                                <p className="text-xs text-amber-600 font-bold mb-0.5">
+                                  {item.category}
+                                </p>
+                                <p className="text-sm text-gray-700 font-medium leading-relaxed">
+                                  {item.content}
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-xs text-amber-600 font-bold mb-0.5">
-                                {item.category}
-                              </p>
-                              <p className="text-sm text-gray-700 font-medium leading-relaxed">
-                                {item.content}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}

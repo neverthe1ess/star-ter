@@ -4,7 +4,7 @@ import {
   embedText,
   getCategoryByMessage,
   getLocationByMessage,
-  getMarketSummary,
+  getAiAnalysis,
   getRecommendCommercialAreasQuery,
   getTablesByMessage,
   getText,
@@ -76,8 +76,8 @@ export class AiService {
     return result;
   }
 
-  async getSummary(areaName: string, metrics: string) {
-    const response = await getMarketSummary(areaName, metrics);
+  async getAnalysis(topic: string, areaName: string, metrics: string) {
+    const response = await getAiAnalysis(topic, areaName, metrics);
     return getText(response);
   }
 

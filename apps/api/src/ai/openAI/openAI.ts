@@ -245,19 +245,30 @@ function formatTableList(tables: string[]): string {
   return result;
 }
 
-export function getMarketSummary(areaName: string, metrics: string) {
+export function getAiAnalysis(
+  topic: string,
+  areaName: string,
+  metrics: string,
+) {
+  const instructionsByTopic: Record<string, string> = {
+    population: `당신은 유동인구 분석 전문가입니다. 24시간 시간대별 유동인구 데이터를 바탕으로 해당 상권의 '인구 유동 특성'을 3줄 이내로 분석해 주세요.`,
+    revenue: `당신은 매출 분석 전문가입니다. 해당 상권의 '매출 수익 구조'를 바탕으로 수익성과 성장 잠재력을 3줄 이내로 요약해 주세요.`,
+    industry: `당신은 업종 분석 전문가입니다. 상권 내 '업종 분석' 결과와 경쟁 환경을 바탕으로 창업 시 고려할 핵심 포인트를 3줄 이내로 진단해 주세요.`,
+    risk: `당신은 리스크 분석 전문가입니다. 해당 상권의 '경쟁 리스크 분석' 결과를 바탕으로 주의해야 할 요소와 대응 전략을 3줄 이내로 짚어주세요.`,
+  };
+
+  const defaultInstruction = `당신은 상권분석 전문가입니다. 주어진 데이터를 바탕으로 핵심 특징을 3줄 이내로 명확하게 요약해 주세요.`;
+
   return OpenAIClient.getClient().responses.create({
     model: 'gpt-5-nano',
     reasoning: {
       effort: 'minimal',
     },
-    input: `지역: ${areaName}\n데이터:\n${metrics}`,
+    input: `[주제: ${topic}]\n지역: ${areaName}\n데이터:\n${metrics}`,
     instructions: `
-            당신은 상권분석 전문가입니다.
-            주어진 상권 데이터(업종 현황, 매출 추이, 유동인구 특징 등)를 바탕으로 이 상권의 핵심 특징과 현황을 3줄 이내로 명확하게 요약해주세요.
-            사용자가 한눈에 상권의 분위기를 파악할 수 있도록 핵심만 짚어서 설명하세요.
-            전문 용어는 사용하지 말고, 없는 정보는 언급하지 마세요.
-            말투는 "~해요" 체로 친근하지만 전문적으로 작성해주세요.
+            ${instructionsByTopic[topic] || defaultInstruction}
+            사용자가 한눈에 핵심을 파악할 수 있도록 말투는 "~해요" 체로 친근하지만 전문적으로 작성해 주세요.
+            없는 정보는 언급하지 말고, 핵심만 짚어서 전달하세요.
             `,
   });
 }
