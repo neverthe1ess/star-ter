@@ -332,6 +332,51 @@ export class RevenueService {
       }
     }
 
+    // Calculate fluctuation rate for commercial level
+    if (level === 'commercial') {
+      const prevQ = this.getPreviousQuarter(resolvedQuarter);
+      const codes = items.map((item) => item.code);
+
+      const prevWhere: Record<string, any> = {
+        stdr_yyqu_cd: prevQ,
+        [modelConfig.codeField]: { in: codes },
+      };
+
+      if (industryCodes) {
+        prevWhere.svc_induty_cd = { in: industryCodes.split(',') };
+      } else if (industryCode) {
+        prevWhere.svc_induty_cd = industryCode;
+      }
+
+      const prevGroupByArgs: any = {
+        by: [modelConfig.codeField],
+        where: prevWhere,
+        _sum: { thsmon_selng_amt: true },
+      };
+
+      try {
+        const prevRows = await client.groupBy(prevGroupByArgs);
+        const prevMap = new Map<string, number>();
+        prevRows.forEach((row: any) => {
+          prevMap.set(
+            row[modelConfig.codeField],
+            Number(row._sum.thsmon_selng_amt || 0),
+          );
+        });
+
+        items.forEach((item: any) => {
+          const prevAmount = prevMap.get(item.code) || 0;
+          if (prevAmount > 0) {
+            item.fluctuationRate = Number(
+              (((item.amount - prevAmount) / prevAmount) * 100).toFixed(1),
+            );
+          }
+        });
+      } catch (e) {
+        this.logger.warn('Failed to calculate fluctuation rate', e);
+      }
+    }
+
     return {
       level,
       industryCode,
@@ -588,5 +633,12 @@ export class RevenueService {
     }
 
     return latest.stdr_yyqu_cd;
+  }
+
+  private getPreviousQuarter(current: string): string {
+    const year = parseInt(current.substring(0, 4));
+    const quarter = parseInt(current.substring(4, 5));
+    if (quarter === 1) return `${year - 1}4`;
+    return `${year}${quarter - 1}`;
   }
 }

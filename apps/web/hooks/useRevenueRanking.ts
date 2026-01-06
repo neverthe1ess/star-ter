@@ -10,16 +10,17 @@ export type RankItem = {
   amount: number;
   count: number;
   changeType?: string;
+  fluctuationRate?: number;
 };
 
 type RevenueRankingResponse = {
-  level: 'gu' | 'dong';
+  level: 'gu' | 'dong' | 'commercial';
   industryCode?: string;
   items: RankItem[];
 };
 
 interface UseRevenueRankingProps {
-  level: 'gu' | 'dong';
+  level: 'gu' | 'dong' | 'commercial';
   parentGuCode?: string;
   industryCode?: string;
   industryCodes?: string;
@@ -30,7 +31,7 @@ interface UseRevenueRankingReturn {
   isLoading: boolean;
   error: string | null;
   isMoving: boolean;
-  handleSelect: (name: string, code?: string, type?: 'gu' | 'dong') => Promise<void>;
+  handleSelect: (name: string, code?: string, type?: 'gu' | 'dong' | 'commercial') => Promise<void>;
   formatAmount: (amount: number) => string;
 }
 
@@ -86,15 +87,24 @@ export const useRevenueRanking = ({
     return () => controller.abort();
   }, [level, parentGuCode, industryCode, industryCodes]);
 
-  const handleSelect = async (name: string, code?: string, type?: 'gu' | 'dong') => {
+    const handleSelect = async (
+    name: string,
+    code?: string,
+    type?: 'gu' | 'dong' | 'commercial',
+  ) => {
     if (isMoving) return;
     setIsMoving(true);
     try {
-      const result = await geocodeAddress(`서울특별시 ${name}`);
+      // 상권(commercial)의 경우 시 이름을 붙이지 않는 것이 검색 결과가 더 정확할 수 있음
+      const geocodeQuery = type === 'commercial' ? name : `서울특별시 ${name}`;
+      const result = await geocodeAddress(geocodeQuery);
+      
       if (result) {
         const targetType = type || level;
         selectArea({
-          name: result.address || name,
+          // 지오코딩 결과 주소 대신 원본 이름(상권명/행정동명)을 유지해야 
+          // 지도상의 폴리곤 명칭(commercialName/adm_nm)과 일치하여 하이라이트가 정상 작동함
+          name: name,
           coords: { lat: result.lat, lng: result.lng },
           type: targetType,
           code: code,

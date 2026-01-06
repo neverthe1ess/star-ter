@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { InfoBarData } from '../../types/map-types';
 import InfoBarHeader from './InfoBarHeader';
 import InfoBarContents from './InfoBarContents';
-import { useSidebarStore } from '../../stores/useSidebarStore';
+import { useMapStore } from '../../stores/useMapStore';
 
 interface InfoBarProps {
   data: InfoBarData | null;
@@ -14,7 +14,7 @@ interface InfoBarProps {
 
 export default function InfoBar({ data, onClose }: InfoBarProps) {
   const [mounted, setMounted] = useState(false);
-  const { isInfoBarOpen } = useSidebarStore();
+  const { isInfoBarOpen } = useMapStore();
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect

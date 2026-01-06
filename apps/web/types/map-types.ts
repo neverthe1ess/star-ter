@@ -45,6 +45,7 @@ export interface PolygonStyle {
   strokeOpacity: number;
   fillColor: string;
   fillOpacity: number;
+  zIndex?: number;
 }
 
 export interface KakaoCustomOverlay {

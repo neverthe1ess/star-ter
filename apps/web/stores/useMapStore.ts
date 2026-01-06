@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { MapStore, SelectedArea } from '../types/map-store-types';
+import { MapStore, SelectedArea, InfoBarData } from '../types/map-store-types';
 
 const ZOOM_LEVELS = {
   gu: 8,
@@ -21,6 +21,7 @@ export const useMapStore = create<MapStore>()(
       markers: [],
       highlightedAreaName: null,
       selectedArea: null,
+      isInfoBarOpen: false,
       hasHydrated: false,
 
       setCenter: (coords) => set({ center: coords }),
@@ -33,17 +34,19 @@ export const useMapStore = create<MapStore>()(
         set({ selectedIndustryCodes: codes }),
       setHighlightedAreaName: (name) => set({ highlightedAreaName: name }),
       setHasHydrated: (state) => set({ hasHydrated: state }),
+      setInfoBarOpen: (isOpen) => set({ isInfoBarOpen: isOpen }),
 
-      // 신규: 지역 선택 핸들러 (랜딩페이지용)
-      selectArea: (area: SelectedArea) => {
-        const zoomLevel = ZOOM_LEVELS[area.type];
+      // 신규: 지역 선택 핸들러 (랜딩페이지 및 지도 클릭 대응)
+      selectArea: (area: SelectedArea, fullData?: InfoBarData) => {
+        const zoomLevel = ZOOM_LEVELS[area.type] || 5;
 
         set({
           center: area.coords,
           zoom: zoomLevel,
-          selectedArea: area,
+          selectedArea: { ...area, fullData },
           searchedLocation: area.name,
           highlightedAreaName: area.name,
+          isInfoBarOpen: true,
           isMoving: true,
           markers: [
             {
@@ -57,6 +60,8 @@ export const useMapStore = create<MapStore>()(
 
         setTimeout(() => set({ isMoving: false }), 800);
       },
+
+      clearSelection: () => set({ selectedArea: null, isInfoBarOpen: false, highlightedAreaName: null }),
 
       // 기존: 좌표 기반 이동 핸들러 (호환성 유지)
       moveToLocation: (coords, location, zoom = 5) => {
@@ -104,13 +109,23 @@ export const useMapStore = create<MapStore>()(
           markers: [],
           highlightedAreaName: null,
           selectedArea: null,
+          isInfoBarOpen: false,
         }),
     }),
     {
       name: 'map-storage',
       onRehydrateStorage: (state) => {
-        return () => state.setHasHydrated(true);
+        return () => state?.setHasHydrated(true);
       },
+      // UI 상태 등은 저장하지 않음
+      partialize: (state) => ({
+        center: state.center,
+        zoom: state.zoom,
+        overlayMode: state.overlayMode,
+        selectedArea: state.selectedArea,
+        highlightedAreaName: state.highlightedAreaName,
+        searchedLocation: state.searchedLocation,
+      }),
     },
   ),
 );

@@ -14,6 +14,21 @@ export interface MapMarker {
   style?: 'default' | 'pulse';
 }
 
+export type InfoBarData = {
+  adm_nm?: string;
+  adm_cd?: string;
+  buld_nm?: string;
+  commercialName?: string;
+  commercialType?: string;
+  commercialCode?: string;
+  signgu_cd?: string;
+  adstrd_cd?: string;
+  x: string | number;
+  y: string | number;
+  polygons?: number[][][][] | number[][][] | number[][];
+  level?: AreaType;
+};
+
 // 선택된 지역 정보 (랜딩페이지에서 전달)
 export interface SelectedArea {
   name: string;
@@ -35,7 +50,8 @@ export interface MapStore {
   highlightedAreaName: string | null;
   
   // 신규: 선별된 지역 정보
-  selectedArea: SelectedArea | null;
+  selectedArea: (SelectedArea & { fullData?: InfoBarData }) | null;
+  isInfoBarOpen: boolean;
   hasHydrated: boolean;
 
   // 액션
@@ -50,7 +66,9 @@ export interface MapStore {
   setHasHydrated: (state: boolean) => void;
 
   // 상권/행정구역 선택 (줌 레벨 자동 설정)
-  selectArea: (area: SelectedArea) => void;
+  selectArea: (area: SelectedArea, fullData?: InfoBarData) => void;
+  setInfoBarOpen: (isOpen: boolean) => void;
+  clearSelection: () => void;
   
   // 기존 이동 함수 (호환성 유지)
   moveToLocation: (

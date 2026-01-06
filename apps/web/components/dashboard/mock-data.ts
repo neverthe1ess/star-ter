@@ -10,6 +10,7 @@ export interface RankingItem {
   isFavorite: boolean;
   code: string; // area code
   summary: string; // AI Summary comment
+  metricType?: 'REVENUE' | 'POPULATION';
 }
 
 export const METRIC_TYPES = [

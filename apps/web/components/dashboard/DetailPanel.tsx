@@ -117,13 +117,17 @@ export default function DetailPanel({ item }: DetailPanelProps) {
         
         <div className="flex items-center gap-3 mt-4">
            <span className="text-3xl font-bold text-gray-900">
-             {item.revenue.toLocaleString()}원
+             {item.metricType === 'POPULATION' 
+               ? `약 ${item.revenue.toLocaleString()}명`
+               : `${Math.round(item.revenue / 3).toLocaleString()}원`}
            </span>
            <span className={`px-3 py-1 rounded-full text-sm font-bold ${status.className}`}>
              {status.label}
            </span>
         </div>
-        <p className="text-md text-gray-600 mt-1">평균 매출(월)</p>
+        <p className="text-md text-gray-600 mt-1">
+          {item.metricType === 'POPULATION' ? '분기 평균 유동인구' : '평균 매출(월)'}
+        </p>
         
         {/* AI Summary Comment */}
         <div className="mt-6 bg-blue-50 p-4 rounded-xl border border-blue-100">
