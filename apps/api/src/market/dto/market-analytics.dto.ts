@@ -82,4 +82,12 @@ export class MarketAnalyticsDto {
 
   openingRate: number;
   closureRate: number;
+
+  storeCount: number;
+  franchiseCount: number;
+  similarStoreCount: number;
+
+  revenue?: {
+    quarterly: number;
+  };
 }

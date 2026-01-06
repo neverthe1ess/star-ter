@@ -25,6 +25,7 @@ const ACTION_TYPE_MAP: Record<BackendActionType, FrontendActionType> = {
   'compare.areas': 'compare',
   'rent.calculate': 'calculateRent',
   'report.generate': 'generateReport',
+  'real_estate.recommend': 'recommendRealEstate',
 };
 
 // -----------------------------------------
@@ -88,6 +89,12 @@ export function mapBackendAction(
           rent: number;
         }
       | undefined,
+
+    // 새 필드 (real_estate.recommend)
+    maxDeposit: backendPayload.maxDeposit as number | undefined,
+    maxMonthlyRent: backendPayload.maxMonthlyRent as number | undefined,
+    minSize: backendPayload.minSize as number | undefined,
+    keywords: backendPayload.keywords as string | undefined,
   };
 
   return { type: frontendType, payload };
@@ -116,6 +123,7 @@ export const ACTION_LABELS: Record<FrontendActionType, string> = {
   openAnalysisPanel: '📊 분석 패널',
   calculateRent: '💰 임대료 계산',
   generateReport: '📑 리포트 생성',
+  recommendRealEstate: '🏠 매물 추천',
 };
 
 // -----------------------------------------

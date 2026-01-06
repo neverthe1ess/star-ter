@@ -60,7 +60,7 @@ export class ActionExecutor {
     lng: number;
     zoom?: number;
   }): void {
-    const { lat, lng, zoom = 3 } = payload;
+    const { lat, lng, zoom = 4 } = payload;
 
     console.log(
       `[ActionExecutor] Moving map to (${lat}, ${lng}), zoom: ${zoom}`,

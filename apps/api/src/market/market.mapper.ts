@@ -60,6 +60,9 @@ export class MarketMapper {
     openingRate: number = 0,
     closureRate: number = 0,
     industries: IndustryData[] = [],
+    storeCount: number = 0,
+    franchiseCount: number = 0,
+    similarStoreCount: number = 0,
   ): MarketAnalyticsDto {
     if (!groupedRows || groupedRows.length === 0) {
       return this.getEmptySalesData(`${areaName} (데이터 없음)`);
@@ -173,6 +176,13 @@ export class MarketMapper {
       },
       openingRate: Math.round(openingRate * 10) / 10,
       closureRate: Math.round(closureRate * 10) / 10,
+
+      storeCount,
+      franchiseCount,
+      similarStoreCount,
+      revenue: {
+        quarterly: val(sum.thsmon_selng_amt),
+      },
     };
   }
 
@@ -218,6 +228,9 @@ export class MarketMapper {
       vitality: { openingRate: 0, closureRate: 0 },
       openingRate: 0,
       closureRate: 0,
+      storeCount: 0,
+      franchiseCount: 0,
+      similarStoreCount: 0,
     };
   }
 }

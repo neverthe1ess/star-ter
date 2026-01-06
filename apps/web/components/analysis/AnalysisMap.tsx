@@ -152,6 +152,26 @@ export default function AnalysisMap({
     }
   }, [map, selectedArea, zoom]);
 
+  // Store 상태(center, markers) 변경 시 지도 이동 처리
+  useEffect(() => {
+    if (!map || !center) return;
+
+    const moveLatLon = new window.kakao.maps.LatLng(center.lat, center.lng);
+    
+    // 현재 중심과 다를 경우에만 이동 (불필요한 애니메이션 방지)
+    const currentCenter = map.getCenter();
+    if (
+      Math.abs(currentCenter.getLat() - center.lat) > 0.0001 || 
+      Math.abs(currentCenter.getLng() - center.lng) > 0.0001
+    ) {
+      map.panTo(moveLatLon);
+    }
+
+    if (zoom && map.getLevel() !== zoom) {
+        map.setLevel(zoom, { animate: true });
+    }
+  }, [map, center, zoom]);
+
   usePopulationLayer(
     map,
     (effectiveTimeFilter || 'All') as '0-8' | '8-16' | '16-24' | 'All',

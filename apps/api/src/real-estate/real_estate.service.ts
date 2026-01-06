@@ -136,13 +136,73 @@ export class RealEstateService {
   private buildBBoxFilter(
     query: GetRealEstateQueryDto,
   ): Prisma.real_estate_infoWhereInput {
-    const { minx, miny, maxx, maxy } = query;
+    const {
+      minx,
+      miny,
+      maxx,
+      maxy,
+      maxDeposit,
+      maxMonthlyRent,
+      minSize,
+      keywords,
+    } = query;
 
-    if (!minx || !miny || !maxx || !maxy) return {};
+    const conditions: Prisma.real_estate_infoWhereInput[] = [];
+
+    // BBox 필터 (위치 기반)
+    if (minx && miny && maxx && maxy) {
+      conditions.push({
+        centerlatitude: { gte: miny, lte: maxy },
+        centerlongitude: { gte: minx, lte: maxx },
+      });
+    }
+
+    // 최대 보증금 필터 (AI는 만원 단위로 전달, DB는 천원 단위로 저장)
+    // 만원 → 천원 변환: ×10
+    if (maxDeposit) {
+      const depositInCheonWon = maxDeposit * 10;
+      conditions.push({
+        deposit: { lte: BigInt(depositInCheonWon) },
+      });
+    }
+
+    // 최대 월세 필터 (AI는 만원 단위로 전달, DB는 천원 단위로 저장)
+    if (maxMonthlyRent) {
+      const rentInCheonWon = maxMonthlyRent * 10;
+      conditions.push({
+        monthlyrent: { lte: BigInt(rentInCheonWon) },
+      });
+    }
+
+    // 최소 면적 필터 (m² 단위 → DB는 m² 저장, 프론트는 평 단위로 전달)
+    // 평 → m² 변환: 1평 = 3.3058 m²
+    if (minSize) {
+      const minSizeM2 = minSize * 3.3058;
+      conditions.push({
+        size: { gte: minSizeM2 },
+      });
+    }
+
+    // 키워드 필터 (제목, 주소, 업종명에서 검색)
+    if (keywords) {
+      conditions.push({
+        OR: [
+          { title: { contains: keywords, mode: 'insensitive' } },
+          { address: { contains: keywords, mode: 'insensitive' } },
+          {
+            businesslargecodename: { contains: keywords, mode: 'insensitive' },
+          },
+          {
+            businessmiddlecodename: { contains: keywords, mode: 'insensitive' },
+          },
+        ],
+      });
+    }
+
+    if (conditions.length === 0) return {};
 
     return {
-      centerlatitude: { gte: miny, lte: maxy },
-      centerlongitude: { gte: minx, lte: maxx },
+      AND: conditions,
     };
   }
 

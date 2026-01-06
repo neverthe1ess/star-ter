@@ -122,22 +122,44 @@ export class StoreService {
   async getStoreLocations(
     query: GetStoreLocationsQueryDto,
   ): Promise<StoreLocationsResponseDto> {
-    const { industryCode, minLng, maxLng, minLat, maxLat, limit } = query;
-
-    // bbox가 모두 있으면 사용
-    const bbox =
-      minLng !== undefined &&
-      maxLng !== undefined &&
-      minLat !== undefined &&
-      maxLat !== undefined
-        ? { minLng, maxLng, minLat, maxLat }
-        : undefined;
-
-    const stores = await this.marketRepository.findStoresByIndustryCode({
+    const {
       industryCode,
-      bbox,
-      limit: limit || 100,
-    });
+      minLng,
+      maxLng,
+      minLat,
+      maxLat,
+      limit,
+      areaCode,
+      level,
+    } = query;
+
+    let stores: { lng: number; lat: number; name: string; address: string }[] =
+      [];
+
+    // 1. 지역 코드가 있으면 Polygon 검색 우선
+    if (areaCode && level) {
+      stores = await this.marketRepository.findStoresByIndustryAndArea({
+        industryCode,
+        areaCode,
+        level,
+        limit: limit || 1000,
+      });
+    } else {
+      // 2. bbox가 있으면 사용
+      const bbox =
+        minLng !== undefined &&
+        maxLng !== undefined &&
+        minLat !== undefined &&
+        maxLat !== undefined
+          ? { minLng, maxLng, minLat, maxLat }
+          : undefined;
+
+      stores = await this.marketRepository.findStoresByIndustryCode({
+        industryCode,
+        bbox,
+        limit: limit || 100,
+      });
+    }
 
     return {
       industryCode,

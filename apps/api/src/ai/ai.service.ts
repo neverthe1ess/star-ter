@@ -55,7 +55,46 @@ export class AiService {
     const analyzeResult = await analyzeResults(input);
 
     // Structured Outputs: output_text에 JSON 문자열 ({ reply, actions }) 반환
-    return getText(analyzeResult);
+    // Structured Outputs: output_text에 JSON 문자열 ({ reply, actions }) 반환
+    const finalText = getText(analyzeResult);
+
+    try {
+      const parsedFn = JSON.parse(finalText);
+      if (parsedFn.actions && Array.isArray(parsedFn.actions)) {
+        let modified = false;
+        parsedFn.actions.forEach((action: any) => {
+          if (
+            action.type === 'real_estate.recommend' &&
+            (!action.payload?.lat || !action.payload?.lng)
+          ) {
+            const targetAreaName = action.payload?.areaName;
+            const foundArea =
+              areaList.find((a) => a.areaName === targetAreaName) ||
+              areaList[0];
+
+            if (foundArea && foundArea.lat && foundArea.lng) {
+              action.payload = {
+                ...action.payload,
+                lat: foundArea.lat,
+                lng: foundArea.lng,
+              };
+              modified = true;
+            }
+          }
+        });
+
+        if (modified) {
+          return JSON.stringify(parsedFn);
+        }
+      }
+    } catch (e) {
+      console.error(
+        '[AiService] Failed to patch coordinates in legacy function:',
+        e,
+      );
+    }
+
+    return finalText;
   }
 
   // 대화 히스토리 포함 메시지 처리 함수 (꼬리 질문 지원)
@@ -88,6 +127,10 @@ export class AiService {
     input.push({ role: 'user', content: message });
 
     const toolCallResponse = await toolCallAi(message, categories, areaList);
+    console.log(
+      '[AiService] Tool call response:',
+      JSON.stringify(toolCallResponse.output, null, 2),
+    );
     input.push(...toolCallResponse.output);
 
     for (const toolCall of toolCallResponse.output) {
@@ -108,6 +151,7 @@ export class AiService {
       });
     }
 
+    console.log('[AiService] Calling analyzeResults...');
     const analyzeResult = await analyzeResults(input);
 
     // 디버깅: LLM 응답 출력
@@ -115,6 +159,47 @@ export class AiService {
     console.log('[AI Response]', responseText);
 
     // Structured Outputs: output_text에 JSON 문자열 ({ reply, actions }) 반환
+    // Structured Outputs: output_text에 JSON 문자열 ({ reply, actions }) 반환
+    try {
+      const parsedFn = JSON.parse(responseText);
+      if (parsedFn.actions && Array.isArray(parsedFn.actions)) {
+        let modified = false;
+        parsedFn.actions.forEach((action: any) => {
+          if (
+            action.type === 'real_estate.recommend' &&
+            (!action.payload?.lat || !action.payload?.lng)
+          ) {
+            // areaList에서 좌표 찾기 (첫 번째 유효한 좌표 사용)
+            // areaName이 일치하는 것을 우선 찾고, 없으면 첫 번째 것 사용
+            const targetAreaName = action.payload?.areaName;
+            const foundArea =
+              areaList.find((a) => a.areaName === targetAreaName) ||
+              areaList[0];
+
+            if (foundArea && foundArea.lat && foundArea.lng) {
+              action.payload = {
+                ...action.payload,
+                lat: foundArea.lat,
+                lng: foundArea.lng,
+              };
+              console.log(
+                `[AiService] Injected coordinates for ${action.type}:`,
+                foundArea.lat,
+                foundArea.lng,
+              );
+              modified = true;
+            }
+          }
+        });
+
+        if (modified) {
+          return JSON.stringify(parsedFn);
+        }
+      }
+    } catch (e) {
+      console.error('[AiService] Failed to patch coordinates:', e);
+    }
+
     return responseText;
   }
 
@@ -160,6 +245,21 @@ export class AiService {
           areaVector.data[0].embedding,
           1,
         );
+
+        if (first) {
+          console.log(
+            `[DEBUG] Area found in vector DB: ${first.areaName} (${first.areaCode}, ${first.areaLevel})`,
+          );
+          const coords = await this.aiRepository.getAreaCoordinates(
+            first.areaCode,
+            first.areaLevel,
+          );
+          console.log(`[DEBUG] Coords fetched for ${first.areaName}:`, coords);
+          if (coords) {
+            first.lat = coords.lat;
+            first.lng = coords.lng;
+          }
+        }
         return first;
       }),
     );

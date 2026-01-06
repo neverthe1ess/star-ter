@@ -34,6 +34,8 @@ export class AiToolsService {
         return this.toolsRepository.recommendCommercialByIndustry(args);
       case 'compare_commercial_by_industry':
         return this.toolsRepository.compareCommercialByIndustry(args);
+      case 'recommend_real_estate':
+        return this.toolsRepository.getRecommendRealEstate(args);
       default:
         return undefined;
     }

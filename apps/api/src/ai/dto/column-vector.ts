@@ -8,4 +8,6 @@ export type AreaVectorDto = {
   areaLevel: 'city' | 'gu' | 'dong' | 'commercial';
   areaCode: string;
   distance: number;
+  lat?: number;
+  lng?: number;
 };

@@ -570,4 +570,17 @@ export class ToolsRepository {
     `;
     return rows;
   }
+  // 15) 부동산 매물 추천 (AI 파라미터 추출용)
+  async getRecommendRealEstate(params: QueryParams) {
+    return Promise.resolve({
+      status: 'success',
+      message: 'Real estate recommendation parameters extracted.',
+      params: {
+        maxDeposit: params.maxDeposit,
+        maxMonthlyRent: params.maxMonthlyRent,
+        minSize: params.minSize,
+        keywords: params.keywords,
+      },
+    });
+  }
 }

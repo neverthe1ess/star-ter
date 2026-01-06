@@ -49,6 +49,50 @@ export class AiRepository {
     return rows;
   }
 
+  async getAreaCoordinates(
+    areaCode: string,
+    areaLevel: string,
+  ): Promise<{ lat: number; lng: number } | null> {
+    try {
+      const level = areaLevel.toLowerCase();
+      console.log(
+        `[DEBUG] getAreaCoordinates called with code=${areaCode}, level=${level}`,
+      );
+
+      let rows: { x: number; y: number }[] = [];
+
+      if (level === 'commercial') {
+        const result = await this.prisma.$queryRaw<{ x: number; y: number }[]>`
+          SELECT ST_X(ST_Centroid(ST_Transform(geom, 4326))) as x,
+                 ST_Y(ST_Centroid(ST_Transform(geom, 4326))) as y
+          FROM seoul_commercial_area_grid
+          WHERE trdar_cd = ${areaCode}
+        `;
+        rows = result;
+      } else if (level === 'gu') {
+        // admin_area_gu table has x, y columns directly
+        const result = await this.prisma.adminAreaGu.findFirst({
+          where: { signgu_cd: areaCode },
+          select: { x: true, y: true },
+        });
+        if (result) rows = [result];
+      } else if (level === 'dong') {
+        // admin_area_dong table has x, y columns directly
+        const result = await this.prisma.adminAreaDong.findFirst({
+          where: { adstrd_cd: areaCode },
+          select: { x: true, y: true },
+        });
+        if (result) rows = [result];
+      }
+
+      console.log(`[DEBUG] getAreaCoordinates result count: ${rows.length}`);
+      return rows[0] ? { lat: rows[0].y, lng: rows[0].x } : null;
+    } catch (error) {
+      console.error('Failed to fetch area coordinates:', error);
+      return null;
+    }
+  }
+
   private toVectorLiteral(vector: number[]): string {
     const normalized = vector.map((value) => {
       const numberValue = Number(value);

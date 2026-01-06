@@ -213,4 +213,32 @@ export const TOOLS = [
     },
     strict: true,
   },
+  {
+    type: 'function',
+    name: 'recommend_real_estate',
+    description: '조건에 맞는 부동산 매물을 추천합니다.',
+    parameters: {
+      type: 'object',
+      properties: {
+        maxDeposit: {
+          type: 'number',
+          description: '최대 보증금 (단위: 만원)',
+        },
+        maxMonthlyRent: {
+          type: 'number',
+          description: '최대 월세 (단위: 만원)',
+        },
+        minSize: {
+          type: 'number',
+          description: '최소 면적 (평수 또는 제곱미터)',
+        },
+        keywords: {
+          type: 'string',
+          description: '검색 키워드 (예: "치킨집", "1층", "카페")',
+        },
+      },
+      additionalProperties: false,
+    },
+    strict: false,
+  },
 ];
