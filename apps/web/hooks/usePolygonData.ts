@@ -20,7 +20,7 @@ export const usePolygonData = (
   selectedCategory?: IndustryCategory | null,
   selectedSubCategoryCode?: string | null,
 ) => {
-  const { overlayMode } = useMapStore();
+  const { overlayMode, highlightedAreaName } = useMapStore();
   const { bookmarks } = useBookmark();
 
   const bookmarksSet = useMemo(() => {
@@ -30,6 +30,7 @@ export const usePolygonData = (
   const lastLevelGroupRef = useRef<string | null>(null);
   const lastOverlayModeRef = useRef<string>('revenue');
   const lastIndustryKeyRef = useRef<string>('');
+  const lastHighlightedAreaRef = useRef<string | null>(null);
   const polygonsRef = useRef<KakaoPolygon[]>([]);
   const customOverlaysRef = useRef<KakaoCustomOverlay[]>([]);
   const onPolygonClickRef = useRef(onPolygonClick);
@@ -84,13 +85,14 @@ export const usePolygonData = (
             lowSearch === 1 ? 'gu' : 'dong',
             true,
             bookmarksSet,
+            highlightedAreaName,
           );
         }
       } catch {
         return;
       }
     },
-    [overlayMode, bookmarksSet, industryParams],
+    [overlayMode, bookmarksSet, industryParams, highlightedAreaName],
   );
 
   const fetchBuildingData = useCallback(
@@ -123,13 +125,14 @@ export const usePolygonData = (
             undefined,
             false, // 건물 마커 그리지 않음
             bookmarksSet,
+            highlightedAreaName,
           );
         }
       } catch {
         return;
       }
     },
-    [overlayMode, bookmarksSet],
+    [overlayMode, bookmarksSet, highlightedAreaName],
   );
 
   const fetchCommercialData = useCallback(
@@ -201,6 +204,7 @@ export const usePolygonData = (
               'commercial',
               false,
               bookmarksSet,
+              highlightedAreaName,
             );
 
             allCommercialFeaturesRef.current = [
@@ -225,7 +229,7 @@ export const usePolygonData = (
         return;
       }
     },
-    [overlayMode, bookmarksSet, industryParams],
+    [overlayMode, bookmarksSet, industryParams, highlightedAreaName],
   );
 
   const refreshLayer = useCallback(
@@ -241,12 +245,14 @@ export const usePolygonData = (
       const modeChanged = overlayMode !== lastOverlayModeRef.current;
       const groupChanged = currentGroup !== lastLevelGroupRef.current;
       const industryChanged = industryKey !== lastIndustryKeyRef.current;
-      const shouldClear = groupChanged || modeChanged || industryChanged;
+      const highlightChanged = highlightedAreaName !== lastHighlightedAreaRef.current;
+      const shouldClear = groupChanged || modeChanged || industryChanged || highlightChanged;
 
       if (shouldClear) {
         visitedCommercialRef.current.clear();
         lastOverlayModeRef.current = overlayMode;
         lastIndustryKeyRef.current = industryKey;
+        lastHighlightedAreaRef.current = highlightedAreaName;
       }
       lastLevelGroupRef.current = currentGroup;
 
@@ -266,6 +272,7 @@ export const usePolygonData = (
       fetchCommercialData,
       overlayMode,
       industryKey,
+      highlightedAreaName,
     ],
   );
 

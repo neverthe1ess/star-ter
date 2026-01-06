@@ -282,6 +282,7 @@ export function drawPolygons(
   level?: 'gu' | 'dong' | 'commercial' | 'sido',
   shouldDrawMarkers: boolean = true,
   bookmarks?: Set<string>,
+  highlightedAreaName?: string | null,
 ) {
   if (shouldClear) {
     polygonsRef.current.forEach((poly) => poly.setMap(null));
@@ -415,6 +416,20 @@ export function drawPolygons(
           fillOpacity: 0, // 채우기 없음
         };
         hoverStyle = { ...normalStyle }; // 호버 시에도 유지
+      }
+
+      // 선택된 행정동/상권 강조 처리
+      if (highlightedAreaName && getShortName(feature) === highlightedAreaName) {
+        normalStyle = {
+          ...normalStyle,
+          strokeColor: '#000000',
+          strokeWeight: 5,
+          strokeOpacity: 1.0,
+        };
+        hoverStyle = {
+          ...normalStyle,
+          fillOpacity: Math.max(normalStyle.fillOpacity || 0, 0.4),
+        };
       }
 
       const polygon = new window.kakao.maps.Polygon({

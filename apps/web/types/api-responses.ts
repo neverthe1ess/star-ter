@@ -1,23 +1,3 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
-
-export class GetSummaryReportQueryDto {
-  @IsString()
-  @IsNotEmpty()
-  industryCode: string;
-
-  @IsString()
-  @IsNotEmpty()
-  regionCode: string;
-
-  @IsString()
-  @IsOptional()
-  industryName?: string;
-
-  @IsString()
-  @IsOptional()
-  regionName?: string;
-}
-
 export interface SummaryReportResponse {
   meta: {
     generatedAt: string;
@@ -77,7 +57,7 @@ export interface SummaryReportResponse {
     age50Plus: number;
   };
 
-  // 5) 인사이트 (프론트엔드 요구사항 추가)
+  // 5) 인사이트
   summaryInsights: {
     category: '패턴' | '고객' | '상권' | '데이터 부족';
     content: string;
@@ -107,7 +87,7 @@ export interface SummaryReportResponse {
     implication: string;
   }[];
 
-  // 9) 결론 (프론트엔드 요구사항 추가)
+  // 9) 결론
   conclusion: {
     category: '운영' | '상품' | '마케팅' | '데이터 부족';
     content: string;

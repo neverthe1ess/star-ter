@@ -13,7 +13,7 @@ export default function CtaSection() {
               상권 분석하러 가기 →
             </button>
           </Link>
-          <Link href={'/property'}>
+          <Link href={'/gongsil'}>
             <button className="w-full sm:w-auto cursor-pointer px-10 py-5 bg-white border-2 border-gray-900 text-gray-900 hover:bg-gray-100 text-xl font-bold rounded-full shadow-lg hover:shadow-xl transition-all">
               공실 등록하러 가기 +
             </button>

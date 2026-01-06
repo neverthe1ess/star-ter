@@ -211,7 +211,9 @@ export default function DetailPanel({ item }: DetailPanelProps) {
              {status.label}
            </span>
         </div>
-        <p className="text-md text-gray-600 mt-1">평균 매출(월)</p>
+        <p className="text-md text-gray-600 mt-1">
+          {item.metricType === 'POPULATION' ? '분기 평균 유동인구' : '평균 매출(월)'}
+        </p>
         
         {/* AI Summary Comment */}
         <div className="mt-6 bg-blue-50 p-4 rounded-xl border border-blue-100 min-h-[120px]">
