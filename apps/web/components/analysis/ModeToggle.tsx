@@ -1,11 +1,11 @@
 'use client';
 
 import React from 'react';
-import { PieChart, Building2 } from 'lucide-react';
+import { PieChart, Building2, Users } from 'lucide-react';
 
 interface ModeToggleProps {
-  mode: 'analysis' | 'real-estate';
-  onModeChange: (mode: 'analysis' | 'real-estate') => void;
+  mode: 'analysis' | 'real-estate' | 'population';
+  onModeChange: (mode: 'analysis' | 'real-estate' | 'population') => void;
 }
 
 /**
@@ -35,6 +35,17 @@ export default function ModeToggle({ mode, onModeChange }: ModeToggleProps) {
       >
         <Building2 className="h-4 w-4" />
         부동산
+      </button>
+      <button
+        onClick={() => onModeChange('population')}
+        className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+          mode === 'population'
+            ? 'bg-blue-600 text-white'
+            : 'text-gray-600 hover:bg-gray-100'
+        }`}
+      >
+        <Users className="h-4 w-4" />
+        유동인구
       </button>
     </div>
   );

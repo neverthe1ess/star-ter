@@ -4,6 +4,7 @@ import AnalysisLayout from '@/components/analysis/AnalysisLayout';
 import MapSection from '@/components/analysis/MapSection';
 import InfoSection from '@/components/analysis/InfoSection';
 import RealEstateInfoSection from '@/components/real-estate/RealEstateInfoSection';
+import PopulationAnalysisView from '@/components/analysis/PopulationAnalysisView/PopulationAnalysisView';
 import ComparisonOverlay from '@/components/comparison/ComparisonOverlay';
 import ReportOverlay from '@/components/report-overlay/ReportOverlay';
 import { useComparisonStore } from '@/stores/useComparisonStore';
@@ -15,13 +16,23 @@ export default function AnalysisPage() {
   const { isOpen: isReportOpen, reportRequest, closeReport } = useReportStore();
   const { viewMode } = useMapStore();
 
+  // viewMode에 따른 InfoSection 렌더링
+  const renderInfoSection = () => {
+    switch (viewMode) {
+      case 'real-estate':
+        return <RealEstateInfoSection />;
+      case 'population':
+        return <PopulationAnalysisView />;
+      default:
+        return <InfoSection />;
+    }
+  };
+
   return (
     <div className="relative h-screen w-screen overflow-hidden">
       <AnalysisLayout
         mapSection={<MapSection />}
-        infoSection={
-          viewMode === 'real-estate' ? <RealEstateInfoSection /> : <InfoSection />
-        }
+        infoSection={renderInfoSection()}
       />
       
       {/* 상권 비교 오버레이 */}
@@ -43,4 +54,3 @@ export default function AnalysisPage() {
     </div>
   );
 }
-

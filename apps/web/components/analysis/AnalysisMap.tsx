@@ -26,6 +26,7 @@ interface AnalysisMapProps {
   realEstateData?: RealEstateItem[];
   onMarkerClick?: (item: RealEstateItem) => void;
   hoveredItemId?: string | null;
+  showPopulationHeatmap?: boolean;
 }
 
 export default function AnalysisMap({
@@ -33,6 +34,7 @@ export default function AnalysisMap({
   realEstateData = [],
   onMarkerClick,
   hoveredItemId,
+  showPopulationHeatmap = false,
 }: AnalysisMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<KakaoMarker[]>([]);
@@ -129,12 +131,13 @@ export default function AnalysisMap({
     }
   }, [map, selectedArea, zoom]);
 
+  // 히트맵 레이어: prop으로 전달받은 showPopulationHeatmap 또는 내부 상태로 제어
   usePopulationLayer(
     map,
     population.timeFilter,
     population.genderFilter,
     population.ageFilter,
-    population.showLayer,
+    showPopulationHeatmap || population.showLayer,
     population.getPopulationValue,
   );
 
@@ -190,7 +193,7 @@ export default function AnalysisMap({
     <div className="relative w-full h-full">
       <div
         ref={mapRef}
-        id="kakao-map-analysis"
+        id="kakao-map"
         className="w-full h-full bg-gray-100"
       />
     </div>

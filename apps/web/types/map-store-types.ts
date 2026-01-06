@@ -2,7 +2,7 @@ export type OverlayMode = 'revenue' | 'population' | 'opening' | 'shutting';
 
 export type AreaType = 'gu' | 'dong' | 'commercial';
 
-export type ViewMode = 'analysis' | 'real-estate';
+export type ViewMode = 'analysis' | 'real-estate' | 'population';
 
 export interface MapCoordinates {
   lat: number;
