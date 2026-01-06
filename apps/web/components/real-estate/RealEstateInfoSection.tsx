@@ -87,9 +87,9 @@ export default function RealEstateInfoSection() {
     }
   }, [filteredList, sortBy]);
 
-  // AI 요약 호출 (디바운스 1.5초)
+  // AI 요약 호출 (디바운스 1.5초) - 정렬 변경 시 재호출 방지를 위해 filteredList 사용
   useEffect(() => {
-    if (displayList.length === 0) {
+    if (filteredList.length === 0) {
       setAiSummary('');
       return;
     }
@@ -99,7 +99,7 @@ export default function RealEstateInfoSection() {
 
     const timer = setTimeout(async () => {
       try {
-        const metrics = formatRealEstateMetrics(displayList);
+        const metrics = formatRealEstateMetrics(filteredList);
         const summary = await fetchRealEstateAiSummary(metrics);
 
         if (requestId === aiRequestRef.current) {
@@ -118,7 +118,7 @@ export default function RealEstateInfoSection() {
     }, 1500);
 
     return () => clearTimeout(timer);
-  }, [displayList]);
+  }, [filteredList]);
 
   // 상세 뷰 (Overlay)
   if (selectedRealEstateItem) {
@@ -243,7 +243,7 @@ export default function RealEstateInfoSection() {
                       <div className="h-3 bg-blue-200/50 rounded w-5/6"></div>
                     </div>
                   ) : aiSummary ? (
-                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+                    <p className="text-base text-gray-900 font-medium leading-relaxed whitespace-pre-line">
                       {aiSummary}
                     </p>
                   ) : (

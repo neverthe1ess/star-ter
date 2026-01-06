@@ -20,8 +20,9 @@ export default function MapSection() {
   useEffect(() => {
     if (viewMode === 'analysis') {
       clearData();
+      setSelectedRealEstateItem(null); // 상권 분석 모드로 전환 시 상세페이지 상태 초기화
     }
-  }, [viewMode, clearData]);
+  }, [viewMode, clearData, setSelectedRealEstateItem]);
 
   // 디버깅 & 스토어 동기화
   useEffect(() => {

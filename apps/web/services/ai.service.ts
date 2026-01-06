@@ -114,6 +114,19 @@ export const formatRealEstateMetrics = (items: RealEstateMetrics[]) => {
       : 0;
   };
 
+  // 만원 → 억/만원 포맷팅 (10000만원 이상이면 억 단위로)
+  const formatPrice = (value: number): string => {
+    if (value >= 10000) {
+      const billion = Math.floor(value / 10000);
+      const remainder = value % 10000;
+      if (remainder === 0) {
+        return `${billion}억`;
+      }
+      return `${billion}억 ${Math.round(remainder).toLocaleString()}만`;
+    }
+    return `${Math.round(value).toLocaleString()}만`;
+  };
+
   const avgDeposit = avg(validItems.map((i) => i.deposit));
   const avgMonthlyRent = avg(validItems.map((i) => i.monthlyrent));
   const avgPremium = avg(validItems.map((i) => i.premium));
@@ -138,9 +151,9 @@ export const formatRealEstateMetrics = (items: RealEstateMetrics[]) => {
 총 매물 수: ${validItems.length}건
 
 1. 평균 가격 정보:
-- 평균 보증금: ${avgDeposit > 0 ? `${Math.round(avgDeposit / 10).toLocaleString()}만원` : '정보 없음'}
-- 평균 월세: ${avgMonthlyRent > 0 ? `${Math.round(avgMonthlyRent / 10).toLocaleString()}만원` : '정보 없음'}
-- 평균 권리금: ${avgPremium > 0 ? `${Math.round(avgPremium / 10).toLocaleString()}만원` : '정보 없음'}
+- 평균 보증금: ${avgDeposit > 0 ? `${formatPrice(avgDeposit / 10)}원` : '정보 없음'}
+- 평균 월세: ${avgMonthlyRent > 0 ? `${formatPrice(avgMonthlyRent / 10)}원` : '정보 없음'}
+- 평균 권리금: ${avgPremium > 0 ? `${formatPrice(avgPremium / 10)}원` : '정보 없음'}
 
 2. 면적 정보:
 - 평균 면적: ${avgSize > 0 ? `${avgSize.toFixed(1)}㎡ (약 ${(avgSize / 3.3).toFixed(1)}평)` : '정보 없음'}
