@@ -46,11 +46,25 @@ export interface RealEstateItem {
   roadaddress: string | null;
   centerlatitude: number | null;
   centerlongitude: number | null;
+  previewphotourl: string | null;
+  smallphotourls: string | null;
+  originphotourls: string | null;
+  businesslargecodename: string | null;
+  businessmiddlecodename: string | null;
   deposit: number | null;
   monthlyrent: number | null;
+  premium: number | null;
+  maintenancefee: number | null;
+  floor: number | null;
+  groundfloor: number | null;
   size: number | null;
-  previewphotourl: string | null;
   title: string | null;
+  nearsubwaystation: string | null;
+  ismoveindate: boolean | null;
+  moveindate: string | null;
+  createddateutc: string | null;
+  editeddateutc: string | null;
+  areaprice: number | null;
 }
 
 export interface MapStore {
@@ -76,6 +90,8 @@ export interface MapStore {
   realEstateList: RealEstateItem[];
   // 신규: 리스트 호버 상태
   hoveredRealEstateItemId: string | null;
+  // 신규: 클러스터 필터링 좌표 (클릭한 클러스터의 좌표)
+  filteredClusterCoords: { lat: number; lng: number } | null;
 
   hasHydrated: boolean;
 
@@ -93,6 +109,9 @@ export interface MapStore {
   setSelectedRealEstateItem: (item: RealEstateItem | null) => void;
   setRealEstateList: (list: RealEstateItem[]) => void;
   setHoveredRealEstateItemId: (id: string | null) => void;
+  setFilteredClusterCoords: (
+    coords: { lat: number; lng: number } | null,
+  ) => void;
 
   // 상권/행정구역 선택 (줌 레벨 자동 설정)
   selectArea: (area: SelectedArea, fullData?: InfoBarData) => void;
