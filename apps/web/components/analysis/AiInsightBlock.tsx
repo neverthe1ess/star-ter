@@ -66,20 +66,20 @@ export default function AiInsightBlock({
         </div>
         <div className="flex-1">
           <div className="flex items-center justify-between mb-1.5">
-            <p className="text-[15px] font-bold text-gray-900 flex items-center gap-2">
+            <p className="text-[19px] font-bold text-gray-900 flex items-center gap-2">
               AI {topicLabels[topic] || '상권 분석'}
-              <span className="text-[10px] text-blue-600 font-extrabold bg-blue-100 px-2 py-0.5 rounded-full uppercase tracking-wider">
+              <span className="text-[12px] text-blue-600 font-extrabold bg-blue-100 px-2 py-0.5 rounded-full uppercase tracking-wider">
                 Insight
               </span>
             </p>
             {period && (
-              <span className="text-[10px] font-bold text-gray-400">
+              <span className="text-[13px] font-bold text-gray-400">
                 {period} 기준
               </span>
             )}
           </div>
 
-          <div className="text-[14px] text-gray-700 leading-relaxed font-medium">
+          <div className="text-[17px] text-gray-700 leading-relaxed font-medium">
             {loading ? (
               <div className="flex items-center gap-2 text-blue-400 min-h-[40px]">
                 <Loader2 className="w-4 h-4 animate-spin" />
