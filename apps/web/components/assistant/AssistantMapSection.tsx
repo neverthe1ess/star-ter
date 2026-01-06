@@ -222,7 +222,7 @@ export default function AssistantMapSection({ action }: AssistantMapSectionProps
    * 2. /store/locations?industryCode=I21006 호출
    * 3. 응답 데이터를 storeMarkers 상태에 저장
    */
-  const fetchStoreLocations = useCallback(async (seoulCode: string) => {
+  const fetchStoreLocations = useCallback(async (seoulCode: string, areaCode?: string, level?: string) => {
     // Seoul API 코드 → DB 코드 변환
     const dbCode = convertSeoulCodeToDbCode(seoulCode);
     if (!dbCode) {
@@ -231,8 +231,17 @@ export default function AssistantMapSection({ action }: AssistantMapSectionProps
     }
 
     try {
-      console.log(`[AssistantMapSection] 매장 위치 조회: ${seoulCode} → ${dbCode}`);
-      const res = await fetch(`${API_BASE_URL}/store/locations?industryCode=${dbCode}&limit=1000`);
+      console.log(`[AssistantMapSection] 매장 위치 조회: ${seoulCode} → ${dbCode}, Area: ${areaCode} (${level})`);
+      
+      const queryParams = new URLSearchParams({
+        industryCode: dbCode,
+        limit: '1000'
+      });
+      
+      if (areaCode) queryParams.append('areaCode', areaCode);
+      if (level) queryParams.append('level', level);
+
+      const res = await fetch(`${API_BASE_URL}/store/locations?${queryParams.toString()}`);
       
       if (res.ok) {
         const data = await res.json();
@@ -251,11 +260,13 @@ export default function AssistantMapSection({ action }: AssistantMapSectionProps
   // 업종 코드 변경 시 매장 위치 조회
   useEffect(() => {
     if (industryCode) {
-      fetchStoreLocations(industryCode);
+      // action payload에서 지역 정보 추출
+      const { areaCode, level } = action?.payload || {};
+      fetchStoreLocations(industryCode, areaCode, level);
     } else {
       setStoreMarkers([]);
     }
-  }, [industryCode, fetchStoreLocations]);
+  }, [industryCode, fetchStoreLocations, action]);
 
   // 액션 변경 감지 → 핸들러 실행
   useEffect(() => {

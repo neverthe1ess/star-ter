@@ -88,9 +88,17 @@ export class GetStoreLocationsQueryDto {
   @Type(() => Number)
   @IsNumber()
   @IsOptional()
-  @Min(1)
-  @Max(500)
+  // @Max(2000)
   limit?: number;
+
+  @IsString()
+  @IsOptional()
+  areaCode?: string;
+
+  @IsString()
+  @IsOptional()
+  // @IsIn(storeLevels)
+  level?: StoreLevel;
 }
 
 export class StoreLocationDto {

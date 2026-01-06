@@ -108,6 +108,7 @@ export class AiService {
       });
     }
 
+    console.log('[AiService] Calling analyzeResults...');
     const analyzeResult = await analyzeResults(input);
 
     // 디버깅: LLM 응답 출력
@@ -160,6 +161,21 @@ export class AiService {
           areaVector.data[0].embedding,
           1,
         );
+
+        if (first) {
+          console.log(
+            `[DEBUG] Area found in vector DB: ${first.areaName} (${first.areaCode}, ${first.areaLevel})`,
+          );
+          const coords = await this.aiRepository.getAreaCoordinates(
+            first.areaCode,
+            first.areaLevel,
+          );
+          console.log(`[DEBUG] Coords fetched for ${first.areaName}:`, coords);
+          if (coords) {
+            first.lat = coords.lat;
+            first.lng = coords.lng;
+          }
+        }
         return first;
       }),
     );

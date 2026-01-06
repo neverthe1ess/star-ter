@@ -53,10 +53,10 @@ export class MarketRepository {
   }
 
   // 상권 매출 추이 조회 (분기별 업종 합계)
-  async getCommercialRevenueTrend(code: string) {
+  async getCommercialRevenueTrend(code: string, industryCode?: string) {
     return this.prisma.salesCommercial.groupBy({
       by: ['stdr_yyqu_cd'],
-      where: { trdar_cd: code },
+      where: { trdar_cd: code, svc_induty_cd: industryCode },
       _sum: {
         thsmon_selng_amt: true,
         tmzon_00_06_selng_amt: true,
@@ -87,10 +87,10 @@ export class MarketRepository {
   }
 
   // 행정동 매출 추이 조회 (분기별 업종 합계)
-  async getAdminDongRevenueTrend(code: string) {
+  async getAdminDongRevenueTrend(code: string, industryCode?: string) {
     return this.prisma.salesDong.groupBy({
       by: ['stdr_yyqu_cd'],
-      where: { adstrd_cd: code },
+      where: { adstrd_cd: code, svc_induty_cd: industryCode },
       _sum: {
         thsmon_selng_amt: true,
         tmzon_00_06_selng_amt: true,
@@ -163,10 +163,10 @@ export class MarketRepository {
    * 행정구 매출 추이 조회 (분기별 업종 합계)
    * @param code 시군구 코드 (signgu_cd)
    */
-  async getAdminGuRevenueTrend(code: string) {
+  async getAdminGuRevenueTrend(code: string, industryCode?: string) {
     return this.prisma.salesGu.groupBy({
       by: ['stdr_yyqu_cd'],
-      where: { signgu_cd: code },
+      where: { signgu_cd: code, svc_induty_cd: industryCode },
       _sum: {
         thsmon_selng_amt: true,
         tmzon_00_06_selng_amt: true,
@@ -196,18 +196,38 @@ export class MarketRepository {
     });
   }
 
-  async getCommercialStoreStats(code: string) {
+  async getCommercialStoreStats(code: string, industryCode?: string) {
     return this.prisma.storeCommercial.aggregate({
-      where: { trdar_cd: code },
-      _sum: { stor_co: true, opbiz_stor_co: true, clsbiz_stor_co: true },
+      where: {
+        trdar_cd: code,
+        svc_induty_cd: industryCode,
+        stdr_yyqu_cd: LATEST_QUARTER,
+      },
+      _sum: {
+        stor_co: true,
+        opbiz_stor_co: true,
+        clsbiz_stor_co: true,
+        frc_stor_co: true,
+        similr_induty_stor_co: true,
+      },
       _max: { stdr_yyqu_cd: true },
     });
   }
 
-  async getAdministrativeStoreStats(code: string) {
+  async getAdministrativeStoreStats(code: string, industryCode?: string) {
     return this.prisma.storeDong.aggregate({
-      where: { adstrd_cd: code },
-      _sum: { stor_co: true, opbiz_stor_co: true, clsbiz_stor_co: true },
+      where: {
+        adstrd_cd: code,
+        svc_induty_cd: industryCode,
+        stdr_yyqu_cd: LATEST_QUARTER,
+      },
+      _sum: {
+        stor_co: true,
+        opbiz_stor_co: true,
+        clsbiz_stor_co: true,
+        frc_stor_co: true,
+        similr_induty_stor_co: true,
+      },
       _max: { stdr_yyqu_cd: true },
     });
   }
@@ -216,10 +236,20 @@ export class MarketRepository {
    * 행정구 상점 통계 조회 (개업/폐업 건수)
    * @param code 시군구 코드 (signgu_cd)
    */
-  async getGuStoreStats(code: string) {
+  async getGuStoreStats(code: string, industryCode?: string) {
     return this.prisma.storeGu.aggregate({
-      where: { signgu_cd: code },
-      _sum: { stor_co: true, opbiz_stor_co: true, clsbiz_stor_co: true },
+      where: {
+        signgu_cd: code,
+        svc_induty_cd: industryCode,
+        stdr_yyqu_cd: LATEST_QUARTER,
+      },
+      _sum: {
+        stor_co: true,
+        opbiz_stor_co: true,
+        clsbiz_stor_co: true,
+        frc_stor_co: true,
+        similr_induty_stor_co: true,
+      },
       _max: { stdr_yyqu_cd: true },
     });
   }
@@ -387,6 +417,138 @@ export class MarketRepository {
       LIMIT ${limit}
     `;
 
+    return result;
+  }
+  async findStoresByIndustryAndArea({
+    industryCode,
+    areaCode,
+    level,
+    limit = 1000,
+  }: {
+    industryCode: string;
+    areaCode: string;
+    level: string;
+    limit?: number;
+  }): Promise<{ lng: number; lat: number; name: string; address: string }[]> {
+    console.log('[MarketRepository] findStoresByIndustryAndArea:', {
+      industryCode,
+      areaCode,
+      level,
+    });
+    let result: { lng: number; lat: number; name: string; address: string }[] =
+      [];
+
+    if (level === 'commercial') {
+      console.log('[DEBUG] Executing Commercial Area Query...');
+      // 상권: seoul_commercial_area_grid (geom 존재, SRID 4326)
+      try {
+        result = await this.prisma.$queryRaw<
+          { lng: number; lat: number; name: string; address: string }[]
+        >`
+          SELECT 
+            s.longitude as lng,
+            s.latitude as lat,
+            s.store_name as name,
+            s.road_name_address as address
+          FROM seoul_commercial_store_info s
+          JOIN seoul_commercial_area_grid a ON a.trdar_cd = ${areaCode}
+          WHERE s.business_category_small_code LIKE ${industryCode + '%'}
+            AND ST_Intersects(s.geom, a.geom)
+          LIMIT ${limit}
+        `;
+        // DEBUG: Find 'Chicken' Code
+        try {
+          const chickenCodes = await this.prisma.$queryRaw`
+            SELECT DISTINCT business_category_small_code, business_category_small_name
+            FROM seoul_commercial_store_info
+            WHERE business_category_small_name LIKE '%치킨%'
+            LIMIT 5
+          `;
+          console.log('[DEBUG] Chicken Industry Codes:', chickenCodes);
+        } catch (e) {
+          console.error('[DEBUG] Chicken Search Failed:', e);
+        }
+
+        console.log(`[DEBUG] Commercial Stores Found: ${result.length}`);
+      } catch (e) {
+        console.error('[DEBUG] Commercial Query Failed:', e);
+      }
+    } else if (level === 'gu') {
+      // 자치구: admin_area_gu (polygons JSON)
+      // EPSG:5179 -> 4326 변환 필요
+      result = await this.prisma.$queryRaw<
+        { lng: number; lat: number; name: string; address: string }[]
+      >`
+        WITH area_geom AS (
+          SELECT ST_Transform(
+            ST_SetSRID(
+              ST_GeomFromGeoJSON(
+                jsonb_build_object(
+                  'type',
+                  CASE 
+                    WHEN jsonb_typeof(polygons #> '{0,0,0}') = 'number' THEN 'Polygon' 
+                    ELSE 'MultiPolygon' 
+                  END,
+                  'coordinates',
+                  polygons
+                )
+              ),
+              5179
+            ),
+            4326
+          ) as geom
+          FROM admin_area_gu
+          WHERE signgu_cd = ${areaCode}
+        )
+        SELECT 
+          s.longitude as lng,
+          s.latitude as lat,
+          s.store_name as name,
+          s.road_name_address as address
+        FROM seoul_commercial_store_info s, area_geom a
+        WHERE s.business_category_small_code LIKE ${industryCode + '%'}
+          AND ST_Intersects(s.geom, a.geom)
+        LIMIT ${limit}
+      `;
+    } else if (level === 'dong') {
+      // 행정동: admin_area_dong (polygons JSON)
+      result = await this.prisma.$queryRaw<
+        { lng: number; lat: number; name: string; address: string }[]
+      >`
+        WITH area_geom AS (
+          SELECT ST_Transform(
+            ST_SetSRID(
+              ST_GeomFromGeoJSON(
+                jsonb_build_object(
+                  'type',
+                  CASE 
+                    WHEN jsonb_typeof(polygons #> '{0,0,0}') = 'number' THEN 'Polygon' 
+                    ELSE 'MultiPolygon' 
+                  END,
+                  'coordinates',
+                  polygons
+                )
+              ),
+              5179
+            ),
+            4326
+          ) as geom
+          FROM admin_area_dong
+          WHERE adstrd_cd = ${areaCode}
+        )
+        SELECT 
+          s.longitude as lng,
+          s.latitude as lat,
+          s.store_name as name,
+          s.road_name_address as address
+        FROM seoul_commercial_store_info s, area_geom a
+        WHERE s.business_category_small_code LIKE ${industryCode + '%'}
+          AND ST_Intersects(s.geom, a.geom)
+        LIMIT ${limit}
+      `;
+    }
+
+    console.log(`[MarketRepository] Found ${result.length} stores.`);
     return result;
   }
 }

@@ -79,6 +79,7 @@ export function toolCallAi(
             ${formatCategoryVectors(categories)}
 
             지역 코드와 이름 같은경우 아래 값을 참고하세요.
+            지도를 이동해야 할 경우(map.pan_to) 반드시 아래 제공된 위도(lat), 경도(lng) 값을 사용하세요.
             ${formatAreaVectors(areaList)}
             `,
   });
@@ -98,25 +99,28 @@ export function analyzeResults(input: ResponseInput) {
 도구 호출 결과를 참고하여 최종 응답을 생성해 주세요.
 
 [중요: 액션 선택 우선순위]
-- "분석", "분석해줘", "매출", "개업률", "폐업률" 키워드 → ui.open_panel (분석 패널)
+- "분석", "매출", "개업률", "폐업률", "얼마 있어", "몇 개" 등 데이터/통계 요청 → ui.open_panel (분석 패널)
+- "점포", "가게", "치킨집", "카페", "보여줘" 등 특정 업종 위치/정보 요청 → ui.open_panel
+- *주의*: 단순 점포 수나 현황을 물어볼 때도 반드시 'ui.open_panel'을 포함하여 지도에 마커를 보여주세요.
 - "순위", "TOP", "랭킹", "높은/낮은 상권" 키워드 → ranking.show (매출 랭킹)
 - "비교", "vs", "어디가 나아" 키워드 → compare.areas (상권 비교)
 - "유동인구", "방문객", "시간대" 키워드 → population.filter (유동인구)
 - "임대료", "수익", "창업비용" 키워드 → rent.calculate (임대료)
 - "리포트", "보고서" 키워드 → report.generate (리포트)
-- 위 키워드 없이 위치만 언급 → map.pan_to (지도 이동)
+- 위 내용 없이 *단순히 위치만* 확인하려는 경우 → map.pan_to (지도 이동)
 
 [사용 가능한 액션 타입]
 
 1. map.pan_to - 지도를 특정 위치로 이동
-   - 사용 시점: 위치만 보여달라고 할 때 (분석 요청 없음)
+   - 사용 시점: 업종 분석 없이 *단순 지명 위치*만 궁금해할 때
    - 필수: lat, lng, zoom(항상 3), areaName
-   - 예: "강남역 어디야?", "홍대 위치 보여줘" → map.pan_to
+   - 예: "강남역 어디야?", "서울 위치 보여줘"
 
-2. ui.open_panel - 분석 패널 열기 ⭐ 분석 요청 시 사용
-   - 사용 시점: 특정 상권의 상세 분석, 매출 분석 요청 시
+2. ui.open_panel - 분석 패널 열기 (지도가 해당 상권으로 이동함)
+   - 사용 시점: 상권 분석, 업종 통계(점포 수, 매출 등), *업종 마커 표시*가 필요할 때
    - 필수: level(gu/dong/commercial), lat, lng, areaName, panelType(summary)
-   - 예: "강남역 상권 분석해줘", "역삼동 매출 분석" → ui.open_panel
+   - 선택: industryCode (업종 언급 시 필수 포함)
+   - 예: "강남역 치킨집 몇 개야?", "홍대 카페 보여줘", "성수동 매출 분석"
 
 3. ranking.show - 매출 랭킹 표시
    - 사용 시점: 순위, TOP N, 매출 높은/낮은 상권 질문 시
@@ -148,6 +152,7 @@ export function analyzeResults(input: ResponseInput) {
 - 액션이 필요없는 일반 대화는 빈 배열 []
 - 가장 적합한 액션 1개만 선택
 - "분석" 키워드가 있으면 map.pan_to 대신 ui.open_panel 사용!
+- map.pan_to 사용 시, 반드시 도구 호출 결과나 컨텍스트에 포함된 lat, lng 값을 사용하세요. 임의의 값을 생성하지 마세요.
 - 사용하지 않는 payload 필드는 null로 설정
 `,
   });
@@ -263,7 +268,7 @@ function formatAreaVectors(areas: AreaVectorDto[]): string {
   return areas
     .map(
       (area) =>
-        `area_name: ${area.areaName}, area_level: ${area.areaLevel}, area_code: ${area.areaCode}`,
+        `area_name: ${area.areaName}, area_level: ${area.areaLevel}, area_code: ${area.areaCode}, lat: ${area.lat || 'null'}, lng: ${area.lng || 'null'}`,
     )
     .join('\n');
 }

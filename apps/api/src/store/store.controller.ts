@@ -24,6 +24,7 @@ export class StoreController {
   getStoreLocations(
     @Query() query: GetStoreLocationsQueryDto,
   ): Promise<StoreLocationsResponseDto> {
+    console.log('[StoreController] getStoreLocations query:', query);
     return this.storeService.getStoreLocations(query);
   }
 }
