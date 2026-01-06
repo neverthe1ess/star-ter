@@ -27,6 +27,11 @@ export default function DashboardLayout() {
   const [detailWidth, setDetailWidth] = useState(35); // 퍼센트 (기본값: 35%)
   const [isResizing, setIsResizing] = useState(false);
 
+  // Clear selection when dashboard is fresh (e.g., back from analysis)
+  React.useEffect(() => {
+    setSelectedItem(null);
+  }, []);
+
   const AGE_OPTIONS = [
     { label: '전체 연령', value: 'total' },
     { label: '10대', value: '10' },
@@ -97,7 +102,7 @@ export default function DashboardLayout() {
   };
 
   return (
-    <div className="flex flex-col bg-white">
+    <div className="flex flex-col h-screen bg-white">
       {/* 1. Global Header */}
       <header className="flex h-16 items-center justify-between border-b border-gray-200 px-6">
         <div className="flex items-center gap-8">

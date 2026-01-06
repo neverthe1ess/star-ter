@@ -1,6 +1,5 @@
 import { ClientAction } from '@/types/actions';
 import { useMapStore } from '@/stores/useMapStore';
-import { useSidebarStore } from '@/stores/useSidebarStore';
 
 /**
  * ActionExecutor
@@ -93,16 +92,22 @@ export class ActionExecutor {
     // summary 패널: InfoBar 열기 (selectArea를 통해 데이터 주입)
     if (panelType === 'summary') {
       if (lat && lng && level) {
-        useSidebarStore.getState().selectArea({
-          x: lng,
-          y: lat,
-          level,
-          adm_nm: areaName,
-          // 필요한 경우 다른 코드도 매핑 (현재는 이름과 좌표, 레벨로 충분)
-        });
+        useMapStore.getState().selectArea(
+          {
+            name: areaName || 'AI Search Result',
+            coords: { lat, lng },
+            type: level as any,
+          },
+          {
+            x: lng,
+            y: lat,
+            level: level as any,
+            adm_nm: areaName,
+          },
+        );
       } else {
         // 데이터가 부족하면 그냥 열기만 함 (빈 상태)
-        useSidebarStore.getState().setInfoBarOpen(true);
+        useMapStore.getState().setInfoBarOpen(true);
       }
     }
 

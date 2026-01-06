@@ -31,7 +31,7 @@ interface UseRevenueRankingReturn {
   isLoading: boolean;
   error: string | null;
   isMoving: boolean;
-  handleSelect: (name: string) => Promise<void>;
+  handleSelect: (name: string, code?: string, type?: 'gu' | 'dong' | 'commercial') => Promise<void>;
   formatAmount: (amount: number) => string;
 }
 
@@ -41,7 +41,7 @@ export const useRevenueRanking = ({
   industryCode,
   industryCodes,
 }: UseRevenueRankingProps): UseRevenueRankingReturn => {
-  const { moveToLocation } = useMapStore();
+  const { selectArea } = useMapStore();
   const [isMoving, setIsMoving] = useState(false);
   const [items, setItems] = useState<RankItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -87,18 +87,32 @@ export const useRevenueRanking = ({
     return () => controller.abort();
   }, [level, parentGuCode, industryCode, industryCodes]);
 
-  const handleSelect = async (name: string) => {
+    const handleSelect = async (
+    name: string,
+    code?: string,
+    type?: 'gu' | 'dong' | 'commercial',
+  ) => {
     if (isMoving) return;
     setIsMoving(true);
     try {
-      const result = await geocodeAddress(`서울특별시 ${name}`);
-      if (result) {
-        moveToLocation(
-          { lat: result.lat, lng: result.lng },
-          result.address || name,
-          level === 'dong' ? 5 : 7,
-        );
-      }
+      // 상권(commercial)의 경우 시 이름을 붙이지 않는 것이 검색 결과가 더 정확할 수 있음
+      const geocodeQuery = type === 'commercial' ? name : `서울특별시 ${name}`;
+      const result = await geocodeAddress(geocodeQuery);
+      
+      const targetType = type || level;
+      
+      // 지오코딩 성공/실패 여부와 관계없이 selectArea 호출
+      // 지오코딩 실패 시 서울 중심 좌표를 기본값으로 사용 (code가 있으면 분석 페이지에서 정상 조회 가능)
+      const coords = result 
+        ? { lat: result.lat, lng: result.lng }
+        : { lat: 37.5665, lng: 126.9780 }; // 서울 중심 기본 좌표
+      
+      selectArea({
+        name: name,
+        coords: coords,
+        type: targetType,
+        code: code,
+      });
     } finally {
       setIsMoving(false);
     }

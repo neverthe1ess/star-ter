@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { RankingItem } from './mock-data';
 import RankNavItem from '../rank-nav/RankNavItem';
 import {
@@ -44,6 +45,7 @@ export default function RankingList({
   timeSlot,
   adminLevel = 'commercial',
 }: RankingListProps) {
+  const router = useRouter();
   // Favorites State
   const [favorites, setFavorites] = React.useState<Set<string>>(new Set());
 
@@ -75,6 +77,7 @@ export default function RankingList({
 
 
   const handleItemClick = async (item: RankItem) => {
+    if (adminLevel === 'gu') return;
     // Map API item to RankingItem format for DetailPanel
     const rankingItem: RankingItem = {
       id: item.code,
@@ -82,7 +85,7 @@ export default function RankingList({
       name: item.name,
       category: '상권',
       revenue: item.amount, // This holds Population Count for Population Theme
-      fluctuation: getFluctuationFromChangeType(item.changeType),
+      fluctuation: item.fluctuationRate ?? getFluctuationFromChangeType(item.changeType),
       volume: 0,
       stores: item.count,
       isFavorite: favorites.has(item.code),
@@ -91,17 +94,8 @@ export default function RankingList({
     };
 
     onSelect(rankingItem);
-    await handleSelect(item.name);
-  };
-
-  React.useEffect(() => {
-    if (!isLoading && items.length > 0 && !hasSelected) {
-      handleItemClick(items[0]);
-      setHasSelected(true);
-    }
-  }, [items, isLoading, hasSelected]);
-
-
+    // 주소 검색 및 스토어 업데이트 (코드와 레벨 정보 추가 전달)
+    await handleSelect(item.name, item.code, adminLevel);
 
   const metricLabel =
     themeType === 'POPULATION' ? '유동인구 (명)' : '매출 (분기)';
@@ -142,7 +136,7 @@ export default function RankingList({
                 item={item}
                 rank={index + 1}
                 onClick={() => handleItemClick(item)}
-                disabled={false}
+                disabled={adminLevel === 'gu'}
                 isFavorite={favorites.has(item.code)}
                 onToggleFavorite={(e) => toggleFavorite(e, item.code)}
                 fluctuation={

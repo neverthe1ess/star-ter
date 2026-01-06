@@ -55,8 +55,8 @@ export default function BottomMenuBox({
   onToggleReport,
 }: BottomMenuProps) {
   const [active, setActive] = useState<ActiveType | 'none'>('none');
-  const { setInfoBarOpen, setIsOpen, setSelectedArea } = useSidebarStore();
-  const { setSelectedIndustryCodes } = useMapStore();
+  const { setIsOpen } = useSidebarStore();
+  const { setInfoBarOpen, clearSelection, setSelectedIndustryCodes } = useMapStore();
 
   function modalClose() {
     if (active === 'report' && onToggleReport) {
@@ -68,7 +68,7 @@ export default function BottomMenuBox({
   function handleIndustry(id: string) {
     const selected = IndustryData.find((item) => item.code === id);
     if (selected) {
-      setSelectedArea(null);
+      clearSelection();
       setInfoBarOpen(true);
       onSelectCategory(selected);
       const childCodes = selected.children?.map((child) => child.code) || [];
