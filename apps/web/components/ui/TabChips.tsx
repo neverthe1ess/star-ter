@@ -53,7 +53,7 @@ export default function TabChips<T extends string>({
   };
 
   const baseStyle =
-    'shrink-0 px-4 py-2 text-base font-medium transition-all whitespace-nowrap';
+    'shrink-0 px-4 py-2 text-lg font-medium transition-all whitespace-nowrap';
 
   const styles = {
     primary: {

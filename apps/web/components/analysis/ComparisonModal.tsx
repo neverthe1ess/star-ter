@@ -196,8 +196,8 @@ export default function ComparisonModal({ isOpen, onClose }: ComparisonModalProp
         {/* 헤더 */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">상권 비교</h2>
-            <p className="text-base text-gray-500 mt-0.5">
+            <h2 className="text-3xl font-bold text-gray-900">상권 비교</h2>
+            <p className="text-lg text-gray-500 mt-0.5">
               {selectedArea?.name ? (
                 <>
                   <span className="font-medium text-blue-600">{selectedArea.name}</span>
@@ -307,7 +307,7 @@ export default function ComparisonModal({ isOpen, onClose }: ComparisonModalProp
         </div>
 
         {/* 리스트 헤더 */}
-        <div className="grid grid-cols-11 gap-4 border-b border-gray-100 px-6 py-3 text-sm font-semibold text-gray-500 bg-gray-50/80">
+        <div className="grid grid-cols-11 gap-4 border-b border-gray-100 px-6 py-3 text-base font-semibold text-gray-500 bg-gray-50/80">
           <div className="col-span-4 pl-12">순위 / 상권명</div>
           <div className="col-span-3 text-right">{getMetricLabel()}</div>
           <div className="col-span-2 text-right">{getFluctuationLabel()}</div>
