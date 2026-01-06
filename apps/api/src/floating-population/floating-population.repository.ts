@@ -1,3 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -9,6 +14,11 @@ import {
   GetPopulationRankingQueryDto,
   PopulationRankingItemDto,
 } from './dto/population-ranking.dto';
+import {
+  RawQueryResult,
+  MZRankingRow,
+  GenderRankingRow,
+} from './dto/repository.types';
 
 // 전역 상수 정의
 const AGE_GROUPS = [
@@ -31,21 +41,6 @@ const GENDERS = ['m', 'f'] as const;
 const GRANULAR_FIELDS = GENDERS.flatMap((g) =>
   AGE_GROUPS.map((a) => `${g}${a}`),
 );
-
-/**
- * 데이터베이스 조회 결과 타입을 정의합니다.
- */
-interface RawTimeSlotJson extends Record<string, any> {
-  ts: string; // time_slot
-  ap: number; // avg_pop
-  sp: number; // sum_pop
-}
-
-interface RawQueryResult {
-  id: string; // cell_id
-  geom: string; // geometry
-  slots: RawTimeSlotJson[]; // time_slots
-}
 
 @Injectable()
 export class FloatingPopulationRepository {
@@ -358,43 +353,53 @@ export class FloatingPopulationRepository {
         table: 'foot_traffic_gu',
         codeField: 'signgu_cd',
         nameField: 'signgu_cd_nm',
+        changeTable: 'commercial_change_gu',
       },
       dong: {
         table: 'foot_traffic_dong',
         codeField: 'adstrd_cd',
         nameField: 'adstrd_cd_nm',
+        changeTable: 'commercial_change_dong',
       },
       commercial: {
         table: 'foot_traffic_commercial',
         codeField: 'trdar_cd',
         nameField: 'trdar_cd_nm',
+        changeTable: 'commercial_change_commercial',
       },
     };
     const cfg = configMap[level];
 
     const sql = `
+      WITH latest_quarter AS (
+        SELECT MAX(stdr_yyqu_cd) as q FROM ${cfg.table}
+      )
       SELECT 
-        ${cfg.codeField} as code,
-        ${cfg.nameField} as name,
-        (COALESCE(agrde_10_flpop_co, 0) + COALESCE(agrde_20_flpop_co, 0) + COALESCE(agrde_30_flpop_co, 0)) as mz_pop,
-        tot_flpop_co as total_pop,
-        CASE WHEN tot_flpop_co > 0 
-          THEN ROUND((COALESCE(agrde_10_flpop_co, 0) + COALESCE(agrde_20_flpop_co, 0) + COALESCE(agrde_30_flpop_co, 0))::numeric / tot_flpop_co * 100, 1)
+        f.${cfg.codeField} as code,
+        f.${cfg.nameField} as name,
+        (COALESCE(f.agrde_10_flpop_co, 0) + COALESCE(f.agrde_20_flpop_co, 0) + COALESCE(f.agrde_30_flpop_co, 0)) as mz_pop,
+        f.tot_flpop_co as total_pop,
+        CASE WHEN f.tot_flpop_co > 0 
+          THEN ROUND((COALESCE(f.agrde_10_flpop_co, 0) + COALESCE(f.agrde_20_flpop_co, 0) + COALESCE(f.agrde_30_flpop_co, 0))::numeric / f.tot_flpop_co * 100, 1)
           ELSE 0 
-        END as mz_ratio
-      FROM ${cfg.table}
-      WHERE stdr_yyqu_cd = (SELECT MAX(stdr_yyqu_cd) FROM ${cfg.table})
+        END as mz_ratio,
+        c.trdar_chnge_ix as change_type
+      FROM ${cfg.table} f
+      CROSS JOIN latest_quarter lq
+      LEFT JOIN ${cfg.changeTable} c ON f.${cfg.codeField} = c.${cfg.codeField} AND c.stdr_yyqu_cd = lq.q
+      WHERE f.stdr_yyqu_cd = lq.q
       ORDER BY mz_ratio DESC, mz_pop DESC
       LIMIT 100
     `;
 
     try {
-      const results = await this.prisma.$queryRawUnsafe<any[]>(sql);
+      const results = await this.prisma.$queryRawUnsafe<MZRankingRow[]>(sql);
       return results.map((r) => ({
         code: r.code,
         name: r.name,
         amount: Number(r.mz_pop),
         count: 0,
+        changeType: r.change_type || undefined,
         fluctuationRate: Number(r.mz_ratio), // MZ 비중을 fluctuationRate로 활용
       }));
     } catch (e) {
@@ -415,44 +420,55 @@ export class FloatingPopulationRepository {
         table: 'foot_traffic_gu',
         codeField: 'signgu_cd',
         nameField: 'signgu_cd_nm',
+        changeTable: 'commercial_change_gu',
       },
       dong: {
         table: 'foot_traffic_dong',
         codeField: 'adstrd_cd',
         nameField: 'adstrd_cd_nm',
+        changeTable: 'commercial_change_dong',
       },
       commercial: {
         table: 'foot_traffic_commercial',
         codeField: 'trdar_cd',
         nameField: 'trdar_cd_nm',
+        changeTable: 'commercial_change_commercial',
       },
     };
     const cfg = configMap[level];
     const genderCol = gender === 'male' ? 'ml_flpop_co' : 'fml_flpop_co';
 
     const sql = `
+      WITH latest_quarter AS (
+        SELECT MAX(stdr_yyqu_cd) as q FROM ${cfg.table}
+      )
       SELECT 
-        ${cfg.codeField} as code,
-        ${cfg.nameField} as name,
-        ${genderCol} as gender_pop,
-        tot_flpop_co as total_pop,
-        CASE WHEN tot_flpop_co > 0 
-          THEN ROUND(${genderCol}::numeric / tot_flpop_co * 100, 1)
+        f.${cfg.codeField} as code,
+        f.${cfg.nameField} as name,
+        f.${genderCol} as gender_pop,
+        f.tot_flpop_co as total_pop,
+        CASE WHEN f.tot_flpop_co > 0 
+          THEN ROUND(f.${genderCol}::numeric / f.tot_flpop_co * 100, 1)
           ELSE 0 
-        END as gender_ratio
-      FROM ${cfg.table}
-      WHERE stdr_yyqu_cd = (SELECT MAX(stdr_yyqu_cd) FROM ${cfg.table})
+        END as gender_ratio,
+        c.trdar_chnge_ix as change_type
+      FROM ${cfg.table} f
+      CROSS JOIN latest_quarter lq
+      LEFT JOIN ${cfg.changeTable} c ON f.${cfg.codeField} = c.${cfg.codeField} AND c.stdr_yyqu_cd = lq.q
+      WHERE f.stdr_yyqu_cd = lq.q
       ORDER BY gender_ratio DESC, gender_pop DESC
       LIMIT 100
     `;
 
     try {
-      const results = await this.prisma.$queryRawUnsafe<any[]>(sql);
+      const results =
+        await this.prisma.$queryRawUnsafe<GenderRankingRow[]>(sql);
       return results.map((r) => ({
         code: r.code,
         name: r.name,
         amount: Number(r.gender_pop),
         count: 0,
+        changeType: r.change_type || undefined,
         fluctuationRate: Number(r.gender_ratio), // 성별 비중을 fluctuationRate로 활용
       }));
     } catch (e) {

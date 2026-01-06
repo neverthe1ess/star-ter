@@ -205,7 +205,7 @@ export default function AnalysisCard({
             <div>
               <p className="text-base font-bold text-gray-800 mb-1">총 직장 인구</p>
               <div className="flex items-end gap-2 mb-4">
-                <span className="text-3xl font-extrabold text-emerald-600">
+                <span className="text-4xl font-extrabold text-emerald-600">
                     {data && data.population?.working ? <AnimatedNumber value={data.population.working.total} /> : '0'}
                     <span className="text-base font-normal text-gray-600 ml-1">명</span>
                 </span>
