@@ -1,4 +1,4 @@
-import { API_ENDPOINTS } from '@/config/api';
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
 export interface RegisterRealEstateParams {
   name?: string;
@@ -30,7 +30,7 @@ export const realEstateService = {
       throw new Error('로그인이 필요합니다.');
     }
 
-    const response = await fetch(API_ENDPOINTS.REAL_ESTATE, {
+    const response = await fetch(`${API_URL}/real-estate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
