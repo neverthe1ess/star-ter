@@ -2,6 +2,8 @@ export type OverlayMode = 'revenue' | 'population' | 'opening' | 'shutting';
 
 export type AreaType = 'gu' | 'dong' | 'commercial';
 
+export type ViewMode = 'analysis' | 'real-estate';
+
 export interface MapCoordinates {
   lat: number;
   lng: number;
@@ -37,21 +39,44 @@ export interface SelectedArea {
   code?: string; // 행정동 코드(adstrd_cd) 또는 상권 코드(trdar_cd)
 }
 
+export interface RealEstateItem {
+  id: string;
+  name: string | null;
+  address: string | null;
+  roadaddress: string | null;
+  centerlatitude: number | null;
+  centerlongitude: number | null;
+  deposit: number | null;
+  monthlyrent: number | null;
+  size: number | null;
+  previewphotourl: string | null;
+  title: string | null;
+}
+
 export interface MapStore {
   // 상태
   center: MapCoordinates | null;
   zoom: number;
-  searchedLocation: string | null;  // 이름 기반 검색어 (호환성 유지)
+  searchedLocation: string | null; // 이름 기반 검색어 (호환성 유지)
   isMoving: boolean;
   isMapIdle: boolean;
   overlayMode: OverlayMode;
+  viewMode: ViewMode;
   selectedIndustryCodes: string[] | null;
   markers: MapMarker[];
   highlightedAreaName: string | null;
-  
+
   // 신규: 선별된 지역 정보
   selectedArea: (SelectedArea & { fullData?: InfoBarData }) | null;
   isInfoBarOpen: boolean;
+
+  // 신규: 선택된 부동산 매물
+  selectedRealEstateItem: RealEstateItem | null;
+  // 신규: 현재 보고 있는 지역의 부동산 매물 리스트
+  realEstateList: RealEstateItem[];
+  // 신규: 리스트 호버 상태
+  hoveredRealEstateItemId: string | null;
+
   hasHydrated: boolean;
 
   // 액션
@@ -61,15 +86,19 @@ export interface MapStore {
   setIsMoving: (moving: boolean) => void;
   setIsMapIdle: (idle: boolean) => void;
   setOverlayMode: (mode: OverlayMode) => void;
+  setViewMode: (mode: ViewMode) => void;
   setSelectedIndustryCodes: (codes: string[] | null) => void;
   setHighlightedAreaName: (name: string | null) => void;
   setHasHydrated: (state: boolean) => void;
+  setSelectedRealEstateItem: (item: RealEstateItem | null) => void;
+  setRealEstateList: (list: RealEstateItem[]) => void;
+  setHoveredRealEstateItemId: (id: string | null) => void;
 
   // 상권/행정구역 선택 (줌 레벨 자동 설정)
   selectArea: (area: SelectedArea, fullData?: InfoBarData) => void;
   setInfoBarOpen: (isOpen: boolean) => void;
   clearSelection: () => void;
-  
+
   // 기존 이동 함수 (호환성 유지)
   moveToLocation: (
     coords: MapCoordinates,
@@ -78,7 +107,7 @@ export interface MapStore {
     centered?: boolean,
   ) => void;
   moveToLocations: (locations: MapMarker[]) => void;
-  
+
   clearMarkers: () => void;
   reset: () => void;
 }
