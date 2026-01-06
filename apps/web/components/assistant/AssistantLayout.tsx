@@ -4,6 +4,7 @@ import React, { useState, useCallback } from 'react';
 import AppHeader from '@/components/header/AppHeader';
 import AssistantMapSection from './AssistantMapSection';
 import AssistantChat from './AssistantChat';
+import type { AssistantAction } from '@/types/assistant-types';
 
 // 레이아웃 상수
 const MIN_MAP_WIDTH = 20; // 최소 지도 너비 (%)
@@ -19,25 +20,16 @@ export default function AssistantLayout() {
   const [mapWidth, setMapWidth] = useState(DEFAULT_MAP_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
 
-  // 지도 액션 상태 (LLM 응답에서 받은 액션)
-  const [mapAction, setMapAction] = useState<{
-    type: 'showMarker' | 'highlightPolygon' | 'compare' | null;
-    data?: {
-      code?: string;
-      codes?: string[];
-      coordinates?: [number, number];
-    };
-  }>({ type: null });
+  // 현재 액션 상태 (공유 타입 사용)
+  const [currentAction, setCurrentAction] = useState<AssistantAction | null>(null);
 
   // 리사이즈 핸들 드래그 처리
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {
       if (!isResizing) return;
       e.preventDefault();
-      // 마우스 X 좌표를 퍼센트로 변환
       const containerWidth = document.body.clientWidth;
       const newWidthPercent = (e.clientX / containerWidth) * 100;
-      // 최소/최대 범위 제한
       if (newWidthPercent >= MIN_MAP_WIDTH && newWidthPercent <= MAX_MAP_WIDTH) {
         setMapWidth(newWidthPercent);
       }
@@ -45,13 +37,10 @@ export default function AssistantLayout() {
     [isResizing]
   );
 
-  // LLM 응답에서 지도 액션 처리
-  const handleMapAction = useCallback(
-    (action: typeof mapAction) => {
-      setMapAction(action);
-    },
-    []
-  );
+  // 채팅에서 액션 수신 시 처리
+  const handleAction = useCallback((action: AssistantAction) => {
+    setCurrentAction(action);
+  }, []);
 
   return (
     <div className="flex flex-col h-screen w-full bg-white">
@@ -70,7 +59,7 @@ export default function AssistantLayout() {
           className="h-full overflow-hidden"
           style={{ width: `${mapWidth}%` }}
         >
-          <AssistantMapSection mapAction={mapAction} />
+          <AssistantMapSection action={currentAction} />
         </div>
 
         {/* 리사이즈 핸들 */}
@@ -86,9 +75,10 @@ export default function AssistantLayout() {
           className="h-full overflow-hidden bg-gray-50"
           style={{ width: `${100 - mapWidth}%` }}
         >
-          <AssistantChat onMapAction={handleMapAction} />
+          <AssistantChat onAction={handleAction} />
         </div>
       </div>
     </div>
   );
 }
+

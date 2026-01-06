@@ -1,42 +1,21 @@
 'use client';
 
 import React, { useState, useRef, useEffect, FormEvent } from 'react';
-import { Send, Sparkles, ArrowRight } from 'lucide-react';
+import { Send, Sparkles } from 'lucide-react';
+import { mapBackendAction, getActionLabel } from '@/utils/action-mapper';
+import type { AssistantAction, ChatMessage } from '@/types/assistant-types';
 
-interface MapAction {
-  type: 'showMarker' | 'highlightPolygon' | 'compare' | null;
-  data?: {
-    code?: string;
-    codes?: string[];
-    coordinates?: [number, number];
-  };
-}
-
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-  mapAction?: MapAction;
-  // 카드형 컨텐츠 (체크리스트, 버튼 등)
-  card?: {
-    title: string;
-    items?: string[];
-    buttonText?: string;
-    buttonAction?: string;
-  };
-}
-
+// Props 타입
 interface AssistantChatProps {
-  onMapAction: (action: MapAction) => void;
+  onAction: (action: AssistantAction) => void;
 }
 
-// 모던 LLM 스타일 채팅 UI (Wix 스타일 참조)
+// 모던 LLM 스타일 채팅 UI
 // - 큼직한 카드형 말풍선
 // - 넓은 간격과 여백
 // - 깔끔한 입력창
-export default function AssistantChat({ onMapAction }: AssistantChatProps) {
-  const [messages, setMessages] = useState<Message[]>([
+export default function AssistantChat({ onAction }: AssistantChatProps) {
+  const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
       role: 'assistant',
@@ -72,7 +51,7 @@ export default function AssistantChat({ onMapAction }: AssistantChatProps) {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    const userMessage: Message = {
+    const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
       content: input.trim(),
@@ -89,18 +68,29 @@ export default function AssistantChat({ onMapAction }: AssistantChatProps) {
       );
       const data = await response.json();
 
-      const assistantMessage: Message = {
+      // 백엔드: { reply: string, actions: Action[] }
+      const replyContent = data.reply || data.message || '응답을 처리하는 중 문제가 발생했습니다.';
+      
+      // Actions 변환 (action-mapper 유틸리티 사용)
+      let action: AssistantAction | null = null;
+      
+      if (data.actions && Array.isArray(data.actions) && data.actions.length > 0) {
+        const backendAction = data.actions[0];
+        action = mapBackendAction(backendAction.type, backendAction.payload || {});
+      }
+
+      const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.reply || data.action || '응답을 처리하는 중 문제가 발생했습니다.',
+        content: replyContent,
         timestamp: new Date(),
-        mapAction: data.mapAction,
+        action: action || undefined,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
 
-      if (data.mapAction) {
-        onMapAction(data.mapAction);
+      if (action) {
+        onAction(action);
       }
     } catch (error) {
       console.error('Chat error:', error);
@@ -173,15 +163,15 @@ export default function AssistantChat({ onMapAction }: AssistantChatProps) {
                     </div>
                   )}
 
-                  {/* 지도 액션 뱃지 */}
-                  {message.mapAction?.type && (
+                  {/* 액션 뱃지 (getActionLabel 사용) */}
+                  {message.action && (
                     <div className="absolute -bottom-6 left-1 flex items-center gap-1.5">
                       <span className="relative flex h-2 w-2">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
                       </span>
                       <span className="text-[11px] font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                        지도 업데이트됨
+                        {getActionLabel(message.action.type)}
                       </span>
                     </div>
                   )}
