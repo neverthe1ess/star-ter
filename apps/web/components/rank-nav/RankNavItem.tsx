@@ -54,7 +54,7 @@ export default function RankNavItem({
       {/* Fluctuation */}
       <div className="col-span-2 flex justify-end">
         <div
-          className={`flex items-center text-xs font-bold ${
+          className={`flex items-center text-sm font-bold ${
             fluctuation > 0
               ? 'text-red-500'
               : fluctuation < 0
