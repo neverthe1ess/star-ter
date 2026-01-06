@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { RankingItem } from './mock-data';
 import RankNavItem from '../rank-nav/RankNavItem';
@@ -48,6 +48,7 @@ export default function RankingList({
   const router = useRouter();
   // Favorites State
   const [favorites, setFavorites] = React.useState<Set<string>>(new Set());
+  const [hoveredItem, setHoveredItem] = useState<RankItem | null>(null);
 
   const toggleFavorite = (e: React.MouseEvent, code: string) => {
     e.stopPropagation();
@@ -135,28 +136,31 @@ export default function RankingList({
         ) : items.length > 0 ? (
           <>
             {items.slice(0, 10).map((item, index) => (
-              <RankNavItem
-                key={item.code}
-                item={item}
-                rank={index + 1}
-                onClick={() => handleItemClick(item)}
-                disabled={adminLevel === 'gu'}
-                isFavorite={favorites.has(item.code)}
-                onToggleFavorite={(e) => toggleFavorite(e, item.code)}
-                fluctuation={
-                  item.fluctuationRate ??
-                  getFluctuationFromChangeType(item.changeType)
-                }
-                formatAmount={(val) => {
-                  if (themeType === 'POPULATION') {
-                    return `약 ${val.toLocaleString()}명`;
+              <div key={item.code}
+              onMouseEnter={() => setHoveredItem(item)}
+              onMouseLeave={() => setHoveredItem(null)}>
+                <RankNavItem
+                  item={item}
+                  rank={index + 1}
+                  onClick={() => handleItemClick(item)}
+                  disabled={adminLevel === 'gu'}
+                  isFavorite={favorites.has(item.code)}
+                  onToggleFavorite={(e) => toggleFavorite(e, item.code)}
+                  fluctuation={
+                    item.fluctuationRate ??
+                    getFluctuationFromChangeType(item.changeType)
                   }
-                  return `약 ${(val / 100000000).toLocaleString(undefined, {
-                    minimumFractionDigits: 1,
-                    maximumFractionDigits: 1,
-                  })}억원`;
-                }}
-              />
+                  formatAmount={(val) => {
+                    if (themeType === 'POPULATION') {
+                      return `약 ${val.toLocaleString()}명`;
+                    }
+                    return `약 ${(val / 100000000).toLocaleString(undefined, {
+                      minimumFractionDigits: 1,
+                      maximumFractionDigits: 1,
+                    })}억원`;
+                  }}
+                />
+              </div>
             ))}
           </>
         ) : (

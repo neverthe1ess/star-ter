@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { RankingItem, MetricType } from './mock-data';
 import { useMarketAnalytics } from '@/hooks/useMarketAnalytics';
 import { RevenueLevel } from '@/services/revenue.service';
-import { fetchAiSummary, formatMetricsForAi } from '@/services/ai.service';
 
 // 분리된 하위 컴포넌트들
 import MarketHeader from './detail/MarketHeader';
