@@ -1,9 +1,27 @@
 'use client';
 
-import React, { useMemo } from 'react';
-import { Building2, MapPin, X, Home, ChevronLeft, Filter } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import {
+  Building2,
+  MapPin,
+  X,
+  Home,
+  ChevronLeft,
+  Filter,
+  ChevronDown,
+} from 'lucide-react';
 import { useMapStore } from '../../stores/useMapStore';
 import { RealEstateItem } from '../../types/map-store-types';
+
+type SortOption = 'latest' | 'deposit' | 'monthlyrent' | 'premium' | 'size';
+
+const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: 'latest', label: '최신순' },
+  { value: 'deposit', label: '보증금순' },
+  { value: 'monthlyrent', label: '월세순' },
+  { value: 'premium', label: '권리금순' },
+  { value: 'size', label: '평수순' },
+];
 
 export default function RealEstateInfoSection() {
   const {
@@ -14,6 +32,9 @@ export default function RealEstateInfoSection() {
     setFilteredClusterCoords,
   } = useMapStore();
 
+  const [sortBy, setSortBy] = useState<SortOption>('latest');
+  const [isSortOpen, setIsSortOpen] = useState(false);
+
   const handleBack = () => {
     setSelectedRealEstateItem(null);
   };
@@ -23,7 +44,7 @@ export default function RealEstateInfoSection() {
   };
 
   // 클러스터 필터링 적용
-  const displayList = useMemo(() => {
+  const filteredList = useMemo(() => {
     if (!filteredClusterCoords) return realEstateList;
 
     const { lat, lng } = filteredClusterCoords;
@@ -34,6 +55,27 @@ export default function RealEstateInfoSection() {
       return itemLat === lat && itemLng === lng;
     });
   }, [realEstateList, filteredClusterCoords]);
+
+  // 정렬 적용
+  const displayList = useMemo(() => {
+    const sorted = [...filteredList];
+
+    switch (sortBy) {
+      case 'deposit':
+        return sorted.sort((a, b) => (a.deposit ?? 0) - (b.deposit ?? 0));
+      case 'monthlyrent':
+        return sorted.sort(
+          (a, b) => (a.monthlyrent ?? 0) - (b.monthlyrent ?? 0),
+        );
+      case 'premium':
+        return sorted.sort((a, b) => (a.premium ?? 0) - (b.premium ?? 0));
+      case 'size':
+        return sorted.sort((a, b) => (a.size ?? 0) - (b.size ?? 0));
+      case 'latest':
+      default:
+        return sorted; // 기본 순서 유지 (최신순은 API에서 처리됨)
+    }
+  }, [filteredList, sortBy]);
 
   // 상세 뷰 (Overlay)
   if (selectedRealEstateItem) {
@@ -78,8 +120,42 @@ export default function RealEstateInfoSection() {
                 {displayList.length}
               </span>
             </h1>
-            <div className="flex gap-2">
-              <span className="text-xs text-gray-400">최신순</span>
+
+            {/* 정렬 드롭다운 */}
+            <div className="relative">
+              <button
+                onClick={() => setIsSortOpen(!isSortOpen)}
+                className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <span>
+                  {SORT_OPTIONS.find((o) => o.value === sortBy)?.label}
+                </span>
+                <ChevronDown
+                  size={14}
+                  className={`transition-transform ${isSortOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+
+              {isSortOpen && (
+                <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 min-w-32">
+                  {SORT_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => {
+                        setSortBy(option.value);
+                        setIsSortOpen(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg ${
+                        sortBy === option.value
+                          ? 'text-blue-600 font-medium bg-blue-50'
+                          : 'text-gray-700'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -169,7 +245,7 @@ function RealEstateCard({
       <div className="flex-1 p-3 flex flex-col justify-between">
         <div>
           <div className="text-lg font-bold text-gray-900 leading-tight">
-            월세 {formatMoney(deposit)} / {formatMoney(monthlyrent)}
+            {formatMoney(deposit)} / {formatMoney(monthlyrent)}
           </div>
 
           <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
@@ -297,7 +373,7 @@ function DetailView({ item }: { item: RealEstateItem }) {
             <div className="p-3 bg-gray-50 rounded-lg">
               <p className="text-xs text-gray-500 font-medium mb-1">층수</p>
               <p className="font-bold text-gray-900">
-                {floor !== null ? `${floor}층` : '-'}
+                {floor !== null ? formatFloor(floor) : '-'}
                 {groundfloor !== null && ` / 지상 ${groundfloor}층`}
               </p>
             </div>
@@ -406,4 +482,11 @@ function formatArea(m2: number | null): string {
   if (!m2) return '0m²';
   const pyeong = (m2 / 3.3058).toFixed(1);
   return `${m2}m² (${pyeong}평)`;
+}
+
+function formatFloor(floor: number): string {
+  if (floor < 0) {
+    return `지하 ${Math.abs(floor)}층`;
+  }
+  return `${floor}층`;
 }

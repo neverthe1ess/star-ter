@@ -21,8 +21,8 @@ const tabs: Tab[] = [
   { id: 'population', label: '인구 유동 특성', icon: <Users size={14} /> },
   { id: 'revenue', label: '매출 수익 구조', icon: <TrendingUp size={14} /> },
   { id: 'industry', label: '업종 분석', icon: <Building2 size={14} /> },
-  { id: 'cost', label: '창업 비용·손익', icon: <DollarSign size={14} /> },
-  { id: 'risk', label: '경쟁·리스크 분석', icon: <AlertTriangle size={14} /> },
+  { id: 'cost', label: '창업 비용 손익', icon: <DollarSign size={14} /> },
+  { id: 'risk', label: '경쟁 리스크 분석', icon: <AlertTriangle size={14} /> },
 ];
 
 interface CategoryTabsProps {
@@ -54,7 +54,9 @@ export default function CategoryTabs({
                 }
               `}
             >
-              <span className={isActive ? 'text-white' : 'text-gray-400'}>{tab.icon}</span>
+              <span className={isActive ? 'text-white' : 'text-gray-400'}>
+                {tab.icon}
+              </span>
               <span>{tab.label}</span>
             </button>
           );

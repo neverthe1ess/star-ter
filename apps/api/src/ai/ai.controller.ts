@@ -20,11 +20,12 @@ export class AiController {
     return this.aiService.getAreaByMessage(message);
   }
 
-  @Post('/summary')
-  async getSummary(
+  @Post('/analyze')
+  async analyze(
+    @Body('topic') topic: string,
     @Body('areaName') areaName: string,
     @Body('metrics') metrics: string,
   ) {
-    return this.aiService.getSummary(areaName, metrics);
+    return this.aiService.getAnalysis(topic, areaName, metrics);
   }
 }
