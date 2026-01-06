@@ -5,6 +5,7 @@ import {
   getCategoryByMessage,
   getLocationByMessage,
   getAiAnalysis,
+  getRealEstateSummary,
   getRecommendCommercialAreasQuery,
   getTablesByMessage,
   getText,
@@ -78,6 +79,11 @@ export class AiService {
 
   async getAnalysis(topic: string, areaName: string, metrics: string) {
     const response = await getAiAnalysis(topic, areaName, metrics);
+    return getText(response);
+  }
+
+  async getRealEstateSummary(metrics: string) {
+    const response = await getRealEstateSummary(metrics);
     return getText(response);
   }
 

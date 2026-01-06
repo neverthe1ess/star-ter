@@ -272,3 +272,25 @@ export function getAiAnalysis(
             `,
   });
 }
+
+export function getRealEstateSummary(metrics: string) {
+  return OpenAIClient.getClient().responses.create({
+    model: 'gpt-5-nano',
+    reasoning: {
+      effort: 'minimal',
+    },
+    input: metrics,
+    instructions: `
+            당신은 부동산 전문가입니다.
+            주어진 매물 데이터(보증금, 월세, 권리금, 면적, 층수 등)를 분석하여 이 지역의 부동산 현황을 3줄 이내로 요약해주세요.
+
+            요약에는 다음 내용을 포함해주세요:
+            - 평균 보증금, 월세, 권리금 수준
+            - 주요 면적대 (소형/중형/대형)
+            - 창업자에게 도움이 될 인사이트
+
+            전문 용어는 쉽게 풀어서 설명하고, 없는 정보는 언급하지 마세요.
+            말투는 "~해요" 체로 친근하지만 전문적으로 작성해주세요.
+            `,
+  });
+}

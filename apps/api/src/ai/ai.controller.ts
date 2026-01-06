@@ -28,4 +28,15 @@ export class AiController {
   ) {
     return this.aiService.getAnalysis(topic, areaName, metrics);
   }
+
+  @Post('/real-estate-summary')
+  async getRealEstateSummary(@Body('metrics') metrics: string) {
+    const startTime = Date.now();
+    this.logger.log('Received real estate summary request');
+    const response = await this.aiService.getRealEstateSummary(metrics);
+    this.logger.log(
+      `Real estate summary response time: ${Date.now() - startTime} ms`,
+    );
+    return response;
+  }
 }
