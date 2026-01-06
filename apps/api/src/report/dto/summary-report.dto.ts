@@ -122,4 +122,23 @@ export interface SummaryReportResponse {
     content: string;
     highlight?: string;
   }[];
+
+  // 10) 매출 분석
+  revenueAnalysis: {
+    monthlyTotal: number;
+    avgTransactionPrice: number;
+    totalTransactionCount: number;
+    weekdayComparison: {
+      weekday: number;
+      weekend: number;
+    };
+    dailyRatio: {
+      day: string;
+      ratio: number;
+    }[];
+    timePeriodRatio: {
+      timeRange: string;
+      ratio: number;
+    }[];
+  };
 }

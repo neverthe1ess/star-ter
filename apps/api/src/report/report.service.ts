@@ -42,6 +42,9 @@ export class ReportService {
 
     const defaultSales = {
       thsmon_selng_amt: 0,
+      thsmon_selng_co: 0,
+      mdwk_selng_amt: 0,
+      wkend_selng_amt: 0,
       mon_selng_amt: 0,
       tues_selng_amt: 0,
       wed_selng_amt: 0,
@@ -228,7 +231,7 @@ export class ReportService {
       (100 - (age10 + age20 + age30 + age40)).toFixed(1),
     );
 
-    return {
+    const baseResult = {
       meta: {
         generatedAt: new Date().toISOString().split('T')[0],
         category: industryName,
@@ -469,6 +472,48 @@ export class ReportService {
         },
       ],
     };
+
+    const result: SummaryReportResponse = {
+      ...(baseResult as Omit<SummaryReportResponse, 'revenueAnalysis'>),
+      revenueAnalysis: {
+        monthlyTotal: Math.floor(avgRevenue),
+        avgTransactionPrice:
+          totalRevenue > 0
+            ? Math.floor(
+                totalRevenue / (Number(activeSales.thsmon_selng_co) || 1),
+              )
+            : 0,
+        totalTransactionCount: Math.floor(
+          (Number(activeSales.thsmon_selng_co) || 0) / (storeCount || 1) / 3,
+        ),
+        weekdayComparison: {
+          weekday: Number(
+            this.calcRatio(Number(activeSales.mdwk_selng_amt), [
+              { value: Number(activeSales.mdwk_selng_amt) },
+              { value: Number(activeSales.wkend_selng_amt) },
+            ]).toFixed(1),
+          ),
+          weekend: 0, // 아래에서 보정
+        },
+        dailyRatio: days.map((d) => ({
+          day: d.name,
+          ratio: Number(this.calcRatio(d.value, days).toFixed(1)),
+        })),
+        timePeriodRatio: times.map((t) => ({
+          timeRange: t.name,
+          ratio: Number(this.calcRatio(t.value, times).toFixed(1)),
+        })),
+      },
+    };
+
+    // 주말 비중 보정
+    if (result.revenueAnalysis.weekdayComparison.weekday > 0) {
+      result.revenueAnalysis.weekdayComparison.weekend = Number(
+        (100 - result.revenueAnalysis.weekdayComparison.weekday).toFixed(1),
+      );
+    }
+
+    return result;
   }
 
   private calcRatio(value: number, all: { value: number }[]): number {

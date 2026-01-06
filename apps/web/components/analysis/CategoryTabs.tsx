@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import {
-  MapPin,
   Users,
   TrendingUp,
   Building2,
@@ -19,7 +18,6 @@ interface Tab {
 }
 
 const tabs: Tab[] = [
-  { id: 'location', label: '위치·공간 정보', icon: <MapPin size={14} /> },
   { id: 'population', label: '인구 유동 특성', icon: <Users size={14} /> },
   { id: 'revenue', label: '매출 수익 구조', icon: <TrendingUp size={14} /> },
   { id: 'industry', label: '업종 분석', icon: <Building2 size={14} /> },
