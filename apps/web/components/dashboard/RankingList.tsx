@@ -101,15 +101,6 @@ export default function RankingList({
     router.push('/analysis');
   };
 
-  React.useEffect(() => {
-    if (!isLoading && items.length > 0 && !hasSelected) {
-      handleItemClick(items[0]);
-      setHasSelected(true);
-    }
-  }, [items, isLoading, hasSelected]);
-
-
-
   const metricLabel =
     themeType === 'POPULATION' ? '유동인구 (명)' : '매출 (분기)';
 

@@ -82,11 +82,19 @@ export class ReportRepository {
       });
       return data ? { adstrd_nm: data.adstrd_nm } : null;
     } else if (area.type === 'commercial') {
+      // 1차: areaCommercial에서 조회
       const data = await this.prisma.areaCommercial.findUnique({
         where: { trdar_cd: area.code },
         select: { trdar_cd_nm: true },
       });
-      return data ? { adstrd_nm: data.trdar_cd_nm } : null;
+      if (data) return { adstrd_nm: data.trdar_cd_nm };
+
+      // 2차: 관광특구 등 areaCommercial에 없는 경우 salesCommercial에서 이름 조회
+      const salesData = await this.prisma.salesCommercial.findFirst({
+        where: { trdar_cd: area.code },
+        select: { trdar_cd_nm: true },
+      });
+      return salesData ? { adstrd_nm: salesData.trdar_cd_nm } : null;
     } else {
       const data = await this.prisma.areaBackarea.findUnique({
         where: { alley_trdar_cd: area.code },
@@ -185,6 +193,15 @@ export class ReportRepository {
         select: { alley_trdar_cd: true },
       });
       if (back) return { type: 'backarea', code: v };
+    }
+
+    // 4. 폴백: salesCommercial에 데이터가 있는지 확인 (관광특구 등 area 테이블 누락 케이스)
+    for (const v of variants) {
+      const salesData = await this.prisma.salesCommercial.findFirst({
+        where: { trdar_cd: v },
+        select: { trdar_cd: true },
+      });
+      if (salesData) return { type: 'commercial', code: v };
     }
 
     return null;

@@ -99,17 +99,20 @@ export const useRevenueRanking = ({
       const geocodeQuery = type === 'commercial' ? name : `서울특별시 ${name}`;
       const result = await geocodeAddress(geocodeQuery);
       
-      if (result) {
-        const targetType = type || level;
-        selectArea({
-          // 지오코딩 결과 주소 대신 원본 이름(상권명/행정동명)을 유지해야 
-          // 지도상의 폴리곤 명칭(commercialName/adm_nm)과 일치하여 하이라이트가 정상 작동함
-          name: name,
-          coords: { lat: result.lat, lng: result.lng },
-          type: targetType,
-          code: code,
-        });
-      }
+      const targetType = type || level;
+      
+      // 지오코딩 성공/실패 여부와 관계없이 selectArea 호출
+      // 지오코딩 실패 시 서울 중심 좌표를 기본값으로 사용 (code가 있으면 분석 페이지에서 정상 조회 가능)
+      const coords = result 
+        ? { lat: result.lat, lng: result.lng }
+        : { lat: 37.5665, lng: 126.9780 }; // 서울 중심 기본 좌표
+      
+      selectArea({
+        name: name,
+        coords: coords,
+        type: targetType,
+        code: code,
+      });
     } finally {
       setIsMoving(false);
     }
