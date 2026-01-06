@@ -4,6 +4,7 @@ import React from 'react';
 import { Users, Clock, CalendarDays } from 'lucide-react';
 import { SummaryReportResponse } from '../../types/api-responses';
 import AiInsightBlock from './AiInsightBlock';
+import WeeklyPopulationChart from './WeeklyPopulationChart';
 
 interface TimePopulationChartProps {
   data: SummaryReportResponse;
@@ -213,6 +214,9 @@ export default function TimePopulationChart({
           </div>
         )}
       </div>
+
+      {/* 4. 요일별 유동인구 차트 */}
+      {data.weeklyFlow && <WeeklyPopulationChart data={data.weeklyFlow} />}
     </div>
   );
 }
