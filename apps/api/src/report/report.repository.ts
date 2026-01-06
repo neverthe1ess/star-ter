@@ -5,10 +5,101 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ReportRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  private readonly INDUSTRY_CODE_MAP: Record<string, string[]> = {
+    I2: [
+      'CS100001',
+      'CS100002',
+      'CS100003',
+      'CS100004',
+      'CS100005',
+      'CS100006',
+      'CS100007',
+      'CS100008',
+      'CS100009',
+      'CS100010',
+    ], // 음식
+    P1: ['CS200001', 'CS200002', 'CS200003', 'CS200004'], // 교육 (예시 코드)
+    Q1: ['CS200005', 'CS200006', 'CS200007', 'CS200008'], // 의료
+    R1: ['CS200009', 'CS200010', 'CS200011', 'CS200012'], // 오락
+    S2: ['CS200013', 'CS200014', 'CS200015', 'CS200016'], // 생활
+    I1: ['CS200017', 'CS200018', 'CS200019', 'CS200020'], // 숙박
+    G2: ['CS300001', 'CS300002', 'CS300003', 'CS300004'], // 소매
+  };
+
   async getLatestSales(regionCode: string, industryCode: string) {
     const area = await this.resolveArea(regionCode);
     if (!area) return null;
 
+    const shouldAggregate =
+      industryCode === 'ALL' || !!this.INDUSTRY_CODE_MAP[industryCode];
+
+    if (shouldAggregate) {
+      // 집계 로직
+      let whereClause: any;
+      if (area.type === 'dong') {
+        whereClause = { adstrd_cd: area.code };
+      } else if (area.type === 'commercial') {
+        whereClause = { trdar_cd: area.code };
+      } else {
+        whereClause = { trdar_cd: area.code };
+      }
+
+      if (industryCode !== 'ALL' && this.INDUSTRY_CODE_MAP[industryCode]) {
+        whereClause.svc_induty_cd = {
+          in: this.INDUSTRY_CODE_MAP[industryCode],
+        };
+      }
+
+      // 테이블 선택
+      let model: any;
+      if (area.type === 'dong') model = this.prisma.salesDong;
+      else if (area.type === 'commercial') model = this.prisma.salesCommercial;
+      else model = this.prisma.salesBackarea;
+
+      // 집계
+      const aggregated = await model.aggregate({
+        where: whereClause,
+        _sum: {
+          thsmon_selng_amt: true,
+          thsmon_selng_co: true,
+          mdwk_selng_amt: true,
+          wkend_selng_amt: true,
+          mon_selng_amt: true,
+          tues_selng_amt: true,
+          wed_selng_amt: true,
+          thur_selng_amt: true,
+          fri_selng_amt: true,
+          sat_selng_amt: true,
+          sun_selng_amt: true,
+          tmzon_00_06_selng_amt: true,
+          tmzon_06_11_selng_amt: true,
+          tmzon_11_14_selng_amt: true,
+          tmzon_14_17_selng_amt: true,
+          tmzon_17_21_selng_amt: true,
+          tmzon_21_24_selng_amt: true,
+          ml_selng_amt: true,
+          fml_selng_amt: true,
+          agrde_10_selng_amt: true,
+          agrde_20_selng_amt: true,
+          agrde_30_selng_amt: true,
+          agrde_40_selng_amt: true,
+          agrde_50_selng_amt: true,
+          agrde_60_above_selng_amt: true,
+        },
+      });
+
+      const s = aggregated._sum;
+      if (!s.thsmon_selng_amt) return null; // 데이터 없음
+
+      return {
+        // 집계된 데이터 반환 (필요한 필드만)
+        svc_induty_cd_nm:
+          industryCode === 'ALL' ? '전체 업종' : '선택 업종 합계',
+        ...s,
+      };
+    }
+
+    // 단일 업종 조회 (기존 로직)
     if (area.type === 'dong') {
       return this.prisma.salesDong.findFirst({
         where: { adstrd_cd: area.code, svc_induty_cd: industryCode },
@@ -52,6 +143,59 @@ export class ReportRepository {
   async getStoreDensity(regionCode: string, industryCode: string) {
     const area = await this.resolveArea(regionCode);
     if (!area) return null;
+
+    const shouldAggregate =
+      industryCode === 'ALL' || !!this.INDUSTRY_CODE_MAP[industryCode];
+
+    if (shouldAggregate) {
+      let whereClause: any;
+      if (area.type === 'dong') {
+        whereClause = { adstrd_cd: area.code };
+      } else if (area.type === 'commercial') {
+        whereClause = { trdar_cd: area.code };
+      } else {
+        whereClause = { trdar_cd: area.code };
+      }
+
+      if (industryCode !== 'ALL' && this.INDUSTRY_CODE_MAP[industryCode]) {
+        whereClause.svc_induty_cd = {
+          in: this.INDUSTRY_CODE_MAP[industryCode],
+        };
+      }
+
+      let model: any;
+      if (area.type === 'dong') model = this.prisma.storeDong;
+      else if (area.type === 'commercial') model = this.prisma.storeCommercial;
+      else model = this.prisma.storeBackarea;
+
+      const aggregated = await model.aggregate({
+        where: whereClause,
+        _sum: {
+          stor_co: true,
+          opbiz_stor_co: true,
+          clsbiz_stor_co: true,
+        },
+      });
+
+      const s = aggregated._sum;
+      if (!s.stor_co) return null;
+
+      // 개/폐업률 재계산
+      // 전체 점포 수 대비 개업/폐업 수 비율 등...
+      // 여기서는 단순히 합산된 개업/폐업 수와, 전체 점포 수를 반환합니다.
+      // opbiz_rt (개업률) = (개업점포수 / 전체점포수) * 100
+      const opbiz_rt = s.stor_co > 0 ? (s.opbiz_stor_co / s.stor_co) * 100 : 0;
+      const clsbiz_rt =
+        s.stor_co > 0 ? (s.clsbiz_stor_co / s.stor_co) * 100 : 0;
+
+      return {
+        stor_co: s.stor_co,
+        opbiz_stor_co: s.opbiz_stor_co,
+        clsbiz_stor_co: s.clsbiz_stor_co,
+        opbiz_rt,
+        clsbiz_rt,
+      };
+    }
 
     if (area.type === 'dong') {
       return this.prisma.storeDong.findFirst({

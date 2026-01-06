@@ -464,6 +464,12 @@ export class ReportService {
               : '데이터 부족',
         },
       ],
+      marketTrends: {
+        opbizRt: storeStats?.opbiz_rt || 0,
+        clsbizRt: storeStats?.clsbiz_rt || 0,
+        opbizStoreCount: storeStats?.opbiz_stor_co || 0,
+        clsbizStoreCount: storeStats?.clsbiz_stor_co || 0,
+      },
       conclusion: [
         {
           category: '운영',
