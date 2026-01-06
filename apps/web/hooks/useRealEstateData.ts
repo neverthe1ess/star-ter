@@ -2,6 +2,9 @@ import { useState, useCallback } from 'react';
 
 import { RealEstateItem } from '../types/map-store-types';
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+
 interface BBox {
   minx: number;
   miny: number;
@@ -25,7 +28,7 @@ export function useRealEstateData() {
         maxy: bbox.maxy.toString(),
       });
 
-      const res = await fetch(`/api/real-estate?${params}`);
+      const res = await fetch(`${API_BASE_URL}/real-estate?${params}`);
       if (!res.ok) throw new Error('부동산 데이터를 불러오지 못했습니다.');
 
       const json = await res.json();
