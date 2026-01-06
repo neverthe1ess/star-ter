@@ -5,6 +5,7 @@ import { Users, Clock, CalendarDays } from 'lucide-react';
 import { SummaryReportResponse } from '../../types/api-responses';
 import AiInsightBlock from './AiInsightBlock';
 import WeeklyPopulationChart from './WeeklyPopulationChart';
+import AgeDistributionChart from './AgeDistributionChart';
 
 interface TimePopulationChartProps {
   data: SummaryReportResponse;
@@ -217,6 +218,11 @@ export default function TimePopulationChart({
 
       {/* 4. 요일별 유동인구 차트 */}
       {data.weeklyFlow && <WeeklyPopulationChart data={data.weeklyFlow} />}
+
+      {/* 5. 연령대별 유동인구 차트 */}
+      {data.ageDistribution && (
+        <AgeDistributionChart data={data.ageDistribution} />
+      )}
     </div>
   );
 }
