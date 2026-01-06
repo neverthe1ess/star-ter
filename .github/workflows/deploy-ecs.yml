@@ -125,7 +125,7 @@ jobs:
             | (.containerDefinitions[] | select(.name=="api") | .secrets[] | select(.name=="AWS_ACCESS_KEY_ID") | .valueFrom) = $AWS_KEY_ARN
             | (.containerDefinitions[] | select(.name=="api") | .secrets[] | select(.name=="AWS_SECRET_ACCESS_KEY") | .valueFrom) = $AWS_SECERT_KEY_ARN
             | (.containerDefinitions[] | select(.name=="api") | .secrets[] | select(.name=="AWS_REGION") | .valueFrom) = $AWS_REGION_ARN
-            | (.containerDefinitions[] | select(.name=="api") | .secrets[] | select(.name=="AWS_S3_BUCKET") | .valueFrom) = $OPENAI_API_KEY_ARN            
+            | (.containerDefinitions[] | select(.name=="api") | .secrets[] | select(.name=="AWS_S3_BUCKET") | .valueFrom) = $AWS_S3_ARN            
             ' \
             infra/ecs/taskdef-api.json > infra/ecs/taskdef-api.rendered.json
 

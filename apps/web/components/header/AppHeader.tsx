@@ -50,7 +50,7 @@ export default function AppHeader({ className = '' }: AppHeaderProps) {
           <Link href="/" className="flex items-center gap-1 hover:text-gray-900">
             <Home className="h-4 w-4" /> 홈
           </Link>
-          <Link href="#" className="flex items-center gap-1 hover:text-gray-900">
+          <Link href="/assistant" className="flex items-center gap-1 hover:text-gray-900">
             <PieChart className="h-4 w-4" /> AI 상권분석
           </Link>
           <button
