@@ -275,7 +275,8 @@ export class ToolsRepository {
   // 10) 상권 비교(2개 상권 예시): 유동인구/매출 합계 비교
   async compareCommercialAreas(params: QueryParams) {
     const { stdrYyquCd, areaCdList } = params;
-    if (areaCdList.length === 0) {
+    // areaCdList가 없거나 빈 배열이면 빈 결과 반환
+    if (!areaCdList || areaCdList.length === 0) {
       return [];
     }
 
@@ -502,7 +503,7 @@ export class ToolsRepository {
   // 14) 업종별 상권 비교(2개 상권 예시): 동일 업종의 매출/점포/유동 비교
   async compareCommercialByIndustry(params: QueryParams) {
     const { stdrYyquCd, areaCdList, categoryCode } = params;
-    if (areaCdList.length === 0) {
+    if (!areaCdList || areaCdList.length === 0) {
       return [];
     }
 

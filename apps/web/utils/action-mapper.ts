@@ -43,6 +43,7 @@ export function mapBackendAction(
 
   // 페이로드 정규화 (백엔드 필드 → 프론트엔드 필드)
   const payload: ActionPayload = {
+    // 기존 필드
     lat: backendPayload.lat as number | undefined,
     lng: backendPayload.lng as number | undefined,
     zoom: backendPayload.zoom as number | undefined,
@@ -56,6 +57,37 @@ export function mapBackendAction(
         : undefined,
     name: backendPayload.areaName as string | undefined,
     code: backendPayload.areaCode as string | undefined,
+
+    // 새 필드 (ranking.show)
+    industryCode: backendPayload.industryCode as string | undefined,
+
+    // 새 필드 (population.filter)
+    genderFilter: backendPayload.genderFilter as
+      | 'Male'
+      | 'Female'
+      | 'Total'
+      | undefined,
+    ageFilter: backendPayload.ageFilter as string | undefined,
+    timeFilter: backendPayload.timeFilter as string | undefined,
+
+    // 새 필드 (compare.areas)
+    compareTargets: backendPayload.compareTargets as
+      | {
+          codeA: string;
+          codeB: string;
+          nameA?: string;
+          nameB?: string;
+        }
+      | undefined,
+
+    // 새 필드 (rent.calculate)
+    rentParams: backendPayload.rentParams as
+      | {
+          area: number;
+          deposit: number;
+          rent: number;
+        }
+      | undefined,
   };
 
   return { type: frontendType, payload };
