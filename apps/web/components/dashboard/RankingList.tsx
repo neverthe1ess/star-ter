@@ -97,10 +97,6 @@ export default function RankingList({
     // 주소 검색 및 스토어 업데이트 (코드와 레벨 정보 추가 전달)
     await handleSelect(item.name, item.code, adminLevel);
 
-    // 분석 페이지로 이동
-    router.push('/analysis');
-  };
-
   const metricLabel =
     themeType === 'POPULATION' ? '유동인구 (명)' : '매출 (분기)';
 
