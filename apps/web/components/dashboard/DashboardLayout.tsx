@@ -143,9 +143,21 @@ export default function DashboardLayout() {
               className="w-full rounded-full bg-gray-100 py-2 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-blue-100"
             />
           </div>
-          <button className="flex h-9 w-24 items-center justify-center rounded bg-blue-600 text-sm font-bold text-white hover:bg-blue-700">
-            로그인
-          </button>
+          {isLoggedIn ? (
+            <button
+              onClick={() => router.push('/user')}
+              className="flex h-9 w-24 items-center justify-center rounded bg-gray-600 text-sm font-bold text-white hover:bg-gray-700"
+            >
+              마이페이지
+            </button>
+          ) : (
+            <button
+              onClick={() => router.push('/login')}
+              className="flex h-9 w-24 items-center justify-center rounded bg-blue-600 text-sm font-bold text-white hover:bg-blue-700"
+            >
+              로그인
+            </button>
+          )}
         </div>
       </header>
 
@@ -160,7 +172,8 @@ export default function DashboardLayout() {
           e.preventDefault();
           // 퍼센트로 변환: (전체 너비 - 마우스 X) / 전체 너비 * 100
           const containerWidth = document.body.clientWidth;
-          const newWidthPercent = ((containerWidth - e.clientX) / containerWidth) * 100;
+          const newWidthPercent =
+            ((containerWidth - e.clientX) / containerWidth) * 100;
           // 최소 20%, 최대 60%로 제한
           if (newWidthPercent > 20 && newWidthPercent < 60) {
             setDetailWidth(newWidthPercent);
@@ -169,7 +182,7 @@ export default function DashboardLayout() {
         onMouseUp={() => setIsResizing(false)}
         onMouseLeave={() => setIsResizing(false)}
       >
-        <section className="flex-1 flex flex-col min-w-[400px] border-r border-gray-200 h-full">
+        <section className="flex-1 flex flex-col min-w-100 border-r border-gray-200 h-full">
           {/* Tabs */}
           <div className="flex gap-2 p-4 pb-0 shrink-0">
             <button
