@@ -8,6 +8,7 @@ import type { AssistantAction, FrontendActionType, ActionPayload } from '@/types
 import { RealEstateItem } from '@/types/map-store-types';
 import { StoreLocation } from '@/hooks/useStoreMarkers';
 import { convertSeoulCodeToDbCode } from '@/utils/industry-code-map';
+import { geocodeAddress } from '@/services/geocoding/geocoding.service';
 
 // Props 타입 (공유 타입 사용)
 interface AssistantMapSectionProps {
@@ -321,6 +322,9 @@ export default function AssistantMapSection({ action }: AssistantMapSectionProps
         ageFilter: action.payload.ageFilter,
         timeFilter: action.payload.timeFilter,
       });
+    } else {
+      // 다른 액션으로 변경되면 유동인구 레이어 비활성화
+      setShowPopulationLayer(false);
     }
     
     // openAnalysisPanel 액션일 때 업종 코드 저장 (마커 표시용)
@@ -341,7 +345,21 @@ export default function AssistantMapSection({ action }: AssistantMapSectionProps
           [lat, lng] = payload.coordinates;
         }
 
-        // fallback: AI가 위치를 지정하지 않은 경우 현재 지도 중심점 사용
+        // 🆕 areaName이 있고 좌표가 없으면 geocoding으로 좌표 변환
+        // (예: "홍대입구역" → { lat: 37.5577, lng: 126.9237 })
+        if ((!lat || !lng) && payload.areaName) {
+          console.log('[AssistantMapSection] areaName을 좌표로 변환 시도:', payload.areaName);
+          const geocodeResult = await geocodeAddress(payload.areaName);
+          if (geocodeResult) {
+            lat = geocodeResult.lat;
+            lng = geocodeResult.lng;
+            console.log('[AssistantMapSection] geocoding 성공:', { lat, lng, address: geocodeResult.address });
+          } else {
+            console.warn('[AssistantMapSection] geocoding 실패:', payload.areaName);
+          }
+        }
+
+        // fallback: geocoding도 실패하면 현재 지도 중심 또는 서울 시청 사용
         if (!lat || !lng) {
           if (center) {
             lat = center.lat;
@@ -402,6 +420,8 @@ export default function AssistantMapSection({ action }: AssistantMapSectionProps
           action={action} 
           isLoading={isLoading} 
           selectedRealEstateItem={selectedRealEstateItem} 
+          showPopulationLayer={showPopulationLayer}
+          onTogglePopulationLayer={setShowPopulationLayer}
         />
       </div>
     </div>

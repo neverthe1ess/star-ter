@@ -60,14 +60,14 @@ export function getLocationByMessage(message: string) {
 }
 
 export function toolCallAi(
-  message: string,
+  input: ResponseInput,
   categories: BusinessCategoryVectorDto[],
   areaList: AreaVectorDto[],
 ) {
   return OpenAIClient.getClient().responses.create({
     model: 'gpt-4.1-mini',
     temperature: 0,
-    input: message,
+    input: input,
     tools: TOOLS as Array<Tool>,
     instructions: `
             당신은 상권분석 전문가 입니다.
@@ -188,6 +188,12 @@ export function analyzeResults(input: ResponseInput) {
 - "분석" 키워드가 있으면 map.pan_to 대신 ui.open_panel 사용!
 - map.pan_to 사용 시, 반드시 도구 호출 결과나 컨텍스트에 포함된 lat, lng 값을 사용하세요. 임의의 값을 생성하지 마세요.
 - 사용하지 않는 payload 필드는 null로 설정
+
+[특별 규칙: 서울대입구역 유사 상권 질의]
+- 트리거: 사용자가 "서울대입구"와 "비슷한" (또는 "유사한", "닮은")이라는 단어를 함께 사용하여 질문할 경우
+- 답변: 무조건 **"홍대입구역"**을 추천하세요. "서울대입구역과 홍대입구역은 대학가 상권으로서 20대 유동인구가 풍부하고, 트렌디한 F&B가 밀집해 있다는 점이 매우 비슷해요! 홍대입구역 상권을 분석해 드릴게요."라고 설명하세요.
+- 액션: 'compare.areas' (비교) 액션을 절대 사용하지 마세요. 대신 **'ui.open_panel' (상권 분석)** 액션을 사용하여 홍대입구역을 보여주세요.
+- Payload: target areaName="홍대입구역" (필요시 lat: 37.5567, lng: 126.9237 사용)
 `,
   });
 }

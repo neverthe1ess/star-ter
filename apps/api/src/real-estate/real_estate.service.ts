@@ -66,7 +66,21 @@ export class RealEstateService {
   async getRealEstateInfo(
     query: GetRealEstateQueryDto,
   ): Promise<RealEstateResponseDto[]> {
+    console.log('[RealEstateService] 🔍 getRealEstateInfo 시작');
+    console.log(
+      '[RealEstateService] 📥 쿼리 파라미터:',
+      JSON.stringify(query, null, 2),
+    );
+
     const where = this.buildBBoxFilter(query);
+    console.log(
+      '[RealEstateService] 🔧 WHERE 조건:',
+      JSON.stringify(
+        where,
+        (key, value) => (typeof value === 'bigint' ? value.toString() : value),
+        2,
+      ),
+    );
 
     const results = await this.prisma.real_estate_info.findMany({
       where,
@@ -93,6 +107,22 @@ export class RealEstateService {
         previewphotourl: true,
       },
     });
+
+    console.log(`[RealEstateService] ✅ 조회 결과: ${results.length}개 매물`);
+
+    // 샘플 데이터 출력 (첫 3개)
+    if (results.length > 0) {
+      console.log('[RealEstateService] 📋 샘플 데이터 (첫 3개):');
+      results.slice(0, 3).forEach((item, idx) => {
+        console.log(`  [${idx + 1}] ${item.title || item.name || 'N/A'}`);
+        console.log(
+          `      좌표: (${item.centerlatitude?.toString() ?? 'N/A'}, ${item.centerlongitude?.toString() ?? 'N/A'})`,
+        );
+        console.log(
+          `      보증금: ${item.deposit ? item.deposit.toString() : 'N/A'}`,
+        );
+      });
+    }
 
     return results.map((item) => this.toResponseDto(item));
   }
@@ -136,6 +166,8 @@ export class RealEstateService {
   private buildBBoxFilter(
     query: GetRealEstateQueryDto,
   ): Prisma.real_estate_infoWhereInput {
+    console.log('[RealEstateService] 🔧 buildBBoxFilter 시작');
+
     const {
       minx,
       miny,
@@ -151,16 +183,25 @@ export class RealEstateService {
 
     // BBox 필터 (위치 기반)
     if (minx && miny && maxx && maxy) {
+      console.log(`[RealEstateService] 📍 BBox 필터:`);
+      console.log(`    경도(lng): ${minx} ~ ${maxx}`);
+      console.log(`    위도(lat): ${miny} ~ ${maxy}`);
       conditions.push({
         centerlatitude: { gte: miny, lte: maxy },
         centerlongitude: { gte: minx, lte: maxx },
       });
+    } else {
+      console.log('[RealEstateService] ⚠️ BBox 필터 없음 (위치 조건 미지정)');
     }
 
     // 최대 보증금 필터 (AI는 만원 단위로 전달, DB는 천원 단위로 저장)
     // 만원 → 천원 변환: ×10
     if (maxDeposit) {
       const depositInCheonWon = maxDeposit * 10;
+      console.log(`[RealEstateService] 💰 보증금 필터:`);
+      console.log(
+        `    입력: ${maxDeposit}만원 → DB조건: ${depositInCheonWon}천원 이하`,
+      );
       conditions.push({
         deposit: { lte: BigInt(depositInCheonWon) },
       });
@@ -169,6 +210,9 @@ export class RealEstateService {
     // 최대 월세 필터 (AI는 만원 단위로 전달, DB는 천원 단위로 저장)
     if (maxMonthlyRent) {
       const rentInCheonWon = maxMonthlyRent * 10;
+      console.log(
+        `[RealEstateService] 🏠 월세 필터: ${maxMonthlyRent}만원 → ${rentInCheonWon}천원 이하`,
+      );
       conditions.push({
         monthlyrent: { lte: BigInt(rentInCheonWon) },
       });
@@ -178,6 +222,9 @@ export class RealEstateService {
     // 평 → m² 변환: 1평 = 3.3058 m²
     if (minSize) {
       const minSizeM2 = minSize * 3.3058;
+      console.log(
+        `[RealEstateService] 📐 면적 필터: ${minSize}평 → ${minSizeM2.toFixed(2)}m² 이상`,
+      );
       conditions.push({
         size: { gte: minSizeM2 },
       });
@@ -185,6 +232,7 @@ export class RealEstateService {
 
     // 키워드 필터 (제목, 주소, 업종명에서 검색)
     if (keywords) {
+      console.log(`[RealEstateService] 🔍 키워드 필터: "${keywords}"`);
       conditions.push({
         OR: [
           { title: { contains: keywords, mode: 'insensitive' } },
@@ -199,7 +247,14 @@ export class RealEstateService {
       });
     }
 
-    if (conditions.length === 0) return {};
+    console.log(
+      `[RealEstateService] 📊 총 필터 조건 수: ${conditions.length}개`,
+    );
+
+    if (conditions.length === 0) {
+      console.log('[RealEstateService] ⚠️ 필터 조건 없음! 전체 데이터 조회됨');
+      return {};
+    }
 
     return {
       AND: conditions,
