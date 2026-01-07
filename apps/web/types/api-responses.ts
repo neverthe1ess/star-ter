@@ -8,6 +8,15 @@ export interface SummaryReportResponse {
     period: string;
   };
 
+  // 0) 위치/공간 정보
+  locationInfo: {
+    areaType: string;
+    areaTypeName: string;
+    guName: string;
+    dongName: string;
+    area: number;
+  };
+
   // 1) 핵심 지표
   keyMetrics: {
     estimatedMonthlySales: {
@@ -80,6 +89,11 @@ export interface SummaryReportResponse {
     characteristics: string;
   }[];
 
+  weeklyFlow: {
+    day: string;
+    value: number;
+  }[];
+
   // 8) 경쟁/상권 구조
   competitionAnalysis: {
     category: string;
@@ -87,10 +101,45 @@ export interface SummaryReportResponse {
     implication: string;
   }[];
 
+  // 8-1) 시장 동향 (New)
+  marketTrends: {
+    opbizRt: number; // 개업률
+    clsbizRt: number; // 폐업률
+    opbizStoreCount: number; // 개업 점포 수
+    clsbizStoreCount: number; // 폐업 점포 수
+  };
+
   // 9) 결론
   conclusion: {
     category: '운영' | '상품' | '마케팅' | '데이터 부족';
     content: string;
     highlight?: string;
+  }[];
+
+  // 10) 매출 분석
+  revenueAnalysis: {
+    monthlyTotal: number;
+    avgTransactionPrice: number;
+    totalTransactionCount: number;
+    weekdayComparison: {
+      weekday: number;
+      weekend: number;
+    };
+    dailyRatio: {
+      day: string;
+      ratio: number;
+    }[];
+    timePeriodRatio: {
+      timeRange: string;
+      ratio: number;
+    }[];
+  };
+
+  // 11) 매출 TOP 업종
+  topIndustries: {
+    rank: number;
+    industryCode: string;
+    industryName: string;
+    salesAmount: number;
   }[];
 }

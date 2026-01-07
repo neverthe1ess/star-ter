@@ -3,13 +3,15 @@
 import React, { useEffect, useState } from 'react';
 import { Sparkles, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useMapStore } from '@/stores/useMapStore';
+import { geocodeAddress } from '@/services/geocoding/geocoding.service';
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
 type AreaRecommendation = {
   area_cd: string;
-  area_level: string;
+  area_level: 'commercial' | 'gu' | 'dong';
   area_nm: string;
   recommend_title: string;
   recommend_reason: string;
@@ -31,6 +33,7 @@ export default function AiInputSection() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingDots, setLoadingDots] = useState('');
+  const { selectArea, setZoom } = useMapStore();
 
   useEffect(() => {
     if (!isLoading) {
@@ -80,7 +83,9 @@ export default function AiInputSection() {
 
       setAreaResults(list);
       if (list.length === 0) {
-        setStatusMessage('추천 결과가 없어요. 다른 질문으로 다시 시도해 주세요.');
+        setStatusMessage(
+          '추천 결과가 없어요. 다른 질문으로 다시 시도해 주세요.',
+        );
       }
     } catch (error) {
       console.error('Failed to fetch area recommendations', error);
@@ -91,13 +96,64 @@ export default function AiInputSection() {
     }
   };
 
-  const handleCardRedirect = (item: AreaRecommendation) => {
-    const params = new URLSearchParams({
-      area_cd: item.area_cd,
-      area_level: item.area_level,
-      area_nm: item.area_nm,
-    });
-    router.push(`/analysis?${params.toString()}`);
+  const handleCardRedirect = async (item: AreaRecommendation) => {
+    const areaType = item.area_level || 'commercial';
+    const geocodeQuery =
+      areaType === 'commercial' ? item.area_nm : `서울특별시 ${item.area_nm}`;
+    const result = await geocodeAddress(geocodeQuery);
+
+    const coords = result
+      ? { lat: result.lat, lng: result.lng }
+      : { lat: 37.5665, lng: 126.978 };
+
+    let polygonData: number[][][][] | number[][][] | number[][] | undefined;
+    if (API_BASE_URL && item.area_cd) {
+      let polygonEndpoint = '';
+      if (areaType === 'commercial') {
+        polygonEndpoint = `${API_BASE_URL}/polygon/commercial/code?code=${item.area_cd}`;
+      } else if (areaType === 'dong') {
+        polygonEndpoint = `${API_BASE_URL}/polygon/dong/code?code=${item.area_cd}`;
+      } else if (areaType === 'gu') {
+        polygonEndpoint = `${API_BASE_URL}/polygon/gu/code?code=${item.area_cd}`;
+      }
+
+      if (polygonEndpoint) {
+        try {
+          const polygonRes = await fetch(polygonEndpoint);
+          if (polygonRes.ok) {
+            const polygonJson = await polygonRes.json();
+            if (polygonJson?.polygons?.coordinates) {
+              polygonData = polygonJson.polygons.coordinates;
+            } else if (polygonJson?.polygons) {
+              polygonData = polygonJson.polygons;
+            }
+          }
+        } catch (err) {
+          console.error('Failed to fetch polygon data:', err);
+        }
+      }
+    }
+
+    selectArea(
+      {
+        name: item.area_nm,
+        coords,
+        type: areaType,
+        code: item.area_cd,
+      },
+      polygonData
+        ? {
+            commercialName: item.area_nm,
+            commercialCode: item.area_cd,
+            x: coords.lng,
+            y: coords.lat,
+            polygons: polygonData,
+            level: areaType,
+          }
+        : undefined,
+    );
+
+    router.push('/analysis');
   };
 
   const isSubmitDisabled = isLoading || query.trim().length === 0;
@@ -107,19 +163,19 @@ export default function AiInputSection() {
       <div className="max-w-4xl mx-auto flex flex-col items-center gap-6">
         {/* Title / Greeting */}
         <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <Sparkles className="h-6 w-6 text-blue-600 fill-blue-100" />
-                <span>무엇을 도와드릴까요?</span>
-            </h1>
-            <p className="text-gray-500 text-sm">
-                상권 분석, 창업 추천, 매출 예측 등 궁금한 점을 자연스럽게 물어보세요.
-            </p>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Sparkles className="h-6 w-6 text-blue-600 fill-blue-100" />
+            <span>어떤 상권을 찾아드릴까요?</span>
+          </h1>
+          <p className="text-gray-500 text-sm">
+            찾고싶은 상권을 질문하세요.
+          </p>
         </div>
 
         {/* Large Chat Input */}
         <div className="w-full relative group">
           <div
-            className={`absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl blur-lg transition-opacity duration-500 ${
+            className={`absolute inset-0 bg-linear-to-r from-blue-500/20 to-purple-500/20 rounded-2xl blur-lg transition-opacity duration-500 ${
               isLoading
                 ? 'opacity-100 animate-pulse blur-2xl scale-105 -inset-2 from-blue-500/45 to-purple-500/40'
                 : 'opacity-0 group-hover:opacity-100'
@@ -133,7 +189,7 @@ export default function AiInputSection() {
             }`}
           >
             <textarea
-              placeholder="예: 강남역에서 30대 여성이 좋아하는 카페 창업하려면?"
+              placeholder="예: 예쁜 카페 차리기 좋은 곳"
               rows={1}
               value={query}
               className="w-full bg-transparent px-6 py-4 pr-14 text-base placeholder:text-gray-400 focus:outline-none resize-none overflow-hidden min-h-[60px] "
@@ -146,7 +202,8 @@ export default function AiInputSection() {
               }}
               onInput={(e) => {
                 e.currentTarget.style.height = 'auto';
-                e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
+                e.currentTarget.style.height =
+                  e.currentTarget.scrollHeight + 'px';
               }}
             />
             <button
@@ -203,4 +260,7 @@ export default function AiInputSection() {
       </div>
     </div>
   );
+}
+function setZoom(arg0: number) {
+  throw new Error('Function not implemented.');
 }

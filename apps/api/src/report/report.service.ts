@@ -19,7 +19,8 @@ export class ReportService {
       area,
       industry,
       income,
-      topIndustries,
+      topIndustriesRaw,
+      areaDetails,
     ] = await Promise.all([
       this.repository.getLatestSales(regionCode, industryCode),
       this.repository.getLatestFootTraffic(regionCode),
@@ -27,8 +28,25 @@ export class ReportService {
       this.repository.getAreaName(regionCode),
       this.repository.getIndustryName(industryCode),
       this.repository.getLatestIncome(regionCode),
-      this.repository.getTopIndustriesInArea(regionCode),
+      this.repository.getTopIndustriesBySales(regionCode),
+      this.repository.getAreaDetails(regionCode),
     ]);
+
+    // 매출 TOP 업종 가공 (중복 업종 제거)
+    const seenCodes = new Set<string>();
+    const topIndustries = topIndustriesRaw
+      .filter((item) => {
+        if (seenCodes.has(item.svc_induty_cd)) return false;
+        seenCodes.add(item.svc_induty_cd);
+        return true;
+      })
+      .slice(0, 10)
+      .map((item, idx) => ({
+        rank: idx + 1,
+        industryCode: item.svc_induty_cd,
+        industryName: item.svc_induty_cd_nm,
+        salesAmount: Number(item.thsmon_selng_amt),
+      }));
 
     // 지역 또는 산업 정보가 완전히 없는 경우에만 에러를 던지고,
     // 최소한의 정보(fallbackName 등)가 있으면 분석을 최대한 진행합니다.
@@ -40,6 +58,9 @@ export class ReportService {
 
     const defaultSales = {
       thsmon_selng_amt: 0,
+      thsmon_selng_co: 0,
+      mdwk_selng_amt: 0,
+      wkend_selng_amt: 0,
       mon_selng_amt: 0,
       tues_selng_amt: 0,
       wed_selng_amt: 0,
@@ -75,28 +96,13 @@ export class ReportService {
       fallbackIndustryName ||
       `업종(${industryCode})`;
 
-    // 1) 핵심 지표 계산
-    const totalRevenue = Number(activeSales.thsmon_selng_amt);
+    // 1) 랭킹 및 텍스트 지표용 데이터 추출
     const storeCount = storeStats?.stor_co || 0;
-    // thsmon_selng_amt는 분기 매출이므로 3으로 나누어 월 평균 매출 계산
+    const totalRevenue = Number(activeSales.thsmon_selng_amt);
     const avgRevenue = totalRevenue / (storeCount || 1) / 3;
 
-    const days = [
-      { name: '월', value: Number(activeSales.mon_selng_amt) },
-      { name: '화', value: Number(activeSales.tues_selng_amt) },
-      { name: '수', value: Number(activeSales.wed_selng_amt) },
-      { name: '목', value: Number(activeSales.thur_selng_amt) },
-      { name: '금', value: Number(activeSales.fri_selng_amt) },
-      { name: '토', value: Number(activeSales.sat_selng_amt) },
-      { name: '일', value: Number(activeSales.sun_selng_amt) },
-    ];
-    const peakDayItem = days.reduce(
-      (prev, current) => (prev.value > current.value ? prev : current),
-      days[0],
-    );
-    const peakDay = peakDayItem.value > 0 ? peakDayItem.name : '데이터 부족';
-
-    const ages = [
+    // 3) 연령대별 매출 피크
+    const ageSales = [
       { name: '10대', value: Number(activeSales.agrde_10_selng_amt) },
       { name: '20대', value: Number(activeSales.agrde_20_selng_amt) },
       { name: '30대', value: Number(activeSales.agrde_30_selng_amt) },
@@ -107,14 +113,11 @@ export class ReportService {
         value: Number(activeSales.agrde_60_above_selng_amt),
       },
     ];
-
-    const peakAgeGroupItem = ages.reduce(
-      (prev, current) => (prev.value > current.value ? prev : current),
-      ages[2],
-    );
+    const sortedAges = [...ageSales].sort((a, b) => b.value - a.value);
     const peakAgeGroup =
-      peakAgeGroupItem.value > 0 ? peakAgeGroupItem.name : '데이터 부족';
+      sortedAges[0].value > 0 ? sortedAges[0].name : '데이터 부족';
 
+    // 4) 경쟁 강도 결정
     const competitionIntensity =
       storeCount > 100
         ? 'High'
@@ -124,34 +127,16 @@ export class ReportService {
             ? 'Low'
             : 'None';
 
-    // 2) 상권 개요 (Derived from data where possible)
-    const times = [
-      { name: '00:00~06:00', value: Number(activeSales.tmzon_00_06_selng_amt) },
-      { name: '06:00~11:00', value: Number(activeSales.tmzon_06_11_selng_amt) },
-      { name: '11:00~14:00', value: Number(activeSales.tmzon_11_14_selng_amt) },
-      { name: '14:00~17:00', value: Number(activeSales.tmzon_14_17_selng_amt) },
-      { name: '17:00~21:00', value: Number(activeSales.tmzon_17_21_selng_amt) },
-      { name: '21:00~24:00', value: Number(activeSales.tmzon_21_24_selng_amt) },
-    ];
-    const peakTimeItem = times.reduce(
-      (prev, current) => (prev.value > current.value ? prev : current),
-      times[2],
-    );
-    const peakTime = peakTimeItem.value > 0 ? peakTimeItem.name : '데이터 부족';
-
-    // 3) 고객 구성
-    const maleRevenue = Number(activeSales.ml_selng_amt);
-    const femaleRevenue = Number(activeSales.fml_selng_amt);
-    const totalGenderRevenue = maleRevenue + femaleRevenue;
-
-    const rawMalePercentage =
-      totalGenderRevenue > 0 ? (maleRevenue / totalGenderRevenue) * 100 : 0;
-    const malePercentage = Number(rawMalePercentage.toFixed(1));
-    const femalePercentage =
-      totalGenderRevenue > 0 ? Number((100 - malePercentage).toFixed(1)) : 0;
-
-    // 6) 시간대별 유동 (Foot Traffic Detail)
+    // 5) 유동인구 시간대별 집계 (Foot Traffic)
     const ftTimes = [
+      {
+        name: '00~06시',
+        value: Number(footTraffic?.tmzon_00_06_flpop_co || 0),
+      },
+      {
+        name: '06~11시',
+        value: Number(footTraffic?.tmzon_06_11_flpop_co || 0),
+      },
       {
         name: '11~14시',
         value: Number(footTraffic?.tmzon_11_14_flpop_co || 0),
@@ -170,8 +155,42 @@ export class ReportService {
       },
     ];
     const ftTotal = ftTimes.reduce((sum, t) => sum + t.value, 0);
+    const sortedFT = [...ftTimes].sort((a, b) => b.value - a.value);
+    const peakFTTime = sortedFT[0].value > 0 ? sortedFT[0].name : '데이터 부족';
+    const maxFT = Math.max(...ftTimes.map((t) => t.value));
 
-    // 7) 요일별 특성
+    // 매출 분석용 변수 복구 (revenueAnalysis에서 사용)
+    const days = [
+      { name: '월', value: Number(activeSales.mon_selng_amt) },
+      { name: '화', value: Number(activeSales.tues_selng_amt) },
+      { name: '수', value: Number(activeSales.wed_selng_amt) },
+      { name: '목', value: Number(activeSales.thur_selng_amt) },
+      { name: '금', value: Number(activeSales.fri_selng_amt) },
+      { name: '토', value: Number(activeSales.sat_selng_amt) },
+      { name: '일', value: Number(activeSales.sun_selng_amt) },
+    ];
+
+    const times = [
+      { name: '00~06시', value: Number(activeSales.tmzon_00_06_selng_amt) },
+      { name: '06~11시', value: Number(activeSales.tmzon_06_11_selng_amt) },
+      { name: '11~14시', value: Number(activeSales.tmzon_11_14_selng_amt) },
+      { name: '14~17시', value: Number(activeSales.tmzon_14_17_selng_amt) },
+      { name: '17~21시', value: Number(activeSales.tmzon_17_21_selng_amt) },
+      { name: '21~24시', value: Number(activeSales.tmzon_21_24_selng_amt) },
+    ];
+
+    // 6) 성별 구성
+    const maleRevenue = Number(activeSales.ml_selng_amt);
+    const femaleRevenue = Number(activeSales.fml_selng_amt);
+    const totalGenderRevenue = maleRevenue + femaleRevenue;
+    const malePercentage =
+      totalGenderRevenue > 0
+        ? Number(((maleRevenue / totalGenderRevenue) * 100).toFixed(1))
+        : 0;
+    const femalePercentage =
+      totalGenderRevenue > 0 ? Number((100 - malePercentage).toFixed(1)) : 0;
+
+    // 7) 유동인구 요일별 특성
     const weekDayTraffic =
       (Number(footTraffic?.mon_flpop_co || 0) +
         Number(footTraffic?.tues_flpop_co || 0) +
@@ -182,12 +201,26 @@ export class ReportService {
     const satTraffic = Number(footTraffic?.sat_flpop_co || 0);
     const sunTraffic = Number(footTraffic?.sun_flpop_co || 0);
 
+    // 8) 유동인구 요일별 피크 (Foot Traffic Peak Day)
+    const ftDays = [
+      { name: '월', value: Number(footTraffic?.mon_flpop_co || 0) },
+      { name: '화', value: Number(footTraffic?.tues_flpop_co || 0) },
+      { name: '수', value: Number(footTraffic?.wed_flpop_co || 0) },
+      { name: '목', value: Number(footTraffic?.thur_flpop_co || 0) },
+      { name: '금', value: Number(footTraffic?.fri_flpop_co || 0) },
+      { name: '토', value: Number(footTraffic?.sat_flpop_co || 0) },
+      { name: '일', value: Number(footTraffic?.sun_flpop_co || 0) },
+    ];
+    const sortedFTDays = [...ftDays].sort((a, b) => b.value - a.value);
+    const peakFTDay =
+      sortedFTDays[0].value > 0 ? sortedFTDays[0].name : '데이터 부족';
+
     // 8) 경쟁/상권 구조
     const avgIncome = income?.mt_avrg_income_amt || 0;
     const linkedIndustries = topIndustries
-      .filter((i) => i.svc_induty_cd_nm !== industryName)
+      .filter((i) => i.industryName !== industryName)
       .slice(0, 3)
-      .map((i) => i.svc_induty_cd_nm)
+      .map((i) => i.industryName)
       .join(', ');
 
     // 4) 연령대 분포 계산 및 보정 (합계 100% 보장)
@@ -226,13 +259,20 @@ export class ReportService {
       (100 - (age10 + age20 + age30 + age40)).toFixed(1),
     );
 
-    return {
+    const baseResult = {
       meta: {
         generatedAt: new Date().toISOString().split('T')[0],
         category: industryName,
         region: areaName,
         radius: 500, // 기본값
         period: '최근 분기',
+      },
+      locationInfo: {
+        areaType: areaDetails?.areaType || '',
+        areaTypeName: areaDetails?.areaTypeName || '데이터 부족',
+        guName: areaDetails?.guName || '',
+        dongName: areaDetails?.dongName || '',
+        area: areaDetails?.area || 0,
       },
       keyMetrics: {
         estimatedMonthlySales: {
@@ -243,13 +283,13 @@ export class ReportService {
         },
         floatingPopulation: {
           count: Number(footTraffic?.tot_flpop_co || 0),
-          mainTime: peakTime,
+          mainTime: peakFTTime,
         },
         mainVisitDays: {
-          days: peakDay !== '데이터 부족' ? [peakDay] : [],
+          days: peakFTDay !== '데이터 부족' ? [peakFTDay] : [],
           comment:
-            peakDay !== '데이터 부족'
-              ? `${peakDay}요일에 매출이 가장 집중됩니다.`
+            peakFTDay !== '데이터 부족'
+              ? `${peakFTDay}요일에 유동인구가 가장 집중됩니다.`
               : '데이터 부족',
         },
         coreCustomer: {
@@ -278,10 +318,12 @@ export class ReportService {
         characteristics:
           areaName !== '데이터 부족' ? `${areaName} 상권` : '데이터 부족',
         visitMotivation:
-          peakTime !== '데이터 부족' ? `${peakTime} 중심 소비` : '데이터 부족',
-        peakTime,
+          peakFTTime !== '데이터 부족'
+            ? `${peakFTTime} 중심 소비`
+            : '데이터 부족',
+        peakTime: peakFTTime,
         inflowPath:
-          peakTime !== '데이터 부족' ? '지역내 유동 중심' : '데이터 부족',
+          peakFTTime !== '데이터 부족' ? '지역내 유동 중심' : '데이터 부족',
       },
       customerComposition: {
         malePercentage,
@@ -298,10 +340,10 @@ export class ReportService {
         {
           category: '패턴',
           content:
-            peakTime !== '데이터 부족' && peakDay !== '데이터 부족'
-              ? `${peakTime} 시간대와 ${peakDay}요일에 매출이 집중되어 효율적인 운영이 필요합니다.`
+            peakFTTime !== '데이터 부족' && peakFTDay !== '데이터 부족'
+              ? `${peakFTTime} 시간대와 ${peakFTDay}요일에 유동인구가 집중되어 효율적인 운영이 필요합니다.`
               : '데이터 부족',
-          highlight: peakTime !== '데이터 부족' ? peakTime : '',
+          highlight: peakFTTime !== '데이터 부족' ? peakFTTime : '',
         },
         {
           category: '고객',
@@ -323,37 +365,22 @@ export class ReportService {
       hourlyFlow: {
         summary:
           ftTotal > 0
-            ? ftTimes[2].value > ftTimes[0].value
+            ? ftTimes[4].value > ftTimes[2].value
               ? '저녁 시간대 유동인구 집중'
               : '점심 시간대 유동인구 집중'
             : '데이터 부족',
-        data: [
-          {
-            timeRange: '11~14시',
-            level:
-              ftTimes[0].value > 50000
+        data: ftTimes.map((t) => ({
+          timeRange: t.name,
+          level:
+            t.value === maxFT
+              ? '피크'
+              : t.value > ftTotal / 6
                 ? '높음'
-                : ftTimes[0].value > 0
+                : t.value > 0
                   ? '보통'
                   : '데이터 부족',
-            intensity: ftTotal > 0 ? (ftTimes[0].value / ftTotal) * 100 : 0,
-          },
-          {
-            timeRange: '14~17시',
-            level: ftTimes[1].value > 0 ? '보통' : '데이터 부족',
-            intensity: ftTotal > 0 ? (ftTimes[1].value / ftTotal) * 100 : 0,
-          },
-          {
-            timeRange: '17~21시',
-            level: ftTimes[2].value > 0 ? '피크' : '데이터 부족',
-            intensity: ftTotal > 0 ? (ftTimes[2].value / ftTotal) * 100 : 0,
-          },
-          {
-            timeRange: '21~24시',
-            level: ftTimes[3].value > 0 ? '보통' : '데이터 부족',
-            intensity: ftTotal > 0 ? (ftTimes[3].value / ftTotal) * 100 : 0,
-          },
-        ],
+          intensity: ftTotal > 0 ? (t.value / ftTotal) * 100 : 0,
+        })),
       },
       weeklyCharacteristics: [
         {
@@ -393,6 +420,10 @@ export class ReportService {
               : '데이터 부족',
         },
       ],
+      weeklyFlow: ftDays.map((d) => ({
+        day: d.name,
+        value: d.value,
+      })),
       competitionAnalysis: [
         {
           category: '동종 업종 밀집',
@@ -433,12 +464,18 @@ export class ReportService {
               : '데이터 부족',
         },
       ],
+      marketTrends: {
+        opbizRt: storeStats?.opbiz_rt || 0,
+        clsbizRt: storeStats?.clsbiz_rt || 0,
+        opbizStoreCount: storeStats?.opbiz_stor_co || 0,
+        clsbizStoreCount: storeStats?.clsbiz_stor_co || 0,
+      },
       conclusion: [
         {
           category: '운영',
           content:
-            peakTime !== '데이터 부족'
-              ? `${peakTime} 시간대 효율적인 인력 배치가 필요합니다.`
+            peakFTTime !== '데이터 부족'
+              ? `${peakFTTime} 시간대 효율적인 인력 배치가 필요합니다.`
               : '데이터 부족',
           highlight: '인력 배치',
         },
@@ -453,13 +490,59 @@ export class ReportService {
         {
           category: '마케팅',
           content:
-            peakDay !== '데이터 부족'
-              ? `${peakDay}요일 매출 극대화를 위한 로컬 마케팅을 강화하세요.`
+            peakFTDay !== '데이터 부족'
+              ? `${peakFTDay}요일 방문객 극대화를 위한 로컬 마케팅을 강화하세요.`
               : '데이터 부족',
           highlight: '로컬 마케팅',
         },
       ],
     };
+
+    const result: SummaryReportResponse = {
+      ...(baseResult as Omit<
+        SummaryReportResponse,
+        'revenueAnalysis' | 'topIndustries'
+      >),
+      topIndustries,
+      revenueAnalysis: {
+        monthlyTotal: Math.floor(avgRevenue),
+        avgTransactionPrice:
+          totalRevenue > 0
+            ? Math.floor(
+                totalRevenue / (Number(activeSales.thsmon_selng_co) || 1),
+              )
+            : 0,
+        totalTransactionCount: Math.floor(
+          (Number(activeSales.thsmon_selng_co) || 0) / (storeCount || 1) / 3,
+        ),
+        weekdayComparison: {
+          weekday: Number(
+            this.calcRatio(Number(activeSales.mdwk_selng_amt), [
+              { value: Number(activeSales.mdwk_selng_amt) },
+              { value: Number(activeSales.wkend_selng_amt) },
+            ]).toFixed(1),
+          ),
+          weekend: 0, // 아래에서 보정
+        },
+        dailyRatio: days.map((d) => ({
+          day: d.name,
+          ratio: Number(this.calcRatio(d.value, days).toFixed(1)),
+        })),
+        timePeriodRatio: times.map((t) => ({
+          timeRange: t.name,
+          ratio: Number(this.calcRatio(t.value, times).toFixed(1)),
+        })),
+      },
+    };
+
+    // 주말 비중 보정
+    if (result.revenueAnalysis.weekdayComparison.weekday > 0) {
+      result.revenueAnalysis.weekdayComparison.weekend = Number(
+        (100 - result.revenueAnalysis.weekdayComparison.weekday).toFixed(1),
+      );
+    }
+
+    return result;
   }
 
   private calcRatio(value: number, all: { value: number }[]): number {

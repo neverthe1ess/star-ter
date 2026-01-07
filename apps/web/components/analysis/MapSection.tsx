@@ -18,10 +18,11 @@ export default function MapSection() {
 
   // viewMode 변경 시 데이터 정리
   useEffect(() => {
-    if (viewMode === 'analysis') {
+    if (viewMode === 'analysis' || viewMode === 'population') {
       clearData();
+      setSelectedRealEstateItem(null);
     }
-  }, [viewMode, clearData]);
+  }, [viewMode, clearData, setSelectedRealEstateItem]);
 
   // 디버깅 & 스토어 동기화
   useEffect(() => {
@@ -42,6 +43,7 @@ export default function MapSection() {
             realEstateData={viewMode === 'real-estate' ? realEstateData : []}
             onMarkerClick={setSelectedRealEstateItem}
             hoveredItemId={hoveredRealEstateItemId}
+            showPopulationHeatmap={viewMode === 'population'}
           />
         </div>
         {/* 모드 토글 버튼 */}

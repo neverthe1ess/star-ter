@@ -83,7 +83,7 @@ export class AnalysisMapper {
       },
       store: {
         total: (st.stor_co as number) || 0,
-        categories: storeCategories.slice(0, 30),
+        categories: storeCategories,
         openingRate: this.calculateRate(
           st.opbiz_stor_co as number,
           st.stor_co as number,
@@ -108,7 +108,7 @@ export class AnalysisMapper {
             },
             working: wp.tot_wrc_popltn_co
               ? {
-                  total: (wp.tot_wrc_popltn_co as number) || 0,
+                  total: wp.tot_wrc_popltn_co || 0,
                   male: (wp.ml_wrc_popltn_co as number) || 0,
                   female: (wp.fml_wrc_popltn_co as number) || 0,
                   age: {

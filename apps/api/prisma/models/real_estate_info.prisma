@@ -2,28 +2,29 @@ model real_estate_info {
   name                   String?
   address                String?
   roadaddress            String?
-  centerlatitude         Decimal?   @db.Decimal(10, 7)
-  centerlongitude        Decimal?   @db.Decimal(10, 7)
-  id                     String     @id
+  centerlatitude         Decimal?               @db.Decimal(10, 7)
+  centerlongitude        Decimal?               @db.Decimal(10, 7)
+  id                     String                 @id @db.Uuid
   previewphotourl        String?
   smallphotourls         String?
   originphotourls        String?
-  businesslargecodename  String?    @db.VarChar(50)
-  businessmiddlecodename String?    @db.VarChar(50)
+  businesslargecodename  String?                @db.VarChar(50)
+  businessmiddlecodename String?                @db.VarChar(50)
   deposit                BigInt?
   monthlyrent            BigInt?
   premium                BigInt?
   maintenancefee         BigInt?
   floor                  Int?
   groundfloor            Int?
-  size                   Decimal?   @db.Decimal(8, 2)
+  size                   Decimal?               @db.Decimal(8, 2)
   title                  String?
-  nearsubwaystation      String?    @db.VarChar(50)
+  nearsubwaystation      String?                @db.VarChar(50)
   ismoveindate           Boolean?
-  moveindate             DateTime?  @db.Date
-  createddateutc         DateTime?  @db.Timestamptz(6)
-  editeddateutc          DateTime?  @db.Timestamptz(6)
+  moveindate             DateTime?              @db.Date
+  createddateutc         DateTime?              @db.Timestamptz(6)
+  editeddateutc          DateTime?              @db.Timestamptz(6)
   areaprice              BigInt?
-  user_id                String?    @db.Uuid
-  user_info              user_info? @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_real_estate_info_user")
+  user_id                String?                @db.Uuid
+  real_estate_bookmark   real_estate_bookmark[]
+  user_info              user_info?             @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_real_estate_info_user")
 }

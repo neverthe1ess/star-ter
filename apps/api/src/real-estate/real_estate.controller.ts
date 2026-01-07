@@ -39,6 +39,10 @@ export class RealEstateController {
 
   @Get()
   getRealEstateInfo(@Query() query: GetRealEstateQueryDto) {
+    console.log(
+      '[RealEstateController] 🔍 요청 수신:',
+      JSON.stringify(query, null, 2),
+    );
     return this.realEstateService.getRealEstateInfo(query);
   }
 

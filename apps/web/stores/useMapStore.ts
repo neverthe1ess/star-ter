@@ -24,6 +24,7 @@ export const useMapStore = create<MapStore>()(
       overlayMode: 'revenue',
       viewMode: 'analysis',
       selectedIndustryCodes: null,
+      selectedIndustryName: null,
       markers: [],
       highlightedAreaName: null,
       selectedArea: null,
@@ -31,6 +32,7 @@ export const useMapStore = create<MapStore>()(
       selectedRealEstateItem: null,
       realEstateList: [],
       hoveredRealEstateItemId: null,
+      filteredClusterCoords: null,
       hasHydrated: false,
 
       setCenter: (coords) => set({ center: coords }),
@@ -42,6 +44,7 @@ export const useMapStore = create<MapStore>()(
       setViewMode: (mode) => set({ viewMode: mode }),
       setSelectedIndustryCodes: (codes) =>
         set({ selectedIndustryCodes: codes }),
+      setSelectedIndustryName: (name) => set({ selectedIndustryName: name }),
       setHighlightedAreaName: (name) => set({ highlightedAreaName: name }),
       setHasHydrated: (state) => set({ hasHydrated: state }),
       setSelectedRealEstateItem: (item) =>
@@ -49,7 +52,11 @@ export const useMapStore = create<MapStore>()(
       setRealEstateList: (list: RealEstateItem[]) =>
         set({ realEstateList: list }),
       setHoveredRealEstateItemId: (id) => set({ hoveredRealEstateItemId: id }),
+      setFilteredClusterCoords: (coords) =>
+        set({ filteredClusterCoords: coords }),
       setInfoBarOpen: (isOpen) => set({ isInfoBarOpen: isOpen }),
+      isBottomBarOpen: true,
+      setBottomBarOpen: (isOpen) => set({ isBottomBarOpen: isOpen }),
 
       // 신규: 지역 선택 핸들러 (랜딩페이지 및 지도 클릭 대응)
       selectArea: (area: SelectedArea, fullData?: InfoBarData) => {
@@ -63,6 +70,9 @@ export const useMapStore = create<MapStore>()(
           highlightedAreaName: area.name,
           isInfoBarOpen: true,
           isMoving: true,
+          // 상권 선택 시 부동산 관련 상태 초기화
+          selectedRealEstateItem: null,
+          viewMode: 'analysis',
           markers: [
             {
               id: 'selected',
@@ -142,6 +152,8 @@ export const useMapStore = create<MapStore>()(
         center: state.center,
         zoom: state.zoom,
         overlayMode: state.overlayMode,
+        selectedIndustryCodes: state.selectedIndustryCodes,
+        selectedIndustryName: state.selectedIndustryName,
         selectedArea: state.selectedArea,
         highlightedAreaName: state.highlightedAreaName,
         searchedLocation: state.searchedLocation,

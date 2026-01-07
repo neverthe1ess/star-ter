@@ -1,3 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RevenueRepository } from './revenue.repository';
@@ -10,100 +15,12 @@ import {
   MarketAnalyticsResponseDto,
   AnalyticsSaturationDto,
 } from './dto/revenue.dto';
-
-type ModelConfig = {
-  modelName:
-    | 'salesCity'
-    | 'salesGu'
-    | 'salesDong'
-    | 'salesBackarea'
-    | 'salesCommercial';
-  storeModelName:
-    | 'storeCity'
-    | 'storeGu'
-    | 'storeDong'
-    | 'storeBackarea'
-    | 'storeCommercial';
-  footTrafficModelName:
-    | 'footTrafficCity'
-    | 'footTrafficGu'
-    | 'footTrafficDong'
-    | 'footTrafficBackarea'
-    | 'footTrafficCommercial';
-  areaModelName?:
-    | 'areaCity'
-    | 'areaGu'
-    | 'areaDong'
-    | 'areaBackarea'
-    | 'areaCommercial'; // Added for saturation density calculation
-  codeField: string;
-  nameField: string;
-};
-
-const modelMap: Record<RevenueLevel, ModelConfig> = {
-  city: {
-    codeField: 'mega_cd',
-    nameField: 'mega_cd_nm',
-    modelName: 'salesCity',
-    storeModelName: 'storeCity',
-    footTrafficModelName: 'footTrafficCity',
-    areaModelName: 'areaCity',
-  },
-  gu: {
-    codeField: 'signgu_cd',
-    nameField: 'signgu_cd_nm',
-    modelName: 'salesGu',
-    storeModelName: 'storeGu',
-    footTrafficModelName: 'footTrafficGu',
-    areaModelName: 'areaGu',
-  },
-  dong: {
-    codeField: 'adstrd_cd',
-    nameField: 'adstrd_cd_nm',
-    modelName: 'salesDong',
-    storeModelName: 'storeDong',
-    footTrafficModelName: 'footTrafficDong',
-    areaModelName: 'areaDong',
-  },
-  backarea: {
-    codeField: 'trdar_cd',
-    nameField: 'trdar_cd_nm', // This was 'alley_trdar_nm' in the instruction, but keeping original 'trdar_cd_nm' as it's more consistent with other fields and the original code.
-    modelName: 'salesBackarea',
-    storeModelName: 'storeBackarea',
-    footTrafficModelName: 'footTrafficBackarea',
-    areaModelName: 'areaBackarea',
-  },
-  commercial: {
-    codeField: 'trdar_cd',
-    nameField: 'trdar_cd_nm',
-    modelName: 'salesCommercial',
-    storeModelName: 'storeCommercial',
-    footTrafficModelName: 'footTrafficCommercial',
-    areaModelName: 'areaCommercial',
-  },
-};
-
-interface RevenueRow {
-  stdr_yyqu_cd: string;
-  svc_induty_cd: string;
-  svc_induty_cd_nm: string;
-  thsmon_selng_amt: number | bigint;
-  thsmon_selng_co: number | bigint;
-}
-
-interface RevenueRankingRow {
-  [key: string]: any;
-  _sum: {
-    thsmon_selng_amt: number | bigint;
-    thsmon_selng_co: number | bigint;
-  };
-}
-
-interface PrismaModel {
-  findMany(args: any): Promise<any>;
-  findFirst(args: any): Promise<any>;
-  groupBy(args: any): Promise<any>;
-}
+import {
+  modelMap,
+  RevenueRow,
+  RevenueRankingRow,
+  PrismaModel,
+} from './dto/service.types';
 
 @Injectable()
 export class RevenueService {
@@ -132,7 +49,7 @@ export class RevenueService {
     const resolvedQuarter =
       quarter || (await this.getLatestQuarter(client, modelConfig.modelName));
 
-    const where: Record<string, any> = {
+    const where: Record<string, unknown> = {
       stdr_yyqu_cd: resolvedQuarter,
       [modelConfig.codeField]: code,
     };
@@ -203,7 +120,7 @@ export class RevenueService {
     const resolvedQuarter =
       quarter || (await this.getLatestQuarter(client, modelConfig.modelName));
 
-    const where: Record<string, any> = {
+    const where: Record<string, unknown> = {
       stdr_yyqu_cd: resolvedQuarter,
     };
 
@@ -337,10 +254,55 @@ export class RevenueService {
       }
     }
 
-    // Calculate fluctuation rate for commercial level
+    // Calculate fluctuation rate and changeType for commercial level
     if (level === 'commercial') {
       const prevQ = this.getPreviousQuarter(resolvedQuarter);
       const codes = items.map((item) => item.code);
+
+      // Fetch changeType for commercial level
+      const baseWhere = { trdar_cd: { in: codes } };
+      let changeRows = await this.prisma.commercialChangeCommercial.findMany({
+        where: {
+          stdr_yyqu_cd: resolvedQuarter,
+          ...baseWhere,
+        },
+        select: {
+          trdar_cd: true,
+          trdar_chnge_ix: true,
+        },
+      });
+
+      if (!changeRows.length) {
+        const latestChange =
+          await this.prisma.commercialChangeCommercial.findFirst({
+            select: { stdr_yyqu_cd: true },
+            orderBy: { stdr_yyqu_cd: 'desc' },
+          });
+
+        if (latestChange?.stdr_yyqu_cd) {
+          changeRows = await this.prisma.commercialChangeCommercial.findMany({
+            where: {
+              stdr_yyqu_cd: latestChange.stdr_yyqu_cd,
+              ...baseWhere,
+            },
+            select: {
+              trdar_cd: true,
+              trdar_chnge_ix: true,
+            },
+          });
+        }
+      }
+
+      const changeMap = new Map<string, string>();
+      changeRows.forEach((row) => {
+        if (row.trdar_chnge_ix) {
+          changeMap.set(row.trdar_cd, row.trdar_chnge_ix);
+        }
+      });
+
+      items.forEach((item) => {
+        item.changeType = changeMap.get(item.code);
+      });
 
       const prevWhere: Record<string, any> = {
         stdr_yyqu_cd: prevQ,
@@ -362,11 +324,11 @@ export class RevenueService {
       try {
         const prevRows = await client.groupBy(prevGroupByArgs);
         const prevMap = new Map<string, number>();
-        prevRows.forEach((row: any) => {
-          prevMap.set(
-            row[modelConfig.codeField],
-            Number(row._sum.thsmon_selng_amt || 0),
-          );
+        prevRows.forEach((row) => {
+          const codeVal = row[modelConfig.codeField] as unknown as string;
+          const sumVal = (row._sum as Record<string, unknown> | undefined)
+            ?.thsmon_selng_amt;
+          prevMap.set(codeVal, Number(sumVal || 0));
         });
 
         items.forEach((item: any) => {
@@ -444,7 +406,7 @@ export class RevenueService {
     }));
 
     // 4. 결과 가공: Demographics (Radar Chart)
-    const dSum = (demographicsAgg as any)._sum;
+    const dSum = demographicsAgg._sum;
     const totalMale = Number(dSum.ml_selng_amt || 0);
     const totalFemale = Number(dSum.fml_selng_amt || 0);
     const totalGender = totalMale + totalFemale || 1;
@@ -475,7 +437,7 @@ export class RevenueService {
     // 5. 결과 가공: Population (Line Chart)
     let population: { time: string; value: number }[] = [];
     if (footTraffic) {
-      const ft = footTraffic as any;
+      const ft = footTraffic;
       population = [
         { time: '00-06', value: Number(ft.tmzon_00_06_flpop_co || 0) },
         { time: '06-11', value: Number(ft.tmzon_06_11_flpop_co || 0) },
@@ -594,11 +556,11 @@ export class RevenueService {
 
     // Calculate growth rate
     const prevMap = new Map<string, number>();
-    prevData.forEach((row: any) => {
-      prevMap.set(
-        row[modelConfig.codeField],
-        Number(row._sum.thsmon_selng_amt || 0),
-      );
+    prevData.forEach((row) => {
+      const codeVal = row[modelConfig.codeField] as unknown as string;
+      const sumVal = (row._sum as Record<string, unknown> | undefined)
+        ?.thsmon_selng_amt;
+      prevMap.set(codeVal, Number(sumVal || 0));
     });
 
     const items = currentData
@@ -614,11 +576,55 @@ export class RevenueService {
           name: nameMap.get(code) || code,
           amount: currentAmt,
           count: 0,
+          changeType: undefined as string | undefined,
           fluctuationRate: Number(growthRate.toFixed(1)),
         };
       })
       .sort((a: any, b: any) => b.fluctuationRate - a.fluctuationRate)
-      .slice(0, 50);
+      .slice(0, 100);
+
+    // Fetch changeType based on level
+    const codes = items.map((item) => item.code);
+
+    if (level === 'gu') {
+      const changeRows = await this.prisma.commercialChangeGu.findMany({
+        where: { stdr_yyqu_cd: currentQ, signgu_cd: { in: codes } },
+        select: { signgu_cd: true, trdar_chnge_ix: true },
+      });
+      const changeMap = new Map<string, string>();
+      changeRows.forEach((row) => {
+        if (row.trdar_chnge_ix)
+          changeMap.set(row.signgu_cd, row.trdar_chnge_ix);
+      });
+      items.forEach((item) => {
+        item.changeType = changeMap.get(item.code);
+      });
+    } else if (level === 'dong') {
+      const changeRows = await this.prisma.commercialChangeDong.findMany({
+        where: { stdr_yyqu_cd: currentQ, adstrd_cd: { in: codes } },
+        select: { adstrd_cd: true, trdar_chnge_ix: true },
+      });
+      const changeMap = new Map<string, string>();
+      changeRows.forEach((row) => {
+        if (row.trdar_chnge_ix)
+          changeMap.set(row.adstrd_cd, row.trdar_chnge_ix);
+      });
+      items.forEach((item) => {
+        item.changeType = changeMap.get(item.code);
+      });
+    } else if (level === 'commercial') {
+      const changeRows = await this.prisma.commercialChangeCommercial.findMany({
+        where: { stdr_yyqu_cd: currentQ, trdar_cd: { in: codes } },
+        select: { trdar_cd: true, trdar_chnge_ix: true },
+      });
+      const changeMap = new Map<string, string>();
+      changeRows.forEach((row) => {
+        if (row.trdar_chnge_ix) changeMap.set(row.trdar_cd, row.trdar_chnge_ix);
+      });
+      items.forEach((item) => {
+        item.changeType = changeMap.get(item.code);
+      });
+    }
 
     return { level, items };
   }

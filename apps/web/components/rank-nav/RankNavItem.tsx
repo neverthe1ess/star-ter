@@ -1,5 +1,4 @@
 import { RankItem } from '@/hooks/useRevenueRanking';
-import { Heart } from 'lucide-react';
 
 type RankNavItemProps = {
   item: RankItem;
@@ -25,8 +24,6 @@ export default function RankNavItem({
   onClick,
   disabled,
   formatAmount,
-  isFavorite,
-  onToggleFavorite,
   fluctuation,
 }: RankNavItemProps) {
   return (
@@ -38,27 +35,18 @@ export default function RankNavItem({
     >
       {/* Rank & Name Section */}
       <div className="col-span-4 flex items-center gap-3 overflow-hidden">
-        <div
-          onClick={onToggleFavorite}
-          className="cursor-pointer shrink-0 p-1.5 rounded-full hover:bg-gray-200 transition-colors"
-        >
-          <Heart
-            className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400 group-hover:text-gray-500'}`}
-          />
-        </div>
-
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-900 text-sm font-bold text-white">
           {rank}
         </span>
 
-        <span className="truncate text-base font-semibold text-gray-900">
+        <span className="truncate text-lg font-semibold text-gray-900">
           {item.name}
         </span>
       </div>
 
       {/* Value */}
       <div className="col-span-3 text-right">
-        <span className="text-base font-bold text-gray-900">
+        <span className="text-lg font-bold text-gray-900">
           {formatAmount(item.amount)}
         </span>
       </div>
@@ -66,7 +54,7 @@ export default function RankNavItem({
       {/* Fluctuation */}
       <div className="col-span-2 flex justify-end">
         <div
-          className={`flex items-center text-xs font-bold ${
+          className={`flex items-center text-base font-bold ${
             fluctuation > 0
               ? 'text-red-500'
               : fluctuation < 0
@@ -98,7 +86,7 @@ export default function RankNavItem({
 
           return (
             <span
-              className={`rounded-full px-2 py-1 text-[10px] font-bold text-nowrap ${badgeClass}`}
+              className={`rounded-full px-2.5 py-1 text-xs font-bold text-nowrap ${badgeClass}`}
             >
               {label}
             </span>

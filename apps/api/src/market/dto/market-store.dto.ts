@@ -42,6 +42,10 @@ export class GetMarketAnalysisQueryDto {
   @IsString()
   @IsOptional()
   adstrd_cd?: string;
+
+  @IsString()
+  @IsOptional()
+  industryCode?: string;
 }
 
 export class MarketStoreListDto {

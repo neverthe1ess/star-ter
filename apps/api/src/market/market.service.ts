@@ -74,22 +74,23 @@ export class MarketService {
   async getAnalytics(
     query: GetMarketAnalysisQueryDto,
   ): Promise<MarketAnalyticsDto> {
-    const { latitude, longitude, level, signgu_cd, adstrd_cd } = query;
+    const { latitude, longitude, level, signgu_cd, adstrd_cd, industryCode } =
+      query;
     const lat = parseFloat(latitude);
     const lng = parseFloat(longitude);
 
     this.logger.log(
-      `[Analytics 요청] lat: ${lat}, lng: ${lng}, level: ${level || 'default'}, signgu_cd: ${signgu_cd || 'none'}, adstrd_cd: ${adstrd_cd || 'none'}`,
+      `[Analytics 요청] lat: ${lat}, lng: ${lng}, level: ${level || 'default'}, signgu_cd: ${signgu_cd || 'none'}, industry: ${industryCode || 'none'}`,
     );
 
     // (1) level이 'gu'인 경우: 행정구 데이터 조회
     if (level === 'gu') {
       if (signgu_cd) {
-        return this.fetchGuAnalytics(signgu_cd);
+        return this.fetchGuAnalytics(signgu_cd, industryCode);
       }
       const guArea = await this.marketRepository.findAdministrativeGu(lat, lng);
       if (guArea) {
-        return this.fetchGuAnalytics(guArea.signgu_cd);
+        return this.fetchGuAnalytics(guArea.signgu_cd, industryCode);
       }
       return MarketMapper.getEmptySalesData('행정구 정보를 찾을 수 없습니다.');
     }
@@ -97,14 +98,14 @@ export class MarketService {
     // (2) level이 'dong'인 경우: 행정동 데이터 직접 조회
     if (level === 'dong') {
       if (adstrd_cd) {
-        return this.fetchDongAnalytics(adstrd_cd);
+        return this.fetchDongAnalytics(adstrd_cd, industryCode);
       }
       const adminArea = await this.marketRepository.findAdministrativeDistrict(
         lat,
         lng,
       );
       if (adminArea) {
-        return this.fetchDongAnalytics(adminArea.adstrd_cd);
+        return this.fetchDongAnalytics(adminArea.adstrd_cd, industryCode);
       }
       return MarketMapper.getEmptySalesData('행정동 정보를 찾을 수 없습니다.');
     }
@@ -118,6 +119,7 @@ export class MarketService {
       return this.fetchCommercialAnalytics(
         commercialArea.trdar_cd,
         commercialArea.trdar_cd_nm,
+        industryCode,
       );
     }
 
@@ -126,7 +128,7 @@ export class MarketService {
       lng,
     );
     if (adminArea) {
-      return this.fetchDongAnalytics(adminArea.adstrd_cd);
+      return this.fetchDongAnalytics(adminArea.adstrd_cd, industryCode);
     }
 
     return MarketMapper.getEmptySalesData('분석할 수 없는 지역입니다.');
@@ -177,14 +179,23 @@ export class MarketService {
   // PRIVATE - Analytics 조회
   // ===============================
 
-  private async fetchGuAnalytics(code: string): Promise<MarketAnalyticsDto> {
+  private async fetchGuAnalytics(
+    code: string,
+    industryCode?: string,
+  ): Promise<MarketAnalyticsDto> {
     const [salesData, storeStats, topIndustries] = await Promise.all([
-      this.marketRepository.getAdminGuRevenueTrend(code),
-      this.marketRepository.getGuStoreStats(code),
+      this.marketRepository.getAdminGuRevenueTrend(code, industryCode),
+      this.marketRepository.getGuStoreStats(code, industryCode),
       this.marketRepository.getGuTopIndustries(code),
     ]);
 
-    const { openingRate, closureRate } = this.calculateRates(storeStats);
+    const {
+      openingRate,
+      closureRate,
+      storeCount,
+      franchiseCount,
+      similarStoreCount,
+    } = this.calculateRates(storeStats);
     const guArea = await this.marketRepository.findGuByCode(code);
     const areaName = guArea?.signgu_nm || code;
 
@@ -195,17 +206,29 @@ export class MarketService {
       openingRate,
       closureRate,
       topIndustries,
+      storeCount,
+      franchiseCount,
+      similarStoreCount,
     );
   }
 
-  private async fetchDongAnalytics(code: string): Promise<MarketAnalyticsDto> {
+  private async fetchDongAnalytics(
+    code: string,
+    industryCode?: string,
+  ): Promise<MarketAnalyticsDto> {
     const [salesData, storeStats, topIndustries] = await Promise.all([
-      this.marketRepository.getAdminDongRevenueTrend(code),
-      this.marketRepository.getAdministrativeStoreStats(code),
+      this.marketRepository.getAdminDongRevenueTrend(code, industryCode),
+      this.marketRepository.getAdministrativeStoreStats(code, industryCode),
       this.marketRepository.getDongTopIndustries(code),
     ]);
 
-    const { openingRate, closureRate } = this.calculateRates(storeStats);
+    const {
+      openingRate,
+      closureRate,
+      storeCount,
+      franchiseCount,
+      similarStoreCount,
+    } = this.calculateRates(storeStats);
     const dongArea = await this.marketRepository.findDongByCode(code);
     const areaName = dongArea?.adstrd_nm || code;
 
@@ -216,20 +239,30 @@ export class MarketService {
       openingRate,
       closureRate,
       topIndustries,
+      storeCount,
+      franchiseCount,
+      similarStoreCount,
     );
   }
 
   private async fetchCommercialAnalytics(
     code: string,
     name: string,
+    industryCode?: string,
   ): Promise<MarketAnalyticsDto> {
     const [salesData, storeStats, topIndustries] = await Promise.all([
-      this.marketRepository.getCommercialRevenueTrend(code),
-      this.marketRepository.getCommercialStoreStats(code),
+      this.marketRepository.getCommercialRevenueTrend(code, industryCode),
+      this.marketRepository.getCommercialStoreStats(code, industryCode),
       this.marketRepository.getCommercialTopIndustries(code),
     ]);
 
-    const { openingRate, closureRate } = this.calculateRates(storeStats);
+    const {
+      openingRate,
+      closureRate,
+      storeCount,
+      franchiseCount,
+      similarStoreCount,
+    } = this.calculateRates(storeStats);
 
     return MarketMapper.mapToAnalyticsDto(
       salesData,
@@ -238,6 +271,9 @@ export class MarketService {
       openingRate,
       closureRate,
       topIndustries,
+      storeCount,
+      franchiseCount,
+      similarStoreCount,
     );
   }
 
@@ -246,9 +282,14 @@ export class MarketService {
       stor_co: number | null;
       opbiz_stor_co: number | null;
       clsbiz_stor_co: number | null;
+      frc_stor_co: number | null;
+      similr_induty_stor_co: number | null;
     };
   }) {
     const totalStores = storeStats._sum.stor_co || 0;
+    const franchiseCount = storeStats._sum.frc_stor_co || 0;
+    const similarStoreCount = storeStats._sum.similr_induty_stor_co || 0;
+
     const openingRate =
       totalStores > 0
         ? ((storeStats._sum.opbiz_stor_co || 0) / totalStores) * 100
@@ -257,7 +298,14 @@ export class MarketService {
       totalStores > 0
         ? ((storeStats._sum.clsbiz_stor_co || 0) / totalStores) * 100
         : 0;
-    return { totalStores, openingRate, closureRate };
+    return {
+      totalStores,
+      openingRate,
+      closureRate,
+      storeCount: totalStores,
+      franchiseCount,
+      similarStoreCount,
+    };
   }
 
   // ===============================

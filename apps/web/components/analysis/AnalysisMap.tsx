@@ -2,14 +2,16 @@
 
 import { useRef, useEffect } from 'react';
 import { initProj4, convertCoord } from '../../utils/map-utils';
-import { KakaoMarker, KakaoPolygon, KakaoLatLng } from '../../types/map-types';
+import { KakaoPolygon, KakaoLatLng } from '../../types/map-types';
 import { useKakaoMap } from '../../hooks/useKakaoMap';
 import { usePopulationLayer } from '../../hooks/usePopulationLayer';
 import { usePopulationVisual } from '../../hooks/usePopulationVisual';
 import { useMapStore } from '../../stores/useMapStore';
 import { useSeoulBoundary } from '../../hooks/useSeoulBoundary';
 import { useRealEstateMarkers } from '../../hooks/useRealEstateMarkers';
+import { useStoreMarkers, StoreLocation } from '../../hooks/useStoreMarkers';
 import { RealEstateItem } from '../../types/map-store-types';
+import polylabel from '@mapbox/polylabel';
 
 initProj4();
 
@@ -25,6 +27,17 @@ interface AnalysisMapProps {
   realEstateData?: RealEstateItem[];
   onMarkerClick?: (item: RealEstateItem) => void;
   hoveredItemId?: string | null;
+  showPopulationHeatmap?: boolean;
+  // 외부에서 유동인구 레이어 토글 가능
+  showPopulationLayer?: boolean;
+  populationFilters?: {
+    genderFilter?: 'Male' | 'Female' | 'Total';
+    ageFilter?: string;
+    timeFilter?: string;
+  };
+  // 업종별 매장 마커 (치킨, 카페 등)
+  storeMarkers?: StoreLocation[];
+  onStoreMarkerClick?: (store: StoreLocation) => void;
 }
 
 export default function AnalysisMap({
@@ -32,26 +45,38 @@ export default function AnalysisMap({
   realEstateData = [],
   onMarkerClick,
   hoveredItemId,
+  showPopulationHeatmap = false,
+  showPopulationLayer: externalShowLayer,
+  populationFilters,
+  storeMarkers = [],
+  onStoreMarkerClick,
 }: AnalysisMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const markersRef = useRef<KakaoMarker[]>([]);
   const polygonsRef = useRef<KakaoPolygon[]>([]);
 
   const { map } = useKakaoMap(mapRef);
 
   // 부동산 마커 렌더링
   useRealEstateMarkers(map, realEstateData, onMarkerClick, hoveredItemId);
+  
+  // 업종별 매장 마커 렌더링 (치킨, 카페 등)
+  useStoreMarkers(map, storeMarkers, onStoreMarkerClick);
   const {
-    center,
+    center,       // 지도 중심 좌표 (center 상태값)
     zoom,
-    markers,
     setZoom,
-    setCenter,
+    setCenter,    // center 상태를 업데이트하는 함수
     clearMarkers,
     isMoving,
     selectedArea,
   } = useMapStore();
   const population = usePopulationVisual();
+  
+  // 외부 prop이 있으면 외부 값 사용, 없으면 내부 상태 사용
+  const effectiveShowLayer = externalShowLayer !== undefined ? externalShowLayer : (showPopulationHeatmap || population.showLayer);
+  const effectiveGenderFilter = populationFilters?.genderFilter || population.genderFilter;
+  const effectiveAgeFilter = populationFilters?.ageFilter || population.ageFilter;
+  const effectiveTimeFilter = populationFilters?.timeFilter || population.timeFilter;
 
   useSeoulBoundary(map);
 
@@ -96,6 +121,16 @@ export default function AnalysisMap({
         rings = polygonData as number[][][];
       }
 
+      const [lng, lat] = polylabel(rings, 1.0);
+      const centerPoint = convertCoord(lng, lat);
+
+      const position = new window.kakao.maps.LatLng(
+        centerPoint.getLat(),
+        centerPoint.getLng(),
+      );
+      map.setCenter(position);
+      map.setLevel(zoom);
+
       rings.forEach((ring) => {
         const path: KakaoLatLng[] = ring.map((c: number[]) =>
           convertCoord(c[0], c[1]),
@@ -106,7 +141,7 @@ export default function AnalysisMap({
           strokeWeight: 3,
           strokeColor: '#3B82F6',
           strokeOpacity: 1,
-          fillColor: '#3B82F6',
+          fillColor: '#ffffff',
           fillOpacity: 0.3,
         });
 
@@ -116,52 +151,34 @@ export default function AnalysisMap({
     } catch (error) {
       console.error('Failed to draw polygon:', error);
     }
-  }, [map, selectedArea]);
+  }, [map, selectedArea, zoom]);
 
+  // Store 상태(center, markers) 변경 시 지도 이동 처리
   useEffect(() => {
     if (!map || !center) return;
 
-    markersRef.current.forEach((m) => m.setMap(null));
-    markersRef.current = [];
-
-    markers.forEach((data) => {
-      const position = new window.kakao.maps.LatLng(
-        data.coords.lat,
-        data.coords.lng,
-      );
-
-      if (data.style === 'pulse') {
-        const content = document.createElement('div');
-        content.className = 'custom-map-marker';
-        content.innerHTML =
-          '<div class="marker-pin"></div><div class="marker-pulse"></div>';
-
-        const overlay = new window.kakao.maps.CustomOverlay({
-          position,
-          content,
-          map,
-          yAnchor: 0.5,
-          zIndex: 3,
-        });
-        markersRef.current.push(overlay as unknown as KakaoMarker);
-      } else {
-        const marker = new window.kakao.maps.Marker({ position, map });
-        markersRef.current.push(marker);
-      }
-    });
-
-    map.setCenter(new window.kakao.maps.LatLng(center.lat, center.lng));
-    if (zoom > 0) {
-      map.setLevel(zoom);
+    const moveLatLon = new window.kakao.maps.LatLng(center.lat, center.lng);
+    
+    // 현재 중심과 다를 경우에만 이동 (불필요한 애니메이션 방지)
+    const currentCenter = map.getCenter();
+    if (
+      Math.abs(currentCenter.getLat() - center.lat) > 0.0001 || 
+      Math.abs(currentCenter.getLng() - center.lng) > 0.0001
+    ) {
+      map.panTo(moveLatLon);
     }
-  }, [center, zoom, markers, map]);
+
+    if (zoom && map.getLevel() !== zoom) {
+        map.setLevel(zoom, { animate: true });
+    }
+  }, [map, center, zoom]);
 
   usePopulationLayer(
     map,
-    population.timeFilter,
-    population.genderFilter,
-    population.ageFilter,
-    population.showLayer,
+    (effectiveTimeFilter || 'All') as '0-8' | '8-16' | '16-24' | 'All',
+    (effectiveGenderFilter || 'Total') as 'Male' | 'Female' | 'Total',
+    (effectiveAgeFilter || 'Total') as 'Total' | '10대' | '20대' | '30대' | '40대' | '50대' | '60대+',
+    effectiveShowLayer,
     population.getPopulationValue,
   );
 
@@ -217,7 +234,7 @@ export default function AnalysisMap({
     <div className="relative w-full h-full">
       <div
         ref={mapRef}
-        id="kakao-map-analysis"
+        id="kakao-map"
         className="w-full h-full bg-gray-100"
       />
     </div>

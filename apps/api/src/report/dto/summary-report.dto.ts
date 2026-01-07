@@ -28,6 +28,15 @@ export interface SummaryReportResponse {
     period: string;
   };
 
+  // 0) 위치/공간 정보
+  locationInfo: {
+    areaType: string; // 상권 유형 코드 (예: 'A', 'D')
+    areaTypeName: string; // 상권 유형명 (예: '발달상권', '골목상권', '행정동')
+    guName: string; // 소속 구 (예: '강남구')
+    dongName: string; // 소속 동 (예: '역삼1동')
+    area: number; // 면적 (㎡)
+  };
+
   // 1) 핵심 지표
   keyMetrics: {
     estimatedMonthlySales: {
@@ -107,10 +116,45 @@ export interface SummaryReportResponse {
     implication: string;
   }[];
 
+  // 8-1) 시장 동향 (New)
+  marketTrends: {
+    opbizRt: number; // 개업률
+    clsbizRt: number; // 폐업률
+    opbizStoreCount: number; // 개업 점포 수
+    clsbizStoreCount: number; // 폐업 점포 수
+  };
+
   // 9) 결론 (프론트엔드 요구사항 추가)
   conclusion: {
     category: '운영' | '상품' | '마케팅' | '데이터 부족';
     content: string;
     highlight?: string;
+  }[];
+
+  // 10) 매출 분석
+  revenueAnalysis: {
+    monthlyTotal: number;
+    avgTransactionPrice: number;
+    totalTransactionCount: number;
+    weekdayComparison: {
+      weekday: number;
+      weekend: number;
+    };
+    dailyRatio: {
+      day: string;
+      ratio: number;
+    }[];
+    timePeriodRatio: {
+      timeRange: string;
+      ratio: number;
+    }[];
+  };
+
+  // 11) 매출 TOP 업종
+  topIndustries: {
+    rank: number;
+    industryCode: string;
+    industryName: string;
+    salesAmount: number;
   }[];
 }

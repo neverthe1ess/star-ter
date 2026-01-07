@@ -17,7 +17,6 @@ import Image from 'next/image';
 import { toast } from 'react-hot-toast';
 
 import { useAuth } from '@/hooks/useAuth';
-import { useBookmark } from '@/hooks/useBookmark';
 import { useModalStore } from '@/stores/useModalStore';
 
 interface RealEstateItem {
@@ -27,18 +26,23 @@ interface RealEstateItem {
   roadaddress: string | null;
   deposit: number | null;
   monthlyrent: number | null;
+  premium: number | null;
   size: number | null;
   previewphotourl: string | null;
+  title?: string | null;
+}
+
+interface RealEstateBookmark {
+  id: string;
+  user_id: string;
+  real_estate_id: string;
+  created_at: string;
+  real_estate_info: RealEstateItem;
 }
 
 export default function UserPage() {
   const router = useRouter();
   const { isLoggedIn } = useAuth();
-  const {
-    bookmarks,
-    removeBookmark,
-    loading: bookmarksLoading,
-  } = useBookmark();
   const [mounted, setMounted] = useState(false);
   const [profile, setProfile] = useState<{
     nickname: string;
@@ -47,6 +51,12 @@ export default function UserPage() {
   } | null>(null);
   const [myRealEstates, setMyRealEstates] = useState<RealEstateItem[]>([]);
   const [realEstateLoading, setRealEstateLoading] = useState(false);
+
+  // 부동산 즐겨찾기 상태
+  const [realEstateBookmarks, setRealEstateBookmarks] = useState<
+    RealEstateBookmark[]
+  >([]);
+  const [bookmarksLoading, setBookmarksLoading] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -109,9 +119,37 @@ export default function UserPage() {
       }
     };
 
+    // 부동산 즐겨찾기 가져오기
+    const fetchRealEstateBookmarks = async () => {
+      const token = localStorage.getItem('accessToken');
+      if (!token) return;
+
+      try {
+        setBookmarksLoading(true);
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/real-estate-bookmark`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        if (!res.ok) throw new Error('Failed to fetch bookmarks');
+
+        const data = await res.json();
+        setRealEstateBookmarks(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setBookmarksLoading(false);
+      }
+    };
+
     if (mounted && isLoggedIn) {
       fetchProfile();
       fetchMyRealEstates();
+      fetchRealEstateBookmarks();
     } else if (mounted && !isLoggedIn) {
       toast.error('로그인이 필요합니다.');
       router.push('/login');
@@ -126,22 +164,45 @@ export default function UserPage() {
 
   const { openModal } = useModalStore();
 
-  const handleRemoveBookmark = (commercialCode: string) => {
+  const handleRemoveBookmark = (realEstateId: string) => {
     openModal({
       type: 'confirm',
       title: '즐겨찾기 삭제',
-      content: '정말로 이 상권을 즐겨찾기에서 삭제하시겠습니까?',
+      content: '정말로 이 매물을 즐겨찾기에서 삭제하시겠습니까?',
       confirmText: '삭제',
       cancelText: '취소',
       onConfirm: async () => {
-        await removeBookmark(commercialCode);
+        try {
+          const token = localStorage.getItem('accessToken');
+          const res = await fetch(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/real-estate-bookmark/${realEstateId}`,
+            {
+              method: 'DELETE',
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            },
+          );
+          if (res.ok) {
+            setRealEstateBookmarks((prev) =>
+              prev.filter((b) => b.real_estate_id !== realEstateId),
+            );
+            toast.success('즐겨찾기가 삭제되었습니다.');
+          } else {
+            toast.error('삭제에 실패했습니다.');
+          }
+        } catch (error) {
+          console.error(error);
+          toast.error('오류가 발생했습니다.');
+        }
       },
     });
   };
 
-  const formatPrice = (price: number | null) => {
+  const formatPrice = (price: number | string | null) => {
     if (!price) return '-';
-    const won = price * 1000;
+    const numPrice = typeof price === 'string' ? parseInt(price) : price;
+    const won = numPrice * 1000;
     if (won >= 100000000) {
       return `${(won / 100000000).toFixed(1)}억원`;
     } else if (won >= 10000) {
@@ -215,7 +276,7 @@ export default function UserPage() {
               </div>
               <div className="text-center px-5 py-3 bg-yellow-50 rounded-lg">
                 <p className="text-2xl font-bold text-yellow-600">
-                  {bookmarks.length}
+                  {realEstateBookmarks.length}
                 </p>
                 <p className="text-xs text-gray-500">즐겨찾기</p>
               </div>
@@ -240,7 +301,7 @@ export default function UserPage() {
               </Link>
             </div>
 
-            <div className="p-4 max-h-100 overflow-auto">
+            <div className="p-4 max-h-150 overflow-auto">
               {realEstateLoading ? (
                 <div className="flex justify-center py-10">
                   <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-blue-600"></div>
@@ -266,20 +327,26 @@ export default function UserPage() {
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-gray-900 text-sm truncate">
+                        <h4 className="font-semibold text-gray-900 text-lg truncate">
                           {item.name || '이름 없음'}
                         </h4>
-                        <p className="text-xs text-gray-500 truncate flex items-center gap-1 mt-0.5">
-                          <MapPin className="h-3 w-3 shrink-0" />
+                        <p className="text-sm text-gray-500 truncate flex items-center gap-1 mt-1">
+                          <MapPin className="h-3.5 w-3.5 shrink-0" />
                           {item.roadaddress || item.address || '주소 없음'}
                         </p>
-                        <div className="flex gap-2 mt-1.5">
-                          <span className="text-xs font-medium text-blue-600">
-                            보증금 {formatPrice(item.deposit)}
+                        <div className="flex gap-2 mt-2 items-center">
+                          <span className="text-sm font-medium text-blue-600">
+                            보증금{' '}
+                            <span className="text-base">
+                              {formatPrice(item.deposit)}
+                            </span>
                           </span>
                           <span className="text-xs text-gray-300">|</span>
-                          <span className="text-xs font-medium text-indigo-600">
-                            월세 {formatPrice(item.monthlyrent)}
+                          <span className="text-sm font-medium text-indigo-600">
+                            월세{' '}
+                            <span className="text-base">
+                              {formatPrice(item.monthlyrent)}
+                            </span>
                           </span>
                         </div>
                       </div>
@@ -307,38 +374,78 @@ export default function UserPage() {
           <div className="bg-white rounded-lg border border-gray-200">
             <div className="flex items-center gap-2 p-4 border-b border-gray-100">
               <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
-              <h3 className="font-bold text-gray-900">즐겨찾기 상권</h3>
+              <h3 className="font-bold text-gray-900">즐겨찾기 매물</h3>
             </div>
 
-            <div className="p-4 max-h-100 overflow-auto">
+            <div className="p-4 max-h-150 overflow-auto">
               {bookmarksLoading ? (
                 <div className="flex justify-center py-10">
                   <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-yellow-500"></div>
                 </div>
-              ) : bookmarks.length > 0 ? (
-                <div className="space-y-2">
-                  {bookmarks.map((bookmark) => (
+              ) : realEstateBookmarks.length > 0 ? (
+                <div className="space-y-3">
+                  {realEstateBookmarks.map((bookmark) => (
                     <div
                       key={bookmark.id}
-                      className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:border-yellow-200 hover:bg-yellow-50/50 transition-colors"
+                      className="flex gap-3 p-3 rounded-lg border border-gray-100 hover:border-yellow-200 hover:bg-yellow-50/50 transition-colors"
                     >
-                      <div className="flex items-center gap-3">
-                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 shrink-0" />
-                        <div>
-                          <span className="font-medium text-gray-900 text-sm">
-                            {bookmark.commercialName}
+                      {bookmark.real_estate_info?.previewphotourl ? (
+                        <Image
+                          src={bookmark.real_estate_info.previewphotourl}
+                          alt={bookmark.real_estate_info.name || '매물'}
+                          width={80}
+                          height={60}
+                          className="rounded object-cover shrink-0"
+                        />
+                      ) : (
+                        <div className="w-20 h-15 rounded bg-gray-100 flex items-center justify-center shrink-0">
+                          <Building2 className="h-6 w-6 text-gray-300" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-gray-900 text-lg truncate">
+                          {bookmark.real_estate_info?.title ||
+                            bookmark.real_estate_info?.name ||
+                            '이름 없음'}
+                        </h4>
+                        <p className="text-sm text-gray-500 truncate flex items-center gap-1 mt-1">
+                          <MapPin className="h-3.5 w-3.5 shrink-0" />
+                          {bookmark.real_estate_info?.roadaddress ||
+                            bookmark.real_estate_info?.address ||
+                            '주소 없음'}
+                        </p>
+                        <div className="flex gap-2 mt-2 items-center">
+                          <span className="text-sm font-medium text-blue-600">
+                            보증금{' '}
+                            <span className="text-base">
+                              {formatPrice(bookmark.real_estate_info?.deposit)}
+                            </span>
                           </span>
-                          <p className="text-xs text-gray-400">
-                            {new Date(bookmark.createdAt).toLocaleDateString()}{' '}
-                            추가
-                          </p>
+                          <span className="text-xs text-gray-300">|</span>
+                          <span className="text-sm font-medium text-indigo-600">
+                            월세{' '}
+                            <span className="text-base">
+                              {formatPrice(
+                                bookmark.real_estate_info?.monthlyrent,
+                              )}
+                            </span>
+                          </span>
+                          <span className="text-xs text-gray-300">|</span>
+                          <span className="text-sm font-medium text-orange-600">
+                            권리금{' '}
+                            <span className="text-base">
+                              {formatPrice(
+                                bookmark.real_estate_info?.premium || 0,
+                              )}
+                            </span>
+                          </span>
                         </div>
                       </div>
                       <button
                         onClick={() =>
-                          handleRemoveBookmark(bookmark.commercialCode)
+                          handleRemoveBookmark(bookmark.real_estate_id)
                         }
-                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-all"
+                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-all self-start"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -349,7 +456,7 @@ export default function UserPage() {
                 <div className="text-center py-10">
                   <Star className="h-10 w-10 mx-auto text-gray-200" />
                   <p className="mt-2 text-sm text-gray-500">
-                    즐겨찾기한 상권이 없습니다
+                    즐겨찾기한 매물이 없습니다
                   </p>
                 </div>
               )}

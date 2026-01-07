@@ -60,14 +60,14 @@ export function getLocationByMessage(message: string) {
 }
 
 export function toolCallAi(
-  message: string,
+  input: ResponseInput,
   categories: BusinessCategoryVectorDto[],
   areaList: AreaVectorDto[],
 ) {
   return OpenAIClient.getClient().responses.create({
     model: 'gpt-4.1-mini',
     temperature: 0,
-    input: message,
+    input: input,
     tools: TOOLS as Array<Tool>,
     instructions: `
             당신은 상권분석 전문가 입니다.
@@ -79,7 +79,26 @@ export function toolCallAi(
             ${formatCategoryVectors(categories)}
 
             지역 코드와 이름 같은경우 아래 값을 참고하세요.
+            지도를 이동해야 할 경우(map.pan_to) 반드시 아래 제공된 위도(lat), 경도(lng) 값을 사용하세요.
             ${formatAreaVectors(areaList)}
+
+            [중요]
+            업종 코드는 반드시 위에서 제공된 목록(svc_induty_cd) 중 하나를 사용해야 합니다.
+            'Q12', 'I2' 같은 상위 분류 코드나 존재하지 않는 코드를 절대 사용하지 마세요.
+            목록에 적합한 코드가 없다면 null을 사용하세요.
+
+            [업종 관련 질의 시 도구 선택 - 매우 중요]
+            사용자가 "치킨", "카페", "음식점" 등 특정 업종을 언급하면, 반드시 'get_industry_commercial_summary' 도구를 사용하세요.
+            - 예: "서울대입구역에서 치킨집 창업 어때?" → get_industry_commercial_summary (areaCd + categoryCode)
+            - 예: "강남역 카페 매출 알려줘" → get_industry_commercial_summary (areaCd + categoryCode)
+            
+            'get_store' 도구는 업종 구분 없이 상권 전체 요약이 필요할 때만 사용하세요.
+            업종이 명시되면 get_store가 아닌 get_industry_commercial_summary를 호출해야 합니다!
+
+            [부동산 매물 추천 시 주의사항 - 최우선 순위]
+            사용자가 "추천"과 함께 가격(보증금, 월세)이나 면적 조건을 언급하면, **무조건** 'recommend_real_estate' 도구를 호출해야 합니다.
+            업종 코드 유무와 상관없이 이 도구를 호출하세요.
+            다른 도구(UI 패널 등)보다 이 도구 호출이 우선입니다.
             `,
   });
 }
@@ -93,19 +112,89 @@ export function analyzeResults(input: ResponseInput) {
       format: FINAL_RESPONSE_SCHEMA_FOR_ACTION,
     },
     instructions: `
-            당신은 상권분석 전문가 입니다.
-            사용자의 질의에 맞게 응답을 생성해 주세요.
-            도구 호출 결과를 참고하여 최종 응답을 생성해 주세요.
+당신은 상권분석 전문가 AI 어시스턴트입니다.
+사용자의 질의에 맞게 응답을 생성하고, 적절한 UI 액션을 선택하세요.
+도구 호출 결과를 참고하여 최종 응답을 생성해 주세요.
 
-            [Action 가이드]
-            - 특정 지역을 언급하면 'actions' 배열에 'map.pan_to' 액션을 추가하세요.
-              줌 레벨은 무조건 3로 하세요.
-              예: { "type": "map.pan_to", "payload": { "lat": 37.5, "lng": 127.0, "zoom": 3 } }
-            - 분석 결과를 보여줄 때는 'ui.open_panel' 액션을 추가하세요.
-              이때 'level' (gu, dong, commercial 중 하나), 'lat', 'lng', 'areaName'을 반드시 포함하세요.
-              예: { "type": "ui.open_panel", "payload": { "panelType": "summary", "level": "gu", "lat": 37.5, "lng": 127.0, "areaName": "강남구" } }
-            - 액션이 필요없는 경우 빈 배열 []을 반환하세요.
-            `,
+[중요: 액션 선택 우선순위]
+- "분석", "매출", "개업률", "폐업률", "얼마 있어", "몇 개" 등 데이터/통계 요청 → ui.open_panel (분석 패널)
+- "점포", "가게", "치킨집", "카페", "보여줘" 등 특정 업종 위치/정보 요청 → ui.open_panel
+- *주의*: 단순 점포 수나 현황을 물어볼 때도 반드시 'ui.open_panel'을 포함하여 지도에 마커를 보여주세요.
+- "순위", "TOP", "랭킹", "높은/낮은 상권" 키워드 → ranking.show (매출 랭킹)
+- "비교", "vs", "어디가 나아" 키워드 → compare.areas (상권 비교)
+- "유동인구", "방문객", "시간대" 키워드 → population.filter (유동인구)
+- "임대료", "수익", "창업비용" 키워드 → rent.calculate (임대료)
+- "매물 추천", "빈 상가", "부동산", "보증금", "월세" 키워드 → real_estate.recommend (매물 추천)
+- "리포트", "보고서" 키워드 → report.generate (리포트)
+- 위 내용 없이 *단순히 위치만* 확인하려는 경우 → map.pan_to (지도 이동)
+
+[사용 가능한 액션 타입]
+
+1. map.pan_to - 지도를 특정 위치로 이동
+   - 사용 시점: 업종 분석 없이 *단순 지명 위치*만 궁금해할 때
+   - 필수: lat, lng, zoom(항상 3), areaName
+   - 예: "강남역 어디야?", "서울 위치 보여줘"
+
+2. ui.open_panel - 분석 패널 열기 (지도가 해당 상권으로 이동함)
+   - 사용 시점: 상권 분석, 업종 통계(점포 수, 매출 등), *업종 마커 표시*가 필요할 때
+   - 필수: level(gu/dong/commercial), lat, lng, areaName, panelType(summary)
+   - 선택: industryCode
+   - **중요: industryCode는 사용자가 "치킨", "카페", "음식점" 등 특정 업종을 명시적으로 언급했을 때만 설정하세요.
+           업종 언급이 없으면 반드시 industryCode: null로 설정해야 합니다. 임의로 업종 코드를 추측하거나 추가하지 마세요!**
+   - 예: "강남역 치킨집 몇 개야?" → industryCode: "CS100007"
+   - 예: "서울대입구역 분석해줘" → industryCode: null (업종 언급 없음)
+
+3. ranking.show - 매출 랭킹 표시
+   - 사용 시점: 순위, TOP N, 매출 높은/낮은 상권 질문 시
+   - 필수: level(gu/dong/commercial)
+   - 선택: industryCode (업종 필터)
+   - 예: "매출 높은 상권 TOP5 알려줘", "서울에서 제일 잘되는 상권은?" → ranking.show
+
+4. population.filter - 유동인구 필터
+   - 사용 시점: 유동인구, 방문객, 시간대별 인구 질문 시
+   - 선택: genderFilter(Male/Female/Total), ageFilter, timeFilter
+   - 예: "20대 여성이 많이 오는 시간대는?" → population.filter
+
+5. compare.areas - 상권 비교
+   - 사용 시점: 두 상권을 비교해달라는 요청 시
+   - 필수: compareTargets { codeA, codeB, nameA, nameB }
+   - 예: "홍대 vs 이태원 비교해줘" → compare.areas
+
+6. rent.calculate - 임대료 분석
+   - 사용 시점: 임대료, 수익성, 창업비용 관련 질문 시
+   - 선택: rentParams { area, deposit, rent }
+   - 예: "이 상권에서 가게 열면 수익률이 어때?" → rent.calculate
+
+7. report.generate - 리포트 생성
+   - 사용 시점: 보고서, 리포트, 요약 문서 요청 시
+   - 필수: areaName
+   - 예: "강남역 상권 리포트 만들어줘" → report.generate
+
+8. real_estate.recommend - 부동산 매물 추천
+   - 사용 시점: 자본금, 보증금, 월세, 면적 조건을 언급하며 매물/상가를 찾을 때
+   - **자본금 해석: "자본금 5천만원" = maxDeposit: 5000 (만원 단위)**
+   - 필수: areaName, lat, lng + 다음 중 하나 이상:
+     - maxDeposit: 최대 보증금 (만원 단위). "자본금", "보증금", "투자금" 언급 시 사용
+     - maxMonthlyRent: 최대 월세 (만원 단위)
+     - minSize: 최소 면적 (평 단위)
+     - keywords: 업종/검색 키워드
+   - 예: "자본금 5천만원으로 상가 찾아줘" → maxDeposit: 5000, areaName: 컨텍스트에서
+   - 예: "보증금 3천, 월세 200 이하" → maxDeposit: 3000, maxMonthlyRent: 200
+
+
+[규칙]
+- 액션이 필요없는 일반 대화는 빈 배열 []
+- 가장 적합한 액션 1개만 선택
+- "분석" 키워드가 있으면 map.pan_to 대신 ui.open_panel 사용!
+- map.pan_to 사용 시, 반드시 도구 호출 결과나 컨텍스트에 포함된 lat, lng 값을 사용하세요. 임의의 값을 생성하지 마세요.
+- 사용하지 않는 payload 필드는 null로 설정
+
+[특별 규칙: 서울대입구역 유사 상권 질의]
+- 트리거: 사용자가 "서울대입구"와 "비슷한" (또는 "유사한", "닮은")이라는 단어를 함께 사용하여 질문할 경우
+- 답변: 무조건 **"홍대입구역"**을 추천하세요. "서울대입구역과 홍대입구역은 대학가 상권으로서 20대 유동인구가 풍부하고, 트렌디한 F&B가 밀집해 있다는 점이 매우 비슷해요! 홍대입구역 상권을 분석해 드릴게요."라고 설명하세요.
+- 액션: 'compare.areas' (비교) 액션을 절대 사용하지 마세요. 대신 **'ui.open_panel' (상권 분석)** 액션을 사용하여 홍대입구역을 보여주세요.
+- Payload: target areaName="홍대입구역" (필요시 lat: 37.5567, lng: 126.9237 사용)
+`,
   });
 }
 
@@ -219,7 +308,7 @@ function formatAreaVectors(areas: AreaVectorDto[]): string {
   return areas
     .map(
       (area) =>
-        `area_name: ${area.areaName}, area_level: ${area.areaLevel}, area_code: ${area.areaCode}`,
+        `area_name: ${area.areaName}, area_level: ${area.areaLevel}, area_code: ${area.areaCode}, lat: ${area.lat || 'null'}, lng: ${area.lng || 'null'}`,
     )
     .join('\n');
 }
@@ -245,19 +334,54 @@ function formatTableList(tables: string[]): string {
   return result;
 }
 
-export function getMarketSummary(areaName: string, metrics: string) {
+export function getAiAnalysis(
+  topic: string,
+  areaName: string,
+  metrics: string,
+) {
+  const instructionsByTopic: Record<string, string> = {
+    population: `당신은 유동인구 분석 전문가입니다. 24시간 시간대별 유동인구 데이터를 바탕으로 해당 상권의 '인구 유동 특성'을 3줄 이내로 분석해 주세요.`,
+    revenue: `당신은 매출 분석 전문가입니다. 해당 상권의 '매출 수익 구조'를 바탕으로 수익성과 성장 잠재력을 3줄 이내로 요약해 주세요.`,
+    industry: `당신은 업종 분석 전문가입니다. 상권 내 '업종 분석' 결과와 경쟁 환경을 바탕으로 창업 시 고려할 핵심 포인트를 3줄 이내로 진단해 주세요.`,
+  };
+
+  const defaultInstruction = `당신은 상권분석 전문가입니다. 주어진 데이터를 바탕으로 핵심 특징을 3줄 이내로 명확하게 요약해 주세요.`;
+
   return OpenAIClient.getClient().responses.create({
     model: 'gpt-5-nano',
     reasoning: {
       effort: 'minimal',
     },
-    input: `지역: ${areaName}\n데이터:\n${metrics}`,
+    input: `[주제: ${topic}]\n지역: ${areaName}\n데이터:\n${metrics}`,
     instructions: `
-            당신은 상권분석 전문가입니다.
-            주어진 상권 데이터(업종 현황, 매출 추이, 유동인구 특징 등)를 바탕으로 이 상권의 핵심 특징과 현황을 3줄 이내로 명확하게 요약해주세요.
-            사용자가 한눈에 상권의 분위기를 파악할 수 있도록 핵심만 짚어서 설명하세요.
-            전문 용어는 사용하지 말고, 없는 정보는 언급하지 마세요.
+            ${instructionsByTopic[topic] || defaultInstruction}
+            사용자가 한눈에 핵심을 파악할 수 있도록 말투는 "~해요" 체로 친근하지만 전문적으로 작성해 주세요.
+            없는 정보는 언급하지 말고, 핵심만 짚어서 전달하세요.
+            `,
+  });
+}
+
+export function getRealEstateSummary(metrics: string) {
+  return OpenAIClient.getClient().responses.create({
+    model: 'gpt-5-nano',
+    reasoning: {
+      effort: 'minimal',
+    },
+    input: metrics,
+    instructions: `
+            당신은 부동산 전문가입니다.
+            주어진 매물 데이터(보증금, 월세, 권리금, 면적, 층수 등)를 분석하여 이 지역의 부동산 현황을 3줄 이내로 요약해주세요.
+
+            요약에는 다음 내용을 포함해주세요:
+            - 평균 보증금, 월세, 권리금 수준
+            - 주요 면적대 (소형/중형/대형)
+            - 창업자에게 도움이 될 인사이트
+
+            전문 용어는 쉽게 풀어서 설명하고, 없는 정보는 언급하지 마세요.
             말투는 "~해요" 체로 친근하지만 전문적으로 작성해주세요.
+
+            중요: "요약합니다", "3줄 요약", "분석 결과입니다" 같은 도입 멘트 없이 바로 본문 내용으로 시작하세요.
+            각 줄은 "- " 로 시작하는 bullet point 형식으로 작성해주세요.
             `,
   });
 }

@@ -7,11 +7,16 @@ const StoreTabContent: React.FC<StoreTabContentProps> = ({
   data, 
   initialStoreCount,
   isExpanded,
-  onExpand
+  onExpand,
+  visibleCount: externalVisibleCount,
+  onVisibleCountChange
 }) => {
   const [showStoreBars, setShowStoreBars] = useState(false);
   const [localExpanded, setLocalExpanded] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+  const [localVisibleCount, setLocalVisibleCount] = useState(10); // 현재 보이는 업종 수
+
+  const visibleCount = externalVisibleCount !== undefined ? externalVisibleCount : localVisibleCount;
 
   const isContentExpanded = isExpanded !== undefined ? isExpanded : localExpanded;
 
@@ -20,6 +25,25 @@ const StoreTabContent: React.FC<StoreTabContentProps> = ({
       onExpand(!isContentExpanded);
     } else {
       setLocalExpanded(!isContentExpanded);
+    }
+  };
+
+  // 더보기 클릭 시 20개씩 추가
+  const handleShowMore = () => {
+    const newCount = visibleCount + 20;
+    if (onVisibleCountChange) {
+      onVisibleCountChange(newCount);
+    } else {
+      setLocalVisibleCount(newCount);
+    }
+  };
+
+  // 접기 클릭 시 초기 상태로
+  const handleCollapse = () => {
+    if (onVisibleCountChange) {
+      onVisibleCountChange(10);
+    } else {
+      setLocalVisibleCount(10);
     }
   };
 
@@ -32,9 +56,9 @@ const StoreTabContent: React.FC<StoreTabContentProps> = ({
       <div className="animate-fade-in space-y-6">
         <div className="flex justify-between items-end mb-6">
           <div>
-            <p className="text-xs font-bold text-gray-800 mb-1">총 매장 수</p>
+            <p className="text-base font-bold text-gray-800 mb-1">총 매장 수</p>
             <div className="flex items-end gap-2">
-              <span className="text-3xl font-extrabold text-blue-600">
+              <span className="text-4xl font-extrabold text-blue-600">
                   {data ? <AnimatedNumber value={data.store.total} /> : initialStoreCount}
                   <span className="text-base font-normal text-gray-600 ml-1">개</span>
               </span>
@@ -43,8 +67,8 @@ const StoreTabContent: React.FC<StoreTabContentProps> = ({
           
           <div className="flex gap-2">
              <div className="flex flex-col justify-center items-center min-w-[70px]">
-                 <span className="text-[10px] text-gray-500 font-semibold">개업률</span>
-                 <span className="text-base font-bold text-blue-600">
+                 <span className="text-sm text-gray-500 font-semibold">개업률</span>
+                 <span className="text-xl font-bold text-blue-600">
                     {data && data.store.openingRate !== undefined ? (
                         <AnimatedNumber 
                             value={data.store.openingRate * 10} 
@@ -54,8 +78,8 @@ const StoreTabContent: React.FC<StoreTabContentProps> = ({
                  </span>
              </div>
              <div className="flex flex-col justify-center items-center min-w-[70px]">
-                 <span className="text-[10px] text-gray-500 font-semibold">폐업률</span>
-                 <span className="text-base font-bold text-red-500">
+                 <span className="text-sm text-gray-500 font-semibold">폐업률</span>
+                 <span className="text-xl font-bold text-red-500">
                     {data && data.store.closingRate !== undefined ? (
                         <AnimatedNumber 
                             value={data.store.closingRate * 10} 
@@ -69,9 +93,9 @@ const StoreTabContent: React.FC<StoreTabContentProps> = ({
         
         <div className="space-y-1">
           <div className="flex justify-between items-center border-b border-gray-100 pb-2 mb-2">
-            <h4 className="text-xs font-bold text-gray-700">주요 업종 분포</h4>
+            <h4 className="text-base font-bold text-gray-700">주요 업종 분포</h4>
             <div className="relative group">
-              <Info size={14} className="text-gray-400 cursor-help" />
+              <Info size={16} className="text-gray-400 cursor-help" />
               <div className="absolute right-0 bottom-full mb-2 hidden group-hover:block z-50 w-max px-2 py-1 bg-gray-800 text-white text-[10px] rounded shadow-lg">
                 {data?.meta.yearQuarter 
                   ? `${data.meta.yearQuarter.slice(0, 4)}년 ${data.meta.yearQuarter.slice(4)}분기 기준` 
@@ -83,8 +107,10 @@ const StoreTabContent: React.FC<StoreTabContentProps> = ({
           {data && data.store.categories ? (
               (() => {
                   const totalList = data.store.categories;
-                  const showCount = isContentExpanded ? totalList.length : 10;
+                  const showCount = Math.min(visibleCount, totalList.length);
                   const visibleList = totalList.slice(0, showCount);
+                  const hasMore = showCount < totalList.length;
+                  const isCollapsed = visibleCount > 10;
                   
                   const maxCount = Math.max(...totalList.map((c) => c.count)) || 1;
                   const totalStores = data.store.total || 1;
@@ -106,8 +132,8 @@ const StoreTabContent: React.FC<StoreTabContentProps> = ({
                           
                           return (
                             <div key={item.name} className="flex flex-col cursor-pointer" onClick={toggleCategory}>
-                                <div className="flex items-center text-sm py-1">
-                                    <span className="text-gray-500 w-24 truncate font-medium transition-all" title={item.name}>
+                                <div className="flex items-center text-lg py-1.5">
+                                    <span className="text-gray-500 w-32 truncate font-medium transition-all" title={item.name}>
                                         {item.name}
                                     </span>
                                     <div className="flex-1 h-1.5 bg-gray-100 rounded-full mx-2 overflow-hidden">
@@ -116,17 +142,17 @@ const StoreTabContent: React.FC<StoreTabContentProps> = ({
                                             style={{ width: showStoreBars ? `${relativePercent}%` : '0%' }}
                                         ></div>
                                     </div>
-                                    <div className="text-right w-20 mr-1">
+                                    <div className="text-right w-24 mr-1">
                                         <span className="font-bold text-gray-800 mr-1">
                                             <AnimatedNumber value={item.count} />
                                         </span>
-                                        <span className="text-xs text-gray-400">({realPercent}%)</span>
+                                        <span className="text-sm text-gray-400">({realPercent}%)</span>
                                     </div>
                                     <div className="text-gray-400 transition-colors">
                                         {isExpandedItem ? (
-                                            <ChevronUp size={14} className="transition-all" />
+                                            <ChevronUp size={16} className="transition-all" />
                                         ) : (
-                                            <ChevronDown size={14} className="transition-all" />
+                                            <ChevronDown size={16} className="transition-all" />
                                         )}
                                     </div>
                                 </div>
@@ -136,7 +162,7 @@ const StoreTabContent: React.FC<StoreTabContentProps> = ({
                                         isExpandedItem ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'
                                     }`}
                                 >
-                                    <div className="text-xs flex justify-center items-center gap-6 py-1">
+                                    <div className="text-sm flex justify-center items-center gap-6 py-1">
                                         <div className="flex items-center gap-2">
                                             <span className="text-gray-500">개업 점포</span>
                                             <span className="font-bold text-blue-600">
@@ -156,13 +182,27 @@ const StoreTabContent: React.FC<StoreTabContentProps> = ({
                           );
                       })}
                       
+                      {/* 더보기/접기 버튼 영역 */}
                       {totalList.length > 10 && (
-                        <button 
-                          onClick={handleExpandToggle}
-                          className="w-full py-2 text-xs text-gray-500 font-medium hover:text-blue-600 transition-colors flex items-center justify-center gap-1 mt-2 border-t border-gray-50"
-                        >
-                          {isContentExpanded ? '접기' : '더보기'}
-                        </button>
+                        <div className="flex items-center justify-center gap-2 mt-2 pt-2 border-t border-gray-50">
+                          {hasMore && (
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); handleShowMore(); }}
+                              className="flex-1 py-2 text-xs text-gray-500 font-medium hover:text-blue-600 transition-colors flex items-center justify-center gap-1"
+                            >
+                              더보기 ({showCount}/{totalList.length})
+                            </button>
+                          )}
+                          {isCollapsed && (
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); handleCollapse(); }}
+                              className="p-2 text-gray-400 hover:text-blue-600 transition-colors rounded-full hover:bg-gray-100"
+                              title="접기"
+                            >
+                              <ChevronUp size={16} />
+                            </button>
+                          )}
+                        </div>
                       )}
                     </>
                   );

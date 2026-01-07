@@ -1,9 +1,12 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { MarketRepository } from '../market/market.repository';
 import {
   GetStoreQueryDto,
   StoreLevel,
   StoreResponseDto,
+  GetStoreLocationsQueryDto,
+  StoreLocationsResponseDto,
 } from './dto/store.dto';
 
 type ModelConfig = {
@@ -49,7 +52,10 @@ export class StoreService {
     },
   };
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly marketRepository: MarketRepository,
+  ) {}
 
   async getStoreStats(query: GetStoreQueryDto): Promise<StoreResponseDto> {
     const { level, code, industryCode, quarter } = query;
@@ -105,6 +111,60 @@ export class StoreService {
         closeRate: Number(row.clsbiz_rt || 0),
         closeStoreCount: Number(row.clsbiz_stor_co || 0),
       })),
+    };
+  }
+
+  /**
+   * 업종 코드로 점포 위치 조회
+   * @param query 업종 코드 및 bbox 필터
+   * @returns 점포 위치 목록
+   */
+  async getStoreLocations(
+    query: GetStoreLocationsQueryDto,
+  ): Promise<StoreLocationsResponseDto> {
+    const {
+      industryCode,
+      minLng,
+      maxLng,
+      minLat,
+      maxLat,
+      limit,
+      areaCode,
+      level,
+    } = query;
+
+    let stores: { lng: number; lat: number; name: string; address: string }[] =
+      [];
+
+    // 1. 지역 코드가 있으면 Polygon 검색 우선
+    if (areaCode && level) {
+      stores = await this.marketRepository.findStoresByIndustryAndArea({
+        industryCode,
+        areaCode,
+        level,
+        limit: limit || 1000,
+      });
+    } else {
+      // 2. bbox가 있으면 사용
+      const bbox =
+        minLng !== undefined &&
+        maxLng !== undefined &&
+        minLat !== undefined &&
+        maxLat !== undefined
+          ? { minLng, maxLng, minLat, maxLat }
+          : undefined;
+
+      stores = await this.marketRepository.findStoresByIndustryCode({
+        industryCode,
+        bbox,
+        limit: limit || 100,
+      });
+    }
+
+    return {
+      industryCode,
+      count: stores.length,
+      stores,
     };
   }
 
