@@ -26,6 +26,9 @@ interface ActionInfoBarProps {
   action: AssistantAction | null;
   isLoading?: boolean;
   selectedRealEstateItem?: RealEstateItem | null;
+  // 유동인구 레이어 토글용
+  showPopulationLayer?: boolean;
+  onTogglePopulationLayer?: (show: boolean) => void;
 }
 
 // -----------------------------------------
@@ -228,10 +231,18 @@ function RankingView({ level, industryCode }: { level: 'gu' | 'dong' | 'commerci
 // -----------------------------------------
 // 유동인구 뷰 (시간대별 미니 라인 차트)
 // -----------------------------------------
-function PopulationView({ genderFilter, ageFilter, timeFilter }: { 
+function PopulationView({ 
+  genderFilter, 
+  ageFilter, 
+  timeFilter,
+  showLayer,
+  onToggleLayer
+}: { 
   genderFilter?: string; 
   ageFilter?: string;
   timeFilter?: string;
+  showLayer?: boolean;
+  onToggleLayer?: (show: boolean) => void;
 }) {
   // 시간대별 샘플 데이터 (실제로는 usePopulationLayer 훅 데이터 사용)
   const timeLabels = ['오전', '낮', '저녁', '밤'];
@@ -243,18 +254,40 @@ function PopulationView({ genderFilter, ageFilter, timeFilter }: {
       <MiniLineChart values={values} />
       
       {/* 필터 정보 */}
-      <div className="text-sm flex-1">
-        <p className="font-medium text-gray-800">시간대별 유동인구</p>
-        <div className="flex gap-2 text-xs text-gray-500">
-          <span className="px-1.5 py-0.5 bg-blue-50 rounded">{genderFilter || '전체'}</span>
-          <span className="px-1.5 py-0.5 bg-purple-50 rounded">{ageFilter || '전 연령'}</span>
+      <div className="flex-1 pl-2">
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-lg font-bold text-gray-800">시간대별 유동인구</p>
+          
+          {/* 레이어 토글 스위치 */}
+          {onToggleLayer && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 font-medium">히트맵</span>
+              <button 
+                onClick={() => onToggleLayer(!showLayer)}
+                className={`relative w-10 h-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 ${
+                  showLayer ? 'bg-blue-500' : 'bg-gray-200'
+                }`}
+              >
+                <span 
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                    showLayer ? 'translate-x-4' : 'translate-x-0'
+                  }`} 
+                />
+              </button>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex gap-2 text-sm text-gray-600">
+          <span className="px-2 py-0.5 bg-blue-50 rounded-md font-medium">{genderFilter || '전체 성별'}</span>
+          <span className="px-2 py-0.5 bg-purple-50 rounded-md font-medium">{ageFilter || '전 연령대'}</span>
         </div>
       </div>
       
       {/* 피크 시간 */}
-      <div className="text-right">
-        <p className="text-xs text-gray-500">피크 시간</p>
-        <p className="text-sm font-bold text-blue-600">저녁</p>
+      <div className="text-right pl-4 border-l border-gray-100 ml-2">
+        <p className="text-xs text-gray-500 mb-0.5">피크 시간</p>
+        <p className="text-xl font-bold text-blue-600">저녁</p>
       </div>
     </div>
   );
@@ -637,7 +670,12 @@ function RealEstateView({ item }: { item?: RealEstateItem | null }) {
 // -----------------------------------------
 // 액션별 컨텐츠 렌더링
 // -----------------------------------------
-function ActionContent({ action, selectedRealEstateItem }: { action: AssistantAction; selectedRealEstateItem?: RealEstateItem | null }) {
+function ActionContent({ action, selectedRealEstateItem, showPopulationLayer, onTogglePopulationLayer }: { 
+  action: AssistantAction; 
+  selectedRealEstateItem?: RealEstateItem | null;
+  showPopulationLayer?: boolean;
+  onTogglePopulationLayer?: (show: boolean) => void;
+}) {
   const { type, payload } = action;
 
   switch (type) {
@@ -656,7 +694,15 @@ function ActionContent({ action, selectedRealEstateItem }: { action: AssistantAc
       return <RankingView level={payload.level || 'commercial'} industryCode={payload.industryCode} />;
 
     case 'filterPopulation':
-      return <PopulationView genderFilter={payload.genderFilter} ageFilter={payload.ageFilter} timeFilter={payload.timeFilter} />;
+      return (
+        <PopulationView 
+          genderFilter={payload.genderFilter} 
+          ageFilter={payload.ageFilter} 
+          timeFilter={payload.timeFilter}
+          showLayer={showPopulationLayer}
+          onToggleLayer={onTogglePopulationLayer}
+        />
+      );
 
     case 'openAnalysisPanel':
       return <AnalysisView areaName={payload.areaName} lat={payload.coordinates?.[0]} lng={payload.coordinates?.[1]} level={payload.level} industryCode={payload.industryCode} />;
@@ -688,7 +734,13 @@ function ActionContent({ action, selectedRealEstateItem }: { action: AssistantAc
 // -----------------------------------------
 // 메인 ActionInfoBar 컴포넌트
 // -----------------------------------------
-export default function ActionInfoBar({ action, isLoading, selectedRealEstateItem }: ActionInfoBarProps) {
+export default function ActionInfoBar({ 
+  action, 
+  isLoading, 
+  selectedRealEstateItem, 
+  showPopulationLayer, 
+  onTogglePopulationLayer 
+}: ActionInfoBarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   
   if (!action) return null;
@@ -732,7 +784,12 @@ export default function ActionInfoBar({ action, isLoading, selectedRealEstateIte
         {/* 컨텐츠 - 접힌 상태가 아닐 때만 표시 */}
         {!isCollapsed && (
           <div className="min-h-[80px]">
-            <ActionContent action={action} selectedRealEstateItem={selectedRealEstateItem} />
+            <ActionContent 
+              action={action} 
+              selectedRealEstateItem={selectedRealEstateItem} 
+              showPopulationLayer={showPopulationLayer}
+              onTogglePopulationLayer={onTogglePopulationLayer}
+            />
           </div>
         )}
       </div>
