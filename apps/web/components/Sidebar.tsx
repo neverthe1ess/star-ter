@@ -46,7 +46,7 @@ const SIDEBAR_VARIANTS: Variants = {
   exit: { x: -350, opacity: 0 },
 };
 
-const TRANSITION = { type: "spring", damping: 25, stiffness: 200 };
+const TRANSITION = { type: "spring", damping: 25, stiffness: 200 } as const;
 
 export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarProps) {
   const router = useRouter();
