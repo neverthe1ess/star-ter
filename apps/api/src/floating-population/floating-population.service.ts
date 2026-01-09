@@ -42,16 +42,22 @@ export class FloatingPopulationService {
 
   async getMZRanking(
     level: 'gu' | 'dong' | 'commercial' = 'commercial',
+    keyword?: string, // 추가
   ): Promise<PopulationRankingResponseDto> {
-    const items = await this.repository.findMZRanking(level);
+    const items = await this.repository.findMZRanking(level, keyword);
     return { items };
   }
 
   async getGenderRanking(
     level: 'gu' | 'dong' | 'commercial' = 'commercial',
     gender: 'male' | 'female' = 'female',
+    keyword?: string, // 추가
   ): Promise<PopulationRankingResponseDto> {
-    const items = await this.repository.findGenderRanking(level, gender);
+    const items = await this.repository.findGenderRanking(
+      level,
+      gender,
+      keyword,
+    );
     return { items };
   }
 }
