@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Logo } from "./Logo";
-import { getProfile, login } from "@/services/auth/auth.api";
+import { login } from "@/services/auth/auth.api";
 import { useUserStore } from "@/store/use-user-store";
 
 interface LoginPageProps {
@@ -25,13 +25,8 @@ export function LoginPage({ onLogin }: LoginPageProps) {
     setError(null);
     setIsSubmitting(true);
     try {
-      await login({ email, password });
-      try {
-        const profile = await getProfile();
-        setAuthUser({ nickname: profile.nickname });
-      } catch {
-        setAuthUser(null);
-      }
+      const response = await login({ email, password });
+      setAuthUser({ id: response.id, nickname: response.nickname });
       onLogin();
     } catch (err) {
       const message = err instanceof Error ? err.message : "로그인에 실패했습니다.";

@@ -19,11 +19,6 @@ export type LoginParams = {
 };
 
 export type LoginResponse = {
-  ok: boolean;
-};
-
-export type UserProfile = {
-  email: string;
+  id: string;
   nickname: string;
-  createdAt: string;
 };
