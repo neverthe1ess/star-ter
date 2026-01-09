@@ -6,43 +6,36 @@ import {
   Body,
   Param,
   UseGuards,
-  Req,
 } from '@nestjs/common';
 import { BookmarkService } from './bookmark.service';
 import { CreateBookmarkDto } from './dto/create-bookmark.dto';
-import { AuthGuard } from '@nestjs/passport'; // Using standard AuthGuard, or your custom one if exists
-
-import { Request } from 'express';
-
-interface RequestWithUser extends Request {
-  user: {
-    userId: string;
-  };
-}
+import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
+import { User } from 'src/auth/decorators/user.decorator';
+import type { AuthenticatedUser } from 'src/auth/types/authenticatedUser';
 
 @Controller('bookmark')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(JwtAuthGuard)
 export class BookmarkController {
   constructor(private readonly bookmarkService: BookmarkService) {}
 
   @Post()
   async addBookmark(
-    @Req() req: RequestWithUser,
+    @User() user: AuthenticatedUser,
     @Body() createBookmarkDto: CreateBookmarkDto,
   ) {
-    return this.bookmarkService.addBookmark(req.user.userId, createBookmarkDto);
+    return this.bookmarkService.addBookmark(user.id, createBookmarkDto);
   }
 
   @Delete(':code')
   async removeBookmark(
-    @Req() req: RequestWithUser,
+    @User() user: AuthenticatedUser,
     @Param('code') commercialCode: string,
   ) {
-    return this.bookmarkService.removeBookmark(req.user.userId, commercialCode);
+    return this.bookmarkService.removeBookmark(user.id, commercialCode);
   }
 
   @Get()
-  async getBookmarks(@Req() req: RequestWithUser) {
-    return this.bookmarkService.getBookmarks(req.user.userId);
+  async getBookmarks(@User() user: AuthenticatedUser) {
+    return this.bookmarkService.getBookmarks(user.id);
   }
 }
