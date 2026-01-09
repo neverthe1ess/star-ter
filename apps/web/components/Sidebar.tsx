@@ -9,7 +9,7 @@ import {
   Settings,
   Menu,
 } from "lucide-react";
-import { motion, AnimatePresence, Variants } from "motion/react";
+import { motion, AnimatePresence, Variants, Transition } from "motion/react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 
 interface SidebarProps {
@@ -36,7 +36,7 @@ const SIDEBAR_VARIANTS: Variants = {
   exit: { x: -350, opacity: 0 },
 };
 
-const TRANSITION = { type: "spring", damping: 25, stiffness: 200 };
+const TRANSITION: Transition = { type: "spring", damping: 25, stiffness: 200 };
 
 export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarProps) {
   return (

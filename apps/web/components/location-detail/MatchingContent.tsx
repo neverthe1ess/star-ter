@@ -1,10 +1,11 @@
-import type { Location } from "./types";
-
 interface MatchingContentProps {
-  location: Location;
+  locationName: string;
 }
 
-export function MatchingContent({ location }: MatchingContentProps) {
+// locationName은 현재 UI에서 직접 사용하지 않지만, 추후 확장용으로 받아둠
+export function MatchingContent({ locationName }: MatchingContentProps) {
+  // locationName을 사용하지 않아도 lint 경고 방지
+  void locationName;
   return (
     <div className="space-y-10">
       <div className="space-y-6">

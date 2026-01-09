@@ -3,6 +3,7 @@
 import { Clock, Search, Sparkles, TrendingUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import Link from 'next/link';
 import {
   getGrowthRanking,
   getStableLocations,
@@ -50,11 +51,7 @@ const hotLocations: LocationUI[] = [
   },
 ];
 
-interface LocationListPageProps {
-  onSelectLocation: (location: LocationUI) => void;
-}
-
-export function LocationListPage({ onSelectLocation }: LocationListPageProps) {
+export function LocationListPage() {
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [trendingLocationsData, setTrendingLocationsData] = useState<
     LocationUI[]
@@ -176,10 +173,7 @@ export function LocationListPage({ onSelectLocation }: LocationListPageProps) {
               `}</style>
               {hotLocations.map((loc) => (
                 <div key={loc.id} className="w-[320px] shrink-0">
-                  <LocationSuggestionCard
-                    location={loc}
-                    onSelect={onSelectLocation}
-                  />
+                  <LocationSuggestionCard location={loc} />
                 </div>
               ))}
             </div>
@@ -208,7 +202,6 @@ export function LocationListPage({ onSelectLocation }: LocationListPageProps) {
                     <LocationSuggestionCard
                       key={loc.id}
                       location={loc}
-                      onSelect={onSelectLocation}
                     />
                   ))}
             </div>
@@ -237,7 +230,6 @@ export function LocationListPage({ onSelectLocation }: LocationListPageProps) {
                     <LocationSuggestionCard
                       key={loc.id}
                       location={loc}
-                      onSelect={onSelectLocation}
                     />
                   ))}
             </div>
@@ -250,15 +242,13 @@ export function LocationListPage({ onSelectLocation }: LocationListPageProps) {
 
 function LocationSuggestionCard({
   location,
-  onSelect,
 }: {
   location: LocationUI;
-  onSelect: (location: LocationUI) => void;
 }) {
   return (
-    <button
-      onClick={() => onSelect(location)}
-      className="group bg-white rounded-3xl p-6 text-left hover:shadow-xl transition-all border border-slate-100 hover:border-blue-900/20 flex flex-col h-auto w-full"
+    <Link
+      href={`/locations/detail/${location.id}`}
+      className="group bg-white rounded-3xl p-6 text-left hover:shadow-xl transition-all border border-slate-100 hover:border-blue-900/20 flex flex-col h-auto w-full block"
     >
       {/* 배지 */}
       <div className="mb-4">
@@ -302,6 +292,6 @@ function LocationSuggestionCard({
           </div>
         </div>
       </div>
-    </button>
+    </Link>
   );
 }

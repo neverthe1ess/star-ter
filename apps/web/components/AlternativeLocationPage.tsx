@@ -171,7 +171,7 @@ export function AlternativeLocationPage({ currentLocation, onBack, onSelectLocat
                         }`}
                       >
                         {location.commercialScore >= currentLocation.commercialScore ? "▲" : "▼"} {" "}
-                        {Math.abs((location.commercialScore - currentLocation.commercialScore).toFixed(2))}
+                        {Math.abs(location.commercialScore - currentLocation.commercialScore).toFixed(2)}
                       </div>
                     </div>
                     <div className="bg-green-50 rounded-lg p-3">
@@ -185,7 +185,7 @@ export function AlternativeLocationPage({ currentLocation, onBack, onSelectLocat
                         }`}
                       >
                         {location.realEstateScore >= currentLocation.realEstateScore ? "▲" : "▼"} {" "}
-                        {Math.abs((location.realEstateScore - currentLocation.realEstateScore).toFixed(2))}
+                        {Math.abs(location.realEstateScore - currentLocation.realEstateScore).toFixed(2)}
                       </div>
                     </div>
                   </div>

@@ -20,30 +20,23 @@ import { MapSection } from './location-detail/MapSection';
 import { useState } from 'react';
 import { Button } from './ui/button';
 import { Resizable } from 're-resizable';
-
-interface Location {
-  id: string;
-  name: string;
-  district: string;
-  category: string;
-  revenue: string;
-  growthRate: number;
-  badge: string;
-  badgeType: 'explosive' | 'rapid' | 'stable';
-  imageUrl: string;
-  rank?: number;
-}
+import Link from 'next/link';
+import type {
+  CommercialBasicInfo,
+  MarketAnalytics,
+  RealEstateItem,
+} from './location-detail/types';
 
 interface LocationDetailPageProps {
-  location: Location;
-  onBack: () => void;
-  onConsultAI?: () => void;
+  basicInfo: CommercialBasicInfo;
+  analytics: MarketAnalytics | null;
+  realEstate: RealEstateItem[];
 }
 
 export function LocationDetailPage({
-  location,
-  onBack,
-  onConsultAI,
+  basicInfo,
+  analytics,
+  realEstate,
 }: LocationDetailPageProps) {
   const [activeTab, setActiveTab] = useState<
     'matching' | 'traffic' | 'analysis' | 'realestate'
@@ -76,19 +69,19 @@ export function LocationDetailPage({
         <div className="mb-16">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
             <div className="flex items-center gap-4">
-              <button
-                onClick={onBack}
+              <Link
+                href="/locations"
                 className="flex items-center justify-center w-12 h-12 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0"
               >
                 <ArrowLeft className="w-6 h-6 text-gray-900" />
-              </button>
+              </Link>
               <h1 className="text-6xl font-semibold text-gray-900">
-                {location.name}
+                {basicInfo.name}
               </h1>
             </div>
           </div>
           <div className="flex items-center gap-4 mb-8">
-            <p className="text-3xl text-gray-400">{location.district}</p>
+            <p className="text-3xl text-gray-400">서울</p>
           </div>
         </div>
 
@@ -189,15 +182,15 @@ export function LocationDetailPage({
               <div className="h-full bg-white rounded-[32px] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                   {isChatMode ? (
-                    <ChatContent location={location} />
+                    <ChatContent locationName={basicInfo.name} />
                   ) : (
                     <div className="p-10">
                       {activeTab === 'matching' && (
-                        <MatchingContent location={location} />
+                        <MatchingContent locationName={basicInfo.name} />
                       )}
-                      {activeTab === 'traffic' && <TrafficContent />}
-                      {activeTab === 'analysis' && <AnalysisContent />}
-                      {activeTab === 'realestate' && <RealEstateContent />}
+                      {activeTab === 'traffic' && <TrafficContent analytics={analytics} />}
+                      {activeTab === 'analysis' && <AnalysisContent analytics={analytics} />}
+                      {activeTab === 'realestate' && <RealEstateContent items={realEstate} />}
                     </div>
                   )}
                 </div>
