@@ -6,21 +6,15 @@ import {
   Body,
   Param,
   UseGuards,
-  Req,
 } from '@nestjs/common';
 import { RealEstateBookmarkService } from './real_estate_bookmark.service';
 import { CreateRealEstateBookmarkDto } from './dto/create-real-estate-bookmark.dto';
-import { AuthGuard } from '@nestjs/passport';
-import { Request } from 'express';
-
-interface RequestWithUser extends Request {
-  user: {
-    userId: string;
-  };
-}
+import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
+import { User } from 'src/auth/decorators/user.decorator';
+import type { AuthenticatedUser } from 'src/auth/types/authenticatedUser';
 
 @Controller('real-estate-bookmark')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(JwtAuthGuard)
 export class RealEstateBookmarkController {
   constructor(
     private readonly realEstateBookmarkService: RealEstateBookmarkService,
@@ -28,35 +22,32 @@ export class RealEstateBookmarkController {
 
   @Post()
   async addBookmark(
-    @Req() req: RequestWithUser,
+    @User() user: AuthenticatedUser,
     @Body() dto: CreateRealEstateBookmarkDto,
   ) {
-    return this.realEstateBookmarkService.addBookmark(req.user.userId, dto);
+    return this.realEstateBookmarkService.addBookmark(user.id, dto);
   }
 
   @Delete(':id')
   async removeBookmark(
-    @Req() req: RequestWithUser,
+    @User() user: AuthenticatedUser,
     @Param('id') realEstateId: string,
   ) {
-    return this.realEstateBookmarkService.removeBookmark(
-      req.user.userId,
-      realEstateId,
-    );
+    return this.realEstateBookmarkService.removeBookmark(user.id, realEstateId);
   }
 
   @Get()
-  async getBookmarks(@Req() req: RequestWithUser) {
-    return this.realEstateBookmarkService.getBookmarks(req.user.userId);
+  async getBookmarks(@User() user: AuthenticatedUser) {
+    return this.realEstateBookmarkService.getBookmarks(user.id);
   }
 
   @Get('check/:id')
   async isBookmarked(
-    @Req() req: RequestWithUser,
+    @User() user: AuthenticatedUser,
     @Param('id') realEstateId: string,
   ) {
     const isBookmarked = await this.realEstateBookmarkService.isBookmarked(
-      req.user.userId,
+      user.id,
       realEstateId,
     );
     return { isBookmarked };

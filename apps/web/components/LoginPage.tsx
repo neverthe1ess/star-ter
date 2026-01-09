@@ -1,10 +1,13 @@
-"use client";
+'use client';
 
 import { useState } from "react";
+import Link from "next/link";
 
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Logo } from "./Logo";
+import { Logo } from './landing/header/Logo';
+import { login } from "@/services/auth/auth.api";
+import { useUserStore } from "@/store/use-user-store";
 
 interface LoginPageProps {
   onLogin: () => void;
@@ -13,10 +16,24 @@ interface LoginPageProps {
 export function LoginPage({ onLogin }: LoginPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const setAuthUser = useUserStore((state) => state.setAuthUser);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin();
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      const response = await login({ email, password });
+      setAuthUser({ id: response.id, nickname: response.nickname });
+      onLogin();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "로그인에 실패했습니다.";
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -27,7 +44,9 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         </div>
 
         <h2 className="text-3xl font-bold text-center mb-3">로그인</h2>
-        <p className="text-gray-600 text-center mb-10 text-lg">상권 분석을 시작하세요</p>
+        <p className="text-gray-600 text-center mb-10 text-lg">
+          상권 분석을 시작하세요
+        </p>
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
@@ -66,19 +85,25 @@ export function LoginPage({ onLogin }: LoginPageProps) {
 
           <Button
             type="submit"
+            disabled={isSubmitting}
             className="w-full bg-blue-950 hover:bg-slate-900 text-white py-7 text-lg"
           >
-            로그인
+            {isSubmitting ? "로그인 중..." : "로그인"}
           </Button>
+          {error && <p className="text-sm text-red-600">{error}</p>}
         </form>
 
         <div className="mt-8 text-center">
           <span className="text-gray-600 text-base">계정이 없으신가요? </span>
-          <button className="text-blue-950 hover:underline font-medium text-base">회원가입</button>
+          <Link href="/regist" className="text-blue-950 hover:underline font-medium text-base">
+            회원가입
+          </Link>
         </div>
 
         <div className="mt-10 pt-8 border-t">
-          <p className="text-center text-gray-600 mb-4 text-base">간편 로그인</p>
+          <p className="text-center text-gray-600 mb-4 text-base">
+            간편 로그인
+          </p>
           <button className="w-full py-4 border-2 border-gray-300 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-3 transition-all">
             <svg className="w-6 h-6" viewBox="0 0 24 24">
               <path
@@ -98,7 +123,9 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            <span className="text-base font-medium text-gray-700">Google로 계속하기</span>
+            <span className="text-base font-medium text-gray-700">
+              Google로 계속하기
+            </span>
           </button>
         </div>
       </div>

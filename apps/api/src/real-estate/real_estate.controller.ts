@@ -1,39 +1,24 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Query,
-  UseGuards,
-  Req,
-} from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import { Request } from 'express';
+import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
 import { RealEstateService } from './real_estate.service';
 import { CreateRealEstateDto } from './dto/real-estate-create.dto';
 import { GetRealEstateQueryDto } from './dto/real-estate-get.dto';
-
-interface AuthenticatedRequest extends Request {
-  user: {
-    userId: string;
-    email: string;
-  };
-}
+import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
+import { User } from 'src/auth/decorators/user.decorator';
+import type { AuthenticatedUser } from 'src/auth/types/authenticatedUser';
 
 @Controller('real-estate')
 export class RealEstateController {
   constructor(private readonly realEstateService: RealEstateService) {}
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @Post()
   create(
-    @Req() req: AuthenticatedRequest,
+    @User() user: AuthenticatedUser,
     @Body() createRealEstateDto: CreateRealEstateDto,
   ) {
-    const userId = req.user.userId;
     return this.realEstateService.create({
       ...createRealEstateDto,
-      user_id: userId,
+      user_id: user.id,
     });
   }
 
@@ -46,10 +31,9 @@ export class RealEstateController {
     return this.realEstateService.getRealEstateInfo(query);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @Get('my')
-  getMyRealEstate(@Req() req: AuthenticatedRequest) {
-    const userId = req.user.userId;
-    return this.realEstateService.getRealEstateByUser(userId);
+  getMyRealEstate(@User() user: AuthenticatedUser) {
+    return this.realEstateService.getRealEstateByUser(user.id);
   }
 }
