@@ -5,10 +5,13 @@ import { Input } from "./ui/input";
 import { ArrowLeft, Calculator, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from "recharts";
+import type { Location, Property } from "@/store/use-app-store";
+
+type BreakevenLocation = Pick<Location, "name">;
 
 interface BreakevenPageProps {
-  location: any;
-  property: any;
+  location: BreakevenLocation;
+  property: Property;
   onBack: () => void;
   onComplete: () => void;
 }

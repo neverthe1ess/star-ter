@@ -4,20 +4,9 @@ import { Button } from "./ui/button";
 import { ArrowLeft, MapPin, Home, Calculator } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { useState } from "react";
+import type { Location, Property } from "@/store/use-app-store";
 
-interface RealEstateProperty {
-  id: string;
-  address: string;
-  type: string;
-  size: string;
-  floor: string;
-  deposit: string;
-  monthlyRent: string;
-  maintenanceFee: string;
-  distance: string;
-  condition: string;
-  availableDate: string;
-}
+type RealEstateProperty = Property;
 
 const properties: RealEstateProperty[] = [
   {
@@ -62,9 +51,9 @@ const properties: RealEstateProperty[] = [
 ];
 
 interface RealEstatePageProps {
-  location: any;
+  location: Location;
   onBack: () => void;
-  onCalculateBreakeven: (property: RealEstateProperty) => void;
+  onCalculateBreakeven: (property: Property) => void;
 }
 
 export function RealEstatePage({ location, onBack, onCalculateBreakeven }: RealEstatePageProps) {

@@ -3,8 +3,11 @@
 import { Button } from "./ui/button";
 import { ArrowLeft, MapPin, TrendingDown, Sparkles } from "lucide-react";
 import { Badge } from "./ui/badge";
+import type { Location as StoreLocation } from "@/store/use-app-store";
 
-interface Location {
+type CurrentLocation = Pick<StoreLocation, "name" | "avgRent" | "commercialScore" | "realEstateScore">;
+
+interface AlternativeLocation {
   id: string;
   name: string;
   district: string;
@@ -20,7 +23,7 @@ interface Location {
   reason: string;
 }
 
-const alternativeLocations: Location[] = [
+const alternativeLocations: AlternativeLocation[] = [
   {
     id: "alt1",
     name: "망원동",
@@ -69,9 +72,9 @@ const alternativeLocations: Location[] = [
 ];
 
 interface AlternativeLocationPageProps {
-  currentLocation: any;
+  currentLocation: CurrentLocation;
   onBack: () => void;
-  onSelectLocation: (location: Location) => void;
+  onSelectLocation: (location: AlternativeLocation) => void;
 }
 
 export function AlternativeLocationPage({ currentLocation, onBack, onSelectLocation }: AlternativeLocationPageProps) {

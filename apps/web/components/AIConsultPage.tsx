@@ -5,19 +5,26 @@ import { Input } from "./ui/input";
 import { ArrowLeft, Send, Sparkles, TrendingUp, AlertCircle, MapPin } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "./ui/badge";
+import type { Location } from "@/store/use-app-store";
 
 interface AIConsultPageProps {
-  location: any;
+  location: Location;
   onBack: () => void;
   onFindAlternative: () => void;
   onViewRealEstate: () => void;
 }
 
+type MessageData = {
+  commercialScore?: number;
+  realEstateScore?: number;
+  showAlternative?: boolean;
+};
+
 interface Message {
   role: "user" | "ai";
   content: string;
   timestamp: Date;
-  data?: any;
+  data?: MessageData;
 }
 
 export function AIConsultPage({ location, onBack, onFindAlternative, onViewRealEstate }: AIConsultPageProps) {

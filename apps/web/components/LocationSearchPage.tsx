@@ -196,7 +196,7 @@ export function LocationSearchPage({
   onSelectLocation,
 }: {
   onBack?: () => void;
-  onSelectLocation: (loc: any) => void;
+  onSelectLocation: (loc: LocationRankItem) => void;
 }) {
   const [activeTab, setActiveTab] = useState("실시간 상권 차트");
   const [subTab, setSubTab] = useState("매출 성장 순");
