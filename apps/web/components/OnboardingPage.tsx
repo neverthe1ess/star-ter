@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Button } from "./ui/button";
-import { Logo } from "./Logo";
 import { ArrowLeft } from "lucide-react";
 import {
   AGE_OPTIONS,
@@ -64,7 +63,6 @@ export function OnboardingPage({ onComplete, onBack }: OnboardingPageProps) {
           <ArrowLeft className="w-5 h-5" />
           <span className="font-medium">뒤로</span>
         </button>
-        <Logo className="h-8" />
         <div className="w-20"></div>
       </header>
 
