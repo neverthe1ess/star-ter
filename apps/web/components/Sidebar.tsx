@@ -11,9 +11,10 @@ import {
   Menu,
   LogIn,
 } from "lucide-react";
+
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
-import { motion, AnimatePresence, Variants } from "motion/react";
+import { motion, AnimatePresence, Variants, Transition } from "motion/react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { logout } from "@/services/auth/auth.api";
 import { useUserStore } from "@/store/use-user-store";
@@ -43,7 +44,7 @@ const SIDEBAR_VARIANTS: Variants = {
   exit: { x: -350, opacity: 0 },
 };
 
-const TRANSITION = { type: "spring", damping: 25, stiffness: 200 };
+const TRANSITION: Transition = { type: "spring", damping: 25, stiffness: 200 };
 
 export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarProps) {
   const router = useRouter();
