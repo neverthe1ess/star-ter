@@ -8,3 +8,5 @@ export type UpdateOnboardingParams = {
 export type UpdateOnboardingResponse = {
   ok: boolean;
 };
+
+export type GetPersonalizationResponse = UpdateOnboardingParams;

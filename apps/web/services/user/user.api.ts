@@ -1,4 +1,7 @@
-import type { UpdateOnboardingParams } from './user.api.types';
+import type {
+  UpdateOnboardingParams,
+  GetPersonalizationResponse,
+} from './user.api.types';
 
 const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
@@ -26,4 +29,22 @@ export async function updateOnboarding(
       throw new Error('온보딩 저장에 실패했습니다.');
     }
   }
+}
+
+export async function getPersonalization(): Promise<GetPersonalizationResponse> {
+  const response = await fetch(`${baseUrl}/users/personalization`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    try {
+      const errorData = (await response.json()) as ErrorResponse;
+      throw new Error(errorData?.message || '개인화 정보 조회에 실패했습니다.');
+    } catch {
+      throw new Error('개인화 정보 조회에 실패했습니다.');
+    }
+  }
+
+  return response.json() as Promise<GetPersonalizationResponse>;
 }

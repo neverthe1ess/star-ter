@@ -46,7 +46,11 @@ export class AuthService {
   }
 
   getJwtToken(user: AuthenticatedUser) {
-    const payload = { nickname: user.nickname, sub: user.id };
+    const payload = {
+      nickname: user.nickname,
+      sub: user.id,
+      on_boarding_completed: user.on_boarding_completed,
+    };
     return {
       access_token: this.jwtService.sign(payload),
     };

@@ -5,6 +5,7 @@ import {
   Body,
   HttpCode,
   Logger,
+  Get,
 } from '@nestjs/common';
 import { UsersService } from './user.service';
 import { User } from 'src/auth/decorators/user.decorator';
@@ -26,5 +27,12 @@ export class UsersController {
   ) {
     this.logger.log(`Updating onboarding for user ID: ${user.id}`);
     await this.usersService.updateOnboarding(user.id, dto);
+  }
+
+  @Get('personalization')
+  @UseGuards(JwtAuthGuard)
+  getPersonalization(@User() user: AuthenticatedUser) {
+    this.logger.log(`Fetching personalization for user ID: ${user.id}`);
+    return this.usersService.getPersonalization(user.id);
   }
 }

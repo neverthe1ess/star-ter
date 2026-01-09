@@ -18,6 +18,9 @@ import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { logout } from "@/services/auth/auth.api";
 import { useUserStore } from "@/store/use-user-store";
 import { ProfilePopup } from "./ProfilePopup";
+import { StartupPreferencesPopup } from "./StartupPreferencesPopup";
+import { getPersonalization, updateOnboarding } from "@/services/user/user.api";
+import type { OnboardingData } from "./onboarding/onboarding-options";
 
 interface SidebarProps {
   activeMenu: string;
@@ -52,9 +55,14 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
   const clearAuthUser = useUserStore((state) => state.clearAuthUser);
   const setAuthUser = useUserStore((state) => state.setAuthUser);
   const [showProfilePopup, setShowProfilePopup] = useState(false);
+  const [showPreferencesPopup, setShowPreferencesPopup] = useState(false);
   const [nickname, setNickname] = useState(authUser?.nickname ?? "사용자");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
+  const [isSavingPreferences, setIsSavingPreferences] = useState(false);
+  const [preferencesError, setPreferencesError] = useState<string | null>(null);
+  const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
+  const [initialPreferences, setInitialPreferences] = useState<OnboardingData | undefined>();
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -73,6 +81,7 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
   useEffect(() => {
     if (!isOpen) {
       setShowProfilePopup(false);
+      setShowPreferencesPopup(false);
     }
   }, [isOpen]);
 
@@ -88,6 +97,38 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
       setLogoutError(message);
     } finally {
       setIsLoggingOut(false);
+    }
+  };
+
+  const handleOpenPreferences = () => {
+    setShowProfilePopup(false);
+    setPreferencesError(null);
+    setShowPreferencesPopup(true);
+    setIsLoadingPreferences(true);
+    getPersonalization()
+      .then((data) => {
+        setInitialPreferences(data);
+      })
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : "개인화 정보 조회에 실패했습니다.";
+        setPreferencesError(message);
+      })
+      .finally(() => {
+        setIsLoadingPreferences(false);
+      });
+  };
+
+  const handleSavePreferences = async (data: OnboardingData) => {
+    setIsSavingPreferences(true);
+    setPreferencesError(null);
+    try {
+      await updateOnboarding(data);
+      setShowPreferencesPopup(false);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "설정 저장에 실패했습니다.";
+      setPreferencesError(message);
+    } finally {
+      setIsSavingPreferences(false);
     }
   };
 
@@ -230,9 +271,26 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
                 nickname={nickname}
                 onNicknameChange={handleNicknameChange}
                 onClose={() => setShowProfilePopup(false)}
+                onOpenPreferences={handleOpenPreferences}
                 onLogout={handleLogout}
                 isLoggingOut={isLoggingOut}
                 logoutError={logoutError}
+              />
+            )}
+          </AnimatePresence>,
+          document.body,
+        )}
+      {isMounted &&
+        createPortal(
+          <AnimatePresence>
+            {showPreferencesPopup && (
+              <StartupPreferencesPopup
+                initialData={initialPreferences}
+                onClose={() => setShowPreferencesPopup(false)}
+                onSave={handleSavePreferences}
+                isSaving={isSavingPreferences}
+                isLoading={isLoadingPreferences}
+                error={preferencesError}
               />
             )}
           </AnimatePresence>,

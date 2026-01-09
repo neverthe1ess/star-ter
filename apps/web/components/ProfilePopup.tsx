@@ -1,41 +1,19 @@
-"use client";
+'use client';
 
 import {
   Camera,
   ChevronRight,
   LogOut,
-  User,
-  Shield,
-  Bell,
-  CreditCard,
-  LifeBuoy,
+  SlidersHorizontal,
   type LucideIcon,
-} from "lucide-react";
-import { motion } from "motion/react";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
+} from 'lucide-react';
+import { motion } from 'motion/react';
+import { ImageWithFallback } from './figma/ImageWithFallback';
 
 type SettingsGroup = {
   title: string;
-  items: { label: string; icon: LucideIcon }[];
+  items: { label: string; icon: LucideIcon; onClick?: () => void }[];
 };
-
-const SETTINGS_GROUPS: SettingsGroup[] = [
-  {
-    title: "Account",
-    items: [
-      { label: "프로필 편집", icon: User },
-      { label: "보안 및 로그인", icon: Shield },
-    ],
-  },
-  {
-    title: "Support",
-    items: [
-      { label: "알림 설정", icon: Bell },
-      { label: "결제 관리", icon: CreditCard },
-      { label: "고객 지원", icon: LifeBuoy },
-    ],
-  },
-];
 
 type ProfilePopupProps = {
   nickname: string;
@@ -44,6 +22,7 @@ type ProfilePopupProps = {
   onLogout: () => void;
   isLoggingOut: boolean;
   logoutError: string | null;
+  onOpenPreferences: () => void;
 };
 
 export function ProfilePopup({
@@ -53,7 +32,21 @@ export function ProfilePopup({
   onLogout,
   isLoggingOut,
   logoutError,
+  onOpenPreferences,
 }: ProfilePopupProps) {
+  const settingsGroups: SettingsGroup[] = [
+    {
+      title: 'Account',
+      items: [
+        {
+          label: '창업 조건 설정',
+          icon: SlidersHorizontal,
+          onClick: onOpenPreferences,
+        },
+      ],
+    },
+  ];
+
   return (
     <>
       <motion.div
@@ -93,13 +86,12 @@ export function ProfilePopup({
                 className="w-full text-lg font-black text-slate-900 bg-transparent border-none focus:ring-0 p-0 mb-0.5"
                 placeholder="닉네임 입력"
               />
-              <p className="text-xs font-bold text-blue-600">Premium Plan 사용 중</p>
             </div>
           </div>
         </div>
 
         <div className="p-2">
-          {SETTINGS_GROUPS.map((group) => (
+          {settingsGroups.map((group) => (
             <div key={group.title} className="mb-2">
               <p className="px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                 {group.title}
@@ -107,13 +99,16 @@ export function ProfilePopup({
               {group.items.map((item) => (
                 <button
                   key={item.label}
+                  onClick={item.onClick}
                   className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-slate-50 rounded-xl transition-all group"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-slate-400 group-hover:text-blue-600 shadow-sm">
                       <item.icon className="w-4 h-4" />
                     </div>
-                    <span className="text-sm font-bold text-slate-700">{item.label}</span>
+                    <span className="text-sm font-bold text-slate-700">
+                      {item.label}
+                    </span>
                   </div>
                   <ChevronRight className="w-4 h-4 text-slate-300" />
                 </button>
@@ -129,9 +124,11 @@ export function ProfilePopup({
             className="w-full flex items-center justify-center gap-2 py-3 text-sm font-bold text-red-500 hover:bg-white hover:shadow-sm rounded-xl transition-all disabled:opacity-60"
           >
             <LogOut className="w-4 h-4" />
-            {isLoggingOut ? "로그아웃 중..." : "로그아웃"}
+            {isLoggingOut ? '로그아웃 중...' : '로그아웃'}
           </button>
-          {logoutError && <p className="px-2 pt-2 text-xs text-red-500">{logoutError}</p>}
+          {logoutError && (
+            <p className="px-2 pt-2 text-xs text-red-500">{logoutError}</p>
+          )}
         </div>
       </motion.div>
     </>

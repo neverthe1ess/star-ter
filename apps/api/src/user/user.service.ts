@@ -20,4 +20,23 @@ export class UsersService {
 
     return true;
   }
+
+  async getPersonalization(userId: string) {
+    const user = await this.prisma.user_info.findUnique({
+      where: { id: userId },
+      select: {
+        target_age_group: true,
+        preferred_region: true,
+        preferred_business_hours: true,
+        startup_capital: true,
+      },
+    });
+
+    return {
+      age: user?.target_age_group ?? '',
+      region: user?.preferred_region ?? '',
+      operatingTime: user?.preferred_business_hours ?? '',
+      capital: user?.startup_capital ?? '',
+    };
+  }
 }
