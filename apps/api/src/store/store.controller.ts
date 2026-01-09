@@ -5,6 +5,8 @@ import {
   StoreResponseDto,
   GetStoreLocationsQueryDto,
   StoreLocationsResponseDto,
+  GetClosureRateRankingQueryDto,
+  ClosureRateRankingResponseDto,
 } from './dto/store.dto';
 
 @Controller('store')
@@ -26,5 +28,20 @@ export class StoreController {
   ): Promise<StoreLocationsResponseDto> {
     console.log('[StoreController] getStoreLocations query:', query);
     return this.storeService.getStoreLocations(query);
+  }
+
+  /**
+   * 폐업률 낮은 순 랭킹 API
+   * GET /store/ranking/closure?level=commercial&industryCode=CS100001
+   */
+  @Get('ranking/closure')
+  getClosureRateRanking(
+    @Query() query: GetClosureRateRankingQueryDto,
+  ): Promise<ClosureRateRankingResponseDto> {
+    return this.storeService.getClosureRateRanking(
+      'commercial',
+      query.industryCode,
+      query.keyword, // 키워드 전달
+    );
   }
 }

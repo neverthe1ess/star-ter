@@ -7,6 +7,7 @@ import {
   RevenueResponseDto,
   MarketAnalyticsResponseDto,
   RevenueLevel,
+  AverageSalesRankingResponseDto,
 } from './dto/revenue.dto';
 
 @Controller('revenue')
@@ -28,9 +29,27 @@ export class RevenueController {
   @Get('ranking/growth')
   getGrowthRanking(
     @Query('level') level?: string,
+    @Query('keyword') keyword?: string, // 추가
   ): Promise<RevenueRankingResponseDto> {
     return this.revenueService.getGrowthRanking(
       (level as RevenueLevel) || 'commercial',
+      keyword,
+    );
+  }
+
+  // 평균 매출 순 / 매출 성장 순
+  @Get('ranking/average')
+  getAverageSalesRanking(
+    @Query('level') level?: string,
+    @Query('industryCode') industryCode?: string,
+    @Query('sortBy') sortBy?: 'average' | 'growth',
+    @Query('keyword') keyword?: string, // 추가
+  ): Promise<AverageSalesRankingResponseDto> {
+    return this.revenueService.getAverageSalesRanking(
+      (level as RevenueLevel) || 'commercial',
+      industryCode,
+      sortBy || 'average',
+      keyword,
     );
   }
 

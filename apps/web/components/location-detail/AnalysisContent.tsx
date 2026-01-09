@@ -1,4 +1,12 @@
-export function AnalysisContent() {
+import type { MarketAnalytics } from './types';
+
+interface AnalysisContentProps {
+  analytics: MarketAnalytics | null;
+}
+
+// analytics 데이터는 추후 연동 예정, 현재는 Mock 데이터 사용
+export function AnalysisContent({ analytics }: AnalysisContentProps) {
+  void analytics; // 추후 실제 데이터 연동 시 사용
   return (
     <div className="space-y-8">
       <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-200">

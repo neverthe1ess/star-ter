@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState } from "react";
 import { Button } from "./ui/button";
@@ -20,10 +20,10 @@ interface OnboardingPageProps {
 export function OnboardingPage({ onComplete, onBack }: OnboardingPageProps) {
   const [step, setStep] = useState(1);
   const [data, setData] = useState({
-    age: "",
-    region: "",
-    operatingTime: "",
-    capital: "",
+    age: '',
+    region: '',
+    operatingTime: '',
+    capital: '',
   });
 
   const handleNext = async () => {
@@ -79,7 +79,9 @@ export function OnboardingPage({ onComplete, onBack }: OnboardingPageProps) {
         <div className="max-w-4xl w-full mx-auto">
           {step === 1 && (
             <div className="space-y-12">
-              <h1 className="text-5xl font-semibold text-gray-900">나이를 알려주세요</h1>
+              <h1 className="text-5xl font-semibold text-gray-900">
+                타겟 연령층을 알려주세요.
+              </h1>
 
               <div className="space-y-4">
                 {AGE_OPTIONS.map((option) => (
@@ -88,8 +90,8 @@ export function OnboardingPage({ onComplete, onBack }: OnboardingPageProps) {
                     onClick={() => setData({ ...data, age: option.value })}
                     className={`w-full p-8 border-2 rounded-2xl text-left transition-all hover:border-gray-900 hover:shadow-lg ${
                       data.age === option.value
-                        ? "border-gray-900 bg-gray-50 shadow-lg"
-                        : "border-gray-300"
+                        ? 'border-gray-900 bg-gray-50 shadow-lg'
+                        : 'border-gray-300'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -97,7 +99,9 @@ export function OnboardingPage({ onComplete, onBack }: OnboardingPageProps) {
                         <div className="text-2xl font-semibold text-gray-900 mb-2">
                           {option.label}
                         </div>
-                        <div className="text-lg text-gray-600">{option.desc}</div>
+                        <div className="text-lg text-gray-600">
+                          {option.desc}
+                        </div>
                       </div>
                     </div>
                   </button>
@@ -119,8 +123,8 @@ export function OnboardingPage({ onComplete, onBack }: OnboardingPageProps) {
                     onClick={() => setData({ ...data, region: option.value })}
                     className={`p-12 border-2 rounded-2xl text-center transition-all hover:border-gray-900 hover:shadow-lg ${
                       data.region === option.value
-                        ? "border-gray-900 bg-gray-50 shadow-lg"
-                        : "border-gray-300"
+                        ? 'border-gray-900 bg-gray-50 shadow-lg'
+                        : 'border-gray-300'
                     }`}
                   >
                     <div className="flex justify-center mb-6">
@@ -145,11 +149,13 @@ export function OnboardingPage({ onComplete, onBack }: OnboardingPageProps) {
                 {OPERATING_TIME_OPTIONS.map((option) => (
                   <button
                     key={option.value}
-                    onClick={() => setData({ ...data, operatingTime: option.value })}
+                    onClick={() =>
+                      setData({ ...data, operatingTime: option.value })
+                    }
                     className={`w-full p-8 border-2 rounded-2xl text-left transition-all hover:border-gray-900 hover:shadow-lg ${
                       data.operatingTime === option.value
-                        ? "border-gray-900 bg-gray-50 shadow-lg"
-                        : "border-gray-300"
+                        ? 'border-gray-900 bg-gray-50 shadow-lg'
+                        : 'border-gray-300'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -159,7 +165,9 @@ export function OnboardingPage({ onComplete, onBack }: OnboardingPageProps) {
                           <div className="text-2xl font-semibold text-gray-900 mb-2">
                             {option.label}
                           </div>
-                          <div className="text-lg text-gray-600">{option.time}</div>
+                          <div className="text-lg text-gray-600">
+                            {option.time}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -182,8 +190,8 @@ export function OnboardingPage({ onComplete, onBack }: OnboardingPageProps) {
                     onClick={() => setData({ ...data, capital: option.value })}
                     className={`w-full p-8 border-2 rounded-2xl text-left transition-all hover:border-gray-900 hover:shadow-lg ${
                       data.capital === option.value
-                        ? "border-gray-900 bg-gray-50 shadow-lg"
-                        : "border-gray-300"
+                        ? 'border-gray-900 bg-gray-50 shadow-lg'
+                        : 'border-gray-300'
                     }`}
                   >
                     <div className="text-2xl font-semibold text-gray-900">
@@ -204,7 +212,7 @@ export function OnboardingPage({ onComplete, onBack }: OnboardingPageProps) {
             disabled={!isStepValid()}
             className="bg-gray-900 hover:bg-gray-800 text-white px-12 py-7 rounded-lg text-lg font-medium disabled:bg-gray-300"
           >
-            {step === 4 ? "Finish" : "Next"}
+            {step === 4 ? '완료' : '다음'}
           </Button>
         </div>
       </div>

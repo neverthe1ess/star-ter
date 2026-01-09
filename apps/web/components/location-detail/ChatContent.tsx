@@ -2,18 +2,17 @@
 
 import { Sparkles, Send, User } from "lucide-react";
 import { useState } from "react";
-import type { Location } from "./types";
 
 interface ChatContentProps {
-  location: Location;
+  locationName: string;
 }
 
-export function ChatContent({ location }: ChatContentProps) {
+export function ChatContent({ locationName }: ChatContentProps) {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([
     {
       role: "ai",
-      content: `안녕하세요! ${location.name} 상권에 대해 분석한 내용을 바탕으로 상담을 도와드리겠습니다. 궁금하신 점이 있으신가요?`,
+      content: `안녕하세요! ${locationName} 상권에 대해 분석한 내용을 바탕으로 상담을 도와드리겠습니다. 궁금하신 점이 있으신가요?`,
       suggestions: [
         "이 구역의 주 타겟 연령대는 어떻게 되나요?",
         "임대료 대비 수익률은 어느 정도일까요?",

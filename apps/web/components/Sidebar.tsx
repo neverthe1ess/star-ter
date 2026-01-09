@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
-import { motion, AnimatePresence, Variants } from "motion/react";
+import { motion, AnimatePresence, Variants, Transition } from "motion/react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { logout } from "@/services/auth/auth.api";
 import { useUserStore } from "@/store/use-user-store";
@@ -186,10 +186,10 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
             animate="animate"
             exit="exit"
             transition={TRANSITION}
-            className="w-[350px] p-4 fixed h-full flex flex-col z-40"
+            className="w-350px p-4 fixed h-full flex flex-col z-40"
           >
             <div className="bg-white rounded-2xl shadow-lg h-full flex flex-col overflow-hidden">
-              <header className="h-16 px-6 flex items-center justify-between border-b border-gray-100 flex-shrink-0">
+              <header className="h-16 px-6 flex items-center justify-between border-b border-gray-100shrink-0">
                 <span className="text-lg font-black text-slate-900 tracking-tight">Starter</span>
                 <button
                   onClick={() => onToggle(false)}

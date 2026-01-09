@@ -39,6 +39,27 @@ export class RevenueRankingResponseDto {
   items: RevenueRankingItemDto[];
 }
 
+// 상권 찾기란 평균 매출 순위
+export class AverageSalesRankingItemDto {
+  code: string;
+  name: string;
+  industryCode?: string;
+  industryName?: string;
+  totalRevenue: number;
+  avgSalesPerStore: number;
+  storeCount: number;
+  maleRatio: number;
+  femaleRatio: number;
+  changeType?: string;
+  fluctuationRate?: number;
+}
+
+export class AverageSalesRankingResponseDto {
+  level: RevenueLevel;
+  industryCode?: string;
+  items: AverageSalesRankingItemDto[];
+}
+
 export class GetRevenueQueryDto {
   @IsString()
   @IsNotEmpty()
@@ -83,6 +104,10 @@ export class GetRevenueRankingQueryDto {
   @IsString()
   @IsOptional()
   quarter?: string;
+
+  @IsString()
+  @IsOptional()
+  keyword?: string; // 검색 키워드 추가
 }
 // Analytics DTOs
 export class AnalyticsSectorDto {
