@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import {
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { randomUUID } from 'crypto';
+import { PrismaService } from '../prisma/prisma.service';
 
 interface MulterFile {
   originalname: string;
@@ -9,11 +14,11 @@ interface MulterFile {
 }
 
 @Injectable()
-export class S3Service {
+export class ImageService {
   private s3Client: S3Client;
   private bucketName: string;
 
-  constructor() {
+  constructor(private readonly prisma: PrismaService) {
     this.s3Client = new S3Client({
       region: process.env.AWS_REGION || 'ap-northeast-2',
       credentials: {
@@ -25,7 +30,7 @@ export class S3Service {
       process.env.AWS_S3_BUCKET || 'star-ter-real-estate-images';
   }
 
-  async uploadImage(file: MulterFile): Promise<{ url: string; key: string }> {
+  async uploadImage(userId: string, file: MulterFile) {
     // 고유 파일명 생성 (충돌 방지)
     const fileExtension = file.originalname.split('.').pop() || 'jpg';
     const uniqueFileName = `${randomUUID()}.${fileExtension}`;
@@ -39,10 +44,28 @@ export class S3Service {
     });
 
     await this.s3Client.send(command);
+    await this.prisma.imageInfo.create({
+      data: {
+        s3_key: key,
+        user_id: userId,
+      },
+    });
 
-    // S3 URL 생성
-    const url = `https://${this.bucketName}.s3.${process.env.AWS_REGION || 'ap-northeast-2'}.amazonaws.com/${key}`;
+    return key;
+  }
 
-    return { url, key };
+  async getImage(key: string) {
+    const command = new GetObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+    });
+
+    const result = await this.s3Client.send(command);
+
+    return {
+      body: result.Body,
+      contentType: result.ContentType,
+      contentLength: result.ContentLength,
+    };
   }
 }
