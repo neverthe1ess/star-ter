@@ -19,7 +19,7 @@ import { logout } from "@/services/auth/auth.api";
 import { useUserStore } from "@/store/use-user-store";
 import { ProfilePopup } from "./ProfilePopup";
 import { StartupPreferencesPopup } from "./StartupPreferencesPopup";
-import { getPersonalization, updateOnboarding } from "@/services/user/user.api";
+import { getPersonalization, updateOnboarding, updateProfile } from "@/services/user/user.api";
 import type { OnboardingData } from "./onboarding/onboarding-options";
 
 interface SidebarProps {
@@ -47,6 +47,12 @@ const SIDEBAR_VARIANTS: Variants = {
 };
 
 const TRANSITION = { type: "spring", damping: 25, stiffness: 200 } as const;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
+const DEFAULT_PROFILE_IMAGE =
+  "https://images.unsplash.com/photo-1649433658557-54cf58577c68?q=80&w=200&h=200&auto=format&fit=crop";
+
+const getProfileImageUrl = (profileImageKey?: string | null) =>
+  profileImageKey ? `${API_BASE_URL}/image/${encodeURIComponent(profileImageKey)}` : DEFAULT_PROFILE_IMAGE;
 
 export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarProps) {
   const router = useRouter();
@@ -59,6 +65,8 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
   const [nickname, setNickname] = useState(authUser?.nickname ?? "사용자");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
   const [isSavingPreferences, setIsSavingPreferences] = useState(false);
   const [preferencesError, setPreferencesError] = useState<string | null>(null);
   const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
@@ -71,7 +79,9 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
 
   const handleNicknameChange = (value: string) => {
     setNickname(value);
-    setAuthUser({ ...authUser, nickname: value });
+    if (authUser) {
+      setAuthUser({ ...authUser, nickname: value });
+    }
   };
 
   useEffect(() => {
@@ -130,6 +140,30 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
     } finally {
       setIsSavingPreferences(false);
     }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!authUser) return;
+    setIsSavingProfile(true);
+    setProfileError(null);
+    try {
+      const response = await updateProfile({ nickname });
+      setAuthUser({
+        ...authUser,
+        nickname: response.nickname ?? nickname,
+        profileImageKey: response.profile_image_key ?? authUser.profileImageKey,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "프로필 저장에 실패했습니다.";
+      setProfileError(message);
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  const handleProfileImageChange = (key: string) => {
+    if (!authUser) return;
+    setAuthUser({ ...authUser, profileImageKey: key });
   };
 
   return (
@@ -223,7 +257,7 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
                         <div className="relative shrink-0">
                           <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100">
                             <ImageWithFallback
-                              src="https://images.unsplash.com/photo-1649433658557-54cf58577c68?q=80&w=200&h=200&auto=format&fit=crop"
+                              src={getProfileImageUrl(authUser?.profileImageKey)}
                               alt="Profile"
                               className="w-full h-full object-cover"
                             />
@@ -232,7 +266,6 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-bold text-slate-900 truncate">{nickname}</p>
-                          <p className="text-[11px] text-slate-400 font-medium truncate">Premium Member</p>
                         </div>
                       </button>
                       <button
@@ -275,6 +308,11 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
                 onLogout={handleLogout}
                 isLoggingOut={isLoggingOut}
                 logoutError={logoutError}
+                isSavingProfile={isSavingProfile}
+                profileError={profileError}
+                onSaveProfile={handleSaveProfile}
+                profileImageKey={authUser?.profileImageKey}
+                onProfileImageChange={handleProfileImageChange}
               />
             )}
           </AnimatePresence>,

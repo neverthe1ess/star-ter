@@ -7,10 +7,12 @@ import { JwtStrategy } from './guard/strategy/jwt.strategy';
 import { LocalStrategy } from './guard/strategy/local.strategy';
 import { AuthRepository } from './auth.repository';
 import { jwtConstants } from './jwt.constants';
+import { UsersModule } from 'src/user/user.module';
 
 @Module({
   imports: [
     PassportModule,
+    UsersModule,
     JwtModule.register({
       secret: jwtConstants.secret,
       signOptions: { expiresIn: '8h' }, // 토큰 유효시간 8시간

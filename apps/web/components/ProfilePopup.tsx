@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import {
   Camera,
   ChevronRight,
@@ -9,6 +10,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { ProfileImageCropModal } from './ProfileImageCropModal';
 
 type SettingsGroup = {
   title: string;
@@ -23,6 +25,11 @@ type ProfilePopupProps = {
   isLoggingOut: boolean;
   logoutError: string | null;
   onOpenPreferences: () => void;
+  onSaveProfile: () => void;
+  isSavingProfile: boolean;
+  profileError: string | null;
+  profileImageKey?: string | null;
+  onProfileImageChange: (key: string) => void;
 };
 
 export function ProfilePopup({
@@ -33,7 +40,48 @@ export function ProfilePopup({
   isLoggingOut,
   logoutError,
   onOpenPreferences,
+  onSaveProfile,
+  isSavingProfile,
+  profileError,
+  profileImageKey,
+  onProfileImageChange,
 }: ProfilePopupProps) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isCropOpen, setIsCropOpen] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const [selectedFileName, setSelectedFileName] = useState<string>('');
+
+  const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+  const fallbackImage =
+    'https://images.unsplash.com/photo-1649433658557-54cf58577c68?q=80&w=200&h=200&auto=format&fit=crop';
+  const profileImageUrl = profileImageKey
+    ? `${API_BASE_URL}/image/${encodeURIComponent(profileImageKey)}`
+    : fallbackImage;
+
+  useEffect(() => {
+    return () => {
+      if (selectedImageUrl) {
+        URL.revokeObjectURL(selectedImageUrl);
+      }
+    };
+  }, [selectedImageUrl]);
+
+  const handleSelectFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.currentTarget.value = '';
+    if (!file) return;
+
+    if (selectedImageUrl) {
+      URL.revokeObjectURL(selectedImageUrl);
+    }
+
+    const url = URL.createObjectURL(file);
+    setSelectedImageUrl(url);
+    setSelectedFileName(file.name);
+    setIsCropOpen(true);
+  };
+
   const settingsGroups: SettingsGroup[] = [
     {
       title: 'Account',
@@ -69,12 +117,17 @@ export function ProfilePopup({
             <div className="relative">
               <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-md">
                 <ImageWithFallback
-                  src="https://images.unsplash.com/photo-1649433658557-54cf58577c68?q=80&w=200&h=200&auto=format&fit=crop"
+                  src={profileImageUrl}
                   alt="Profile"
                   className="w-full h-full object-cover"
                 />
               </div>
-              <button className="absolute -bottom-1 -right-1 p-1.5 bg-slate-900 text-white rounded-full shadow-lg hover:scale-110 transition-transform">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute -bottom-1 -right-1 p-1.5 bg-slate-900 text-white rounded-full shadow-lg hover:scale-110 transition-transform"
+                aria-label="프로필 이미지 변경"
+              >
                 <Camera className="w-3 h-3" />
               </button>
             </div>
@@ -86,8 +139,19 @@ export function ProfilePopup({
                 className="w-full text-lg font-black text-slate-900 bg-transparent border-none focus:ring-0 p-0 mb-0.5"
                 placeholder="닉네임 입력"
               />
+              <button
+                type="button"
+                onClick={onSaveProfile}
+                disabled={isSavingProfile || nickname.trim().length === 0}
+                className="text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors disabled:opacity-60"
+              >
+                {isSavingProfile ? '저장 중...' : '프로필 저장'}
+              </button>
             </div>
           </div>
+          {profileError && (
+            <p className="mt-3 text-xs text-red-500">{profileError}</p>
+          )}
         </div>
 
         <div className="p-2">
@@ -131,6 +195,32 @@ export function ProfilePopup({
           )}
         </div>
       </motion.div>
+
+      <ProfileImageCropModal
+        isOpen={isCropOpen}
+        imageUrl={selectedImageUrl}
+        fileName={selectedFileName}
+        onClose={() => {
+          setIsCropOpen(false);
+          setSelectedImageUrl(null);
+          setSelectedFileName('');
+        }}
+        onReselect={() => fileInputRef.current?.click()}
+        onComplete={(key) => {
+          onProfileImageChange(key);
+          setIsCropOpen(false);
+          setSelectedImageUrl(null);
+          setSelectedFileName('');
+        }}
+      />
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleSelectFile}
+      />
     </>
   );
 }

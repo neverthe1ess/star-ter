@@ -11,13 +11,17 @@ export function AuthBootstrap() {
   const clearAuthUser = useUserStore((state) => state.clearAuthUser);
 
   useEffect(() => {
-    if (authUser) return;
+    if (authUser?.profileImageKey !== undefined) return;
 
     let cancelled = false;
     getProfile()
       .then((profile) => {
         if (!cancelled) {
-          setAuthUser({ id: profile.id, nickname: profile.nickname });
+          setAuthUser({
+            id: profile.id,
+            nickname: profile.nickname,
+            profileImageKey: profile.profile_image_key ?? null,
+          });
         }
       })
       .catch(() => {

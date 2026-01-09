@@ -22,10 +22,12 @@ export type LoginResponse = {
   id: string;
   nickname: string;
   on_boarding_completed: boolean;
+  profile_image_key?: string | null;
 };
 
 export type UserProfile = {
   id: string;
   nickname: string;
   on_boarding_completed: boolean;
+  profile_image_key?: string | null;
 };

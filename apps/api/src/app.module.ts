@@ -18,8 +18,8 @@ import { ReportModule } from './report/report.module';
 import { BookmarkModule } from './bookmark/bookmark.module';
 import { RentModule } from './rent/rent.module';
 import { RealEstateModule } from './real-estate/real_estate.module';
-import { UploadModule } from './image/image.module';
 import { RealEstateBookmarkModule } from './real-estate-bookmark/real_estate_bookmark.module';
+import { ImageModule } from './image/image.module';
 
 @Module({
   imports: [
@@ -40,8 +40,8 @@ import { RealEstateBookmarkModule } from './real-estate-bookmark/real_estate_boo
     BookmarkModule,
     RentModule,
     RealEstateModule,
-    UploadModule,
     RealEstateBookmarkModule,
+    ImageModule,
   ],
   controllers: [HealthController],
   providers: [],
