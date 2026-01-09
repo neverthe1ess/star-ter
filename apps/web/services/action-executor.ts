@@ -1,6 +1,16 @@
 import { ClientAction } from '@/types/actions';
 import { useMapStore } from '@/stores/useMapStore';
 
+type AreaLevel = 'gu' | 'dong' | 'commercial';
+
+type UiOpenPanelPayload = {
+  panelType: 'summary' | 'comparison';
+  level?: AreaLevel;
+  lat?: number;
+  lng?: number;
+  areaName?: string;
+};
+
 /**
  * ActionExecutor
  * AI로부터 받은 ClientAction 배열을 실행하여 실제 UI 변경을 수행합니다.
@@ -78,13 +88,7 @@ export class ActionExecutor {
   /**
    * UI 패널 열기 액션
    */
-  private static executeUiOpenPanel(payload: {
-    panelType: 'summary' | 'comparison';
-    level?: 'gu' | 'dong' | 'commercial';
-    lat?: number;
-    lng?: number;
-    areaName?: string;
-  }): void {
+  private static executeUiOpenPanel(payload: UiOpenPanelPayload): void {
     const { panelType, level, lat, lng, areaName } = payload;
 
     console.log(`[ActionExecutor] Opening panel: ${panelType}`, payload);
@@ -96,12 +100,12 @@ export class ActionExecutor {
           {
             name: areaName || 'AI Search Result',
             coords: { lat, lng },
-            type: level as any,
+            type: level,
           },
           {
             x: lng,
             y: lat,
-            level: level as any,
+            level,
             adm_nm: areaName,
           },
         );
