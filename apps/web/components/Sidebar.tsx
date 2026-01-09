@@ -83,7 +83,6 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
       await logout();
       clearAuthUser();
       setShowProfilePopup(false);
-      router.push("/login");
     } catch (err) {
       const message = err instanceof Error ? err.message : "로그아웃에 실패했습니다.";
       setLogoutError(message);

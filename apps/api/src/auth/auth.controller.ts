@@ -1,4 +1,12 @@
-import { Controller, Post, Body, Res, Logger, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Res,
+  Logger,
+  UseGuards,
+  HttpCode,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { User } from './decorators/user.decorator';
@@ -45,6 +53,6 @@ export class AuthController {
   logout(@Res() res: Response) {
     this.logger.log(`Logging out user`);
     res.clearCookie('access_token');
-    return;
+    return res.sendStatus(200);
   }
 }
