@@ -17,7 +17,7 @@ import { TrafficContent } from './location-detail/TrafficContent';
 import { AnalysisContent } from './location-detail/AnalysisContent';
 import { RealEstateContent } from './location-detail/RealEstateContent';
 import { MapSection } from './location-detail/MapSection';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from './ui/button';
 import { Resizable } from 're-resizable';
 import Link from 'next/link';
@@ -26,6 +26,7 @@ import type {
   MarketAnalytics,
   RealEstateItem,
 } from './location-detail/types';
+import { addToHistory } from '@/hooks/useLocationHistory';
 
 interface LocationDetailPageProps {
   basicInfo: CommercialBasicInfo;
@@ -62,6 +63,12 @@ export function LocationDetailPage({
       icon: Building2,
     },
   ];
+
+  useEffect(() => {
+    if(basicInfo?.code) {
+      addToHistory(basicInfo.code);
+    }
+  }, [basicInfo?.code]);
 
   return (
     <div className="min-h-screen bg-[#f7f7f8]">
