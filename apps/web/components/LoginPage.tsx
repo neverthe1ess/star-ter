@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Logo } from "./Logo";
+import { Logo } from './landing/header/Logo';
 import { login } from "@/services/auth/auth.api";
 import { useUserStore } from "@/store/use-user-store";
 

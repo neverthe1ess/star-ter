@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "./ui/button";
-import { Logo } from "./Logo";
+import { Logo } from './landing/header/Logo';
 import {
   Building2,
   Home,
