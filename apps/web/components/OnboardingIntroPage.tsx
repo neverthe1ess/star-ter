@@ -1,17 +1,20 @@
-"use client";
+'use client';
 
-import { Button } from "./ui/button";
-import { Logo } from "./Logo";
-import { UserCircle, Store, BarChart3, ArrowLeft } from "lucide-react";
+import { Button } from './ui/button';
+import { Logo } from './landing/header/Logo';
+import { UserCircle, Store, BarChart3, ArrowLeft } from 'lucide-react';
 
-const previewImage = "/landing/6e80870c2bfb5a9be684e9f5690556264086efa0.png";
+const previewImage = '/landing/6e80870c2bfb5a9be684e9f5690556264086efa0.png';
 
 interface OnboardingIntroPageProps {
   onStart: () => void;
   onBack?: () => void;
 }
 
-export function OnboardingIntroPage({ onStart, onBack }: OnboardingIntroPageProps) {
+export function OnboardingIntroPage({
+  onStart,
+  onBack,
+}: OnboardingIntroPageProps) {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <header className="px-8 py-6 flex items-center justify-between">
@@ -34,7 +37,8 @@ export function OnboardingIntroPage({ onStart, onBack }: OnboardingIntroPageProp
             상권 분석을 쉽게 시작하세요
           </h1>
           <p className="text-xl text-gray-600">
-            당신의 나이, 선호 지역, 운영 시간, 자본금을 기반으로 맞춤형 업종과 최적의 창업 지역을 추천해드립니다.
+            당신의 나이, 선호 지역, 운영 시간, 자본금을 기반으로 맞춤형 업종과
+            최적의 창업 지역을 추천해드립니다.
           </p>
         </div>
 
@@ -44,13 +48,19 @@ export function OnboardingIntroPage({ onStart, onBack }: OnboardingIntroPageProp
               <div className="absolute -top-4 -left-4 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200 text-sm font-medium">
                 Show preview
               </div>
-              <img src={previewImage} alt="상권 분석 미리보기" className="rounded-2xl shadow-2xl w-full" />
+              <img
+                src={previewImage}
+                alt="상권 분석 미리보기"
+                className="rounded-2xl shadow-2xl w-full"
+              />
             </div>
           </div>
 
           <div className="space-y-12">
             <div>
-              <h2 className="text-3xl font-semibold text-gray-900 mb-8">다음 단계는?</h2>
+              <h2 className="text-3xl font-semibold text-gray-900 mb-8">
+                다음 단계는?
+              </h2>
             </div>
 
             <div className="flex gap-6">
@@ -58,7 +68,9 @@ export function OnboardingIntroPage({ onStart, onBack }: OnboardingIntroPageProp
                 <UserCircle className="w-14 h-14 text-gray-900" />
               </div>
               <div className="flex-1">
-                <h3 className="text-3xl font-semibold text-gray-900 mb-3">기본 정보 입력</h3>
+                <h3 className="text-3xl font-semibold text-gray-900 mb-3">
+                  기본 정보 입력
+                </h3>
                 <p className="text-gray-600 text-xl">
                   나이, 선호 지역, 운영 시간 등 기본 정보를 알려주세요.
                 </p>
@@ -70,7 +82,9 @@ export function OnboardingIntroPage({ onStart, onBack }: OnboardingIntroPageProp
                 <Store className="w-14 h-14 text-gray-900" />
               </div>
               <div className="flex-1">
-                <h3 className="text-3xl font-semibold text-gray-900 mb-3">업종 선택</h3>
+                <h3 className="text-3xl font-semibold text-gray-900 mb-3">
+                  업종 선택
+                </h3>
                 <p className="text-gray-600 text-xl">
                   창업하고 싶은 업종을 선택하면 맞춤 분석을 제공합니다.
                 </p>
@@ -82,7 +96,9 @@ export function OnboardingIntroPage({ onStart, onBack }: OnboardingIntroPageProp
                 <BarChart3 className="w-14 h-14 text-gray-900" />
               </div>
               <div className="flex-1">
-                <h3 className="text-3xl font-semibold text-gray-900 mb-3">상세 분석 확인</h3>
+                <h3 className="text-3xl font-semibold text-gray-900 mb-3">
+                  상세 분석 확인
+                </h3>
                 <p className="text-gray-600 text-xl">
                   AI 기반 상권 분석과 맞춤 지역 추천을 받아보세요.
                 </p>

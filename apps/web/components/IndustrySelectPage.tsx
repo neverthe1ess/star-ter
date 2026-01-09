@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { ArrowLeft, ArrowRight, Search, Sparkles } from "lucide-react";
-import { useState } from "react";
-import { Logo } from "./Logo";
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { ArrowLeft, ArrowRight, Search, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { Logo } from './landing/header/Logo';
 
 interface Industry {
   id: string;
@@ -19,34 +19,34 @@ interface Industry {
 
 const industries: Industry[] = [
   {
-    id: "1",
-    name: "카페",
-    category: "식음료",
-    icon: "☕",
-    avgRevenue: "3,500만원",
+    id: '1',
+    name: '카페',
+    category: '식음료',
+    icon: '☕',
+    avgRevenue: '3,500만원',
     growthRate: 12.5,
-    difficulty: "중",
-    requiredCapital: "5천만원",
+    difficulty: '중',
+    requiredCapital: '5천만원',
   },
   {
-    id: "2",
-    name: "편의점",
-    category: "소매",
-    icon: "🏪",
-    avgRevenue: "4,200만원",
+    id: '2',
+    name: '편의점',
+    category: '소매',
+    icon: '🏪',
+    avgRevenue: '4,200만원',
     growthRate: 5.3,
-    difficulty: "하",
-    requiredCapital: "1억원",
+    difficulty: '하',
+    requiredCapital: '1억원',
   },
   {
-    id: "3",
-    name: "치킨집",
-    category: "식음료",
-    icon: "🍗",
-    avgRevenue: "4,800만원",
+    id: '3',
+    name: '치킨집',
+    category: '식음료',
+    icon: '🍗',
+    avgRevenue: '4,800만원',
     growthRate: 8.7,
-    difficulty: "중",
-    requiredCapital: "3천만원",
+    difficulty: '중',
+    requiredCapital: '3천만원',
   },
 ];
 
@@ -56,15 +56,20 @@ interface IndustrySelectPageProps {
   onSkip?: () => void;
 }
 
-export function IndustrySelectPage({ onSelect, onBack, onSkip }: IndustrySelectPageProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const selectedCategory = "all";
+export function IndustrySelectPage({
+  onSelect,
+  onBack,
+  onSkip,
+}: IndustrySelectPageProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const selectedCategory = 'all';
 
   const filteredIndustries = industries.filter((industry) => {
     const matchesSearch = industry.name
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || industry.category === selectedCategory;
+    const matchesCategory =
+      selectedCategory === 'all' || industry.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -123,12 +128,12 @@ export function IndustrySelectPage({ onSelect, onBack, onSkip }: IndustrySelectP
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredIndustries.map((industry) => {
               const trendReasons: Record<string, string> = {
-                "1": "디저트 오마카세와 로컬 블렌딩 커피에 대한 MZ세대의 수요가 급증하고 있습니다.",
-                "2": "1인 가구 증가에 따른 프리미엄 간편식 및 고퀄리티 소규모 식당이 강세입니다.",
-                "3": "단순 구매를 넘어선 체험형 팝업 스토어 및 큐레이션 샵이 상권의 핵심으로 부상 중입니다.",
-                "4": "헬시 플레저(Healthy Pleasure) 열풍으로 개인 맞춤형 PT와 요가 스튜디오 수요가 꾸준합니다.",
-                "5": "성인 자기계발 및 취미 클래스 시장이 오프라인 커뮤니티 중심으로 재편되고 있습니다.",
-                "6": "반려동물 가구 1,500만 시대, 펫 프렌들리 상권 내 프리미엄 케어 서비스가 블루오션입니다.",
+                '1': '디저트 오마카세와 로컬 블렌딩 커피에 대한 MZ세대의 수요가 급증하고 있습니다.',
+                '2': '1인 가구 증가에 따른 프리미엄 간편식 및 고퀄리티 소규모 식당이 강세입니다.',
+                '3': '단순 구매를 넘어선 체험형 팝업 스토어 및 큐레이션 샵이 상권의 핵심으로 부상 중입니다.',
+                '4': '헬시 플레저(Healthy Pleasure) 열풍으로 개인 맞춤형 PT와 요가 스튜디오 수요가 꾸준합니다.',
+                '5': '성인 자기계발 및 취미 클래스 시장이 오프라인 커뮤니티 중심으로 재편되고 있습니다.',
+                '6': '반려동물 가구 1,500만 시대, 펫 프렌들리 상권 내 프리미엄 케어 서비스가 블루오션입니다.',
               };
 
               return (
@@ -155,9 +160,11 @@ export function IndustrySelectPage({ onSelect, onBack, onSkip }: IndustrySelectP
 
                     <div className="bg-slate-50 rounded-2xl p-4 mb-5 border border-slate-100/50">
                       <p className="text-[13px] text-slate-600 leading-snug break-keep">
-                        <span className="font-bold text-blue-900 mr-1.5">TREND</span>
+                        <span className="font-bold text-blue-900 mr-1.5">
+                          TREND
+                        </span>
                         {trendReasons[industry.id] ||
-                          "데이터 분석 결과 해당 지역에서 높은 성장 잠재력을 보이고 있는 업종입니다."}
+                          '데이터 분석 결과 해당 지역에서 높은 성장 잠재력을 보이고 있는 업종입니다.'}
                       </p>
                     </div>
 
