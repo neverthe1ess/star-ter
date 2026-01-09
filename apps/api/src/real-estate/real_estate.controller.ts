@@ -1,19 +1,8 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Query,
-  UseGuards,
-  Req,
-} from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import { Request } from 'express';
+import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
 import { RealEstateService } from './real_estate.service';
 import { CreateRealEstateDto } from './dto/real-estate-create.dto';
 import { GetRealEstateQueryDto } from './dto/real-estate-get.dto';
 import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
-import { Type } from 'class-transformer'; { AuthenticatedUser } from 'src/auth/types/authenticatedUser';
 import { User } from 'src/auth/decorators/user.decorator';
 import type { AuthenticatedUser } from 'src/auth/types/authenticatedUser';
 
