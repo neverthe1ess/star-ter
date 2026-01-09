@@ -3,7 +3,7 @@ model user_info {
   email                String                 @unique
   password             String
   nickname             String
-  startup_capital      BigInt?
+  startup_capital      String?
   target_age_group     String?
   preferred_region     String?
   preferred_business_hours String?

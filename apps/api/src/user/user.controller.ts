@@ -1,28 +1,30 @@
-import { Controller, Get, UseGuards, NotFoundException } from '@nestjs/common';
-import { UserInfoDto } from './dto/userinfo.dto';
-import { AuthGuard } from '@nestjs/passport';
+import {
+  Controller,
+  UseGuards,
+  Patch,
+  Body,
+  HttpCode,
+  Logger,
+} from '@nestjs/common';
 import { UsersService } from './user.service';
 import { User } from 'src/auth/decorators/user.decorator';
 import type { AuthenticatedUser } from 'src/auth/types/authenticatedUser';
+import { UpdateOnboardingDto } from './dto/update-onboarding.dto';
+import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 
 @Controller('users')
 export class UsersController {
+  private readonly logger = new Logger(UsersController.name);
   constructor(private readonly usersService: UsersService) {}
 
-  @Get()
-  findAll() {
-    return this.usersService.findAll();
-  }
-
-  @UseGuards(AuthGuard('jwt'))
-  @Get('me')
-  async getProfile(@User() user: AuthenticatedUser): Promise<UserInfoDto> {
-    const userData = await this.usersService.findOne(user.id);
-
-    if (!userData) {
-      throw new NotFoundException('User not found');
-    }
-
-    return userData;
+  @Patch('onboarding')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(204)
+  async updateOnboarding(
+    @User() user: AuthenticatedUser,
+    @Body() dto: UpdateOnboardingDto,
+  ) {
+    this.logger.log(`Updating onboarding for user ID: ${user.id}`);
+    await this.usersService.updateOnboarding(user.id, dto);
   }
 }
