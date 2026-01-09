@@ -1,74 +1,50 @@
-import {
-  Injectable,
-  ConflictException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
-import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 
 import { JwtService } from '@nestjs/jwt';
+import { AuthenticatedUser } from './types/authenticatedUser';
+import { AuthRepository } from './auth.repository';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
     private jwtService: JwtService,
+    private authRepository: AuthRepository,
   ) {}
 
-  async register(registerDto: RegisterDto) {
-    // 1. username 중복 체크
-    const existingUser = await this.prisma.user_info.findUnique({
-      where: { email: registerDto.email },
-    });
+  async register(email: string, nickname: string, password: string) {
+    const duplicateUser = await this.authRepository.findOneByEmail(email);
 
-    if (existingUser) {
-      throw new ConflictException('이미 존재하는 EMAIL입니다.');
+    if (duplicateUser) {
+      throw new BadRequestException('User already exists');
     }
 
-    // 2. 비밀번호 암호화
-    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
+    const salt = await bcrypt.genSalt();
+    const hash = await bcrypt.hash(password, salt);
 
-    // 3. User 생성
-    const user = await this.prisma.user_info.create({
-      data: {
-        email: registerDto.email,
-        password: hashedPassword,
-        nickname: registerDto.nickname,
-      },
-    });
+    const user = await this.authRepository.createUser(email, nickname, hash);
 
-    // 비밀번호 제외하고 반환
-    const { password, ...result } = user;
-    return result;
+    return { id: user.id, nickname: user.nickname };
   }
 
-  async login(loginDto: LoginDto) {
-    const { email, password } = loginDto;
+  async validateUser(
+    email: string,
+    password: string,
+  ): Promise<AuthenticatedUser | null> {
+    const user = await this.authRepository.findOneByEmail(email);
 
-    // 1. email을 기준으로 유저를 찾고.
-    const user = await this.prisma.user_info.findUnique({
-      where: { email },
-    });
-
-    if (!user) {
-      throw new UnauthorizedException('EMAIL이 존재하지 않습니다.');
+    if (user && (await bcrypt.compare(password, user.password))) {
+      return { id: user.id, nickname: user.nickname };
     }
 
-    // 2. 비밀번호 확인
-    const isPasswordMatched = await bcrypt.compare(password, user.password);
+    return null;
+  }
 
-    if (!isPasswordMatched) {
-      throw new UnauthorizedException('비밀번호가 일치하지 않습니다.');
-    }
-
-    // 3. 토큰 발급
-    const accessToken = this.jwtService.sign({
-      sub: user.id,
-    });
-
-    return { accessToken };
+  getJwtToken(user: AuthenticatedUser) {
+    const payload = { nickname: user.nickname, sub: user.id };
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
   }
 }

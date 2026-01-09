@@ -2,13 +2,6 @@
 
 import { create } from "zustand";
 
-export type UserData = {
-  age: string;
-  region: string;
-  operatingTime: string;
-  capital: string;
-};
-
 export type Industry = {
   id: string;
   name: string;
@@ -94,11 +87,9 @@ const normalizeProperty = (property: Partial<Property>): Property => ({
 });
 
 type AppState = {
-  userData: UserData | null;
   selectedIndustry: Industry | null;
   selectedLocation: Location | null;
   selectedProperty: Property | null;
-  setUserData: (data: UserData) => void;
   setSelectedIndustry: (industry: Industry | null) => void;
   setSelectedLocation: (location: Partial<Location> | null) => void;
   setSelectedProperty: (property: Partial<Property> | null) => void;
@@ -106,11 +97,9 @@ type AppState = {
 };
 
 export const useAppStore = create<AppState>((set) => ({
-  userData: null,
   selectedIndustry: null,
   selectedLocation: null,
   selectedProperty: null,
-  setUserData: (data) => set({ userData: data }),
   setSelectedIndustry: (industry) => set({ selectedIndustry: industry }),
   setSelectedLocation: (location) =>
     set({ selectedLocation: location ? normalizeLocation(location) : null }),
@@ -118,7 +107,6 @@ export const useAppStore = create<AppState>((set) => ({
     set({ selectedProperty: property ? normalizeProperty(property) : null }),
   reset: () =>
     set({
-      userData: null,
       selectedIndustry: null,
       selectedLocation: null,
       selectedProperty: null,
