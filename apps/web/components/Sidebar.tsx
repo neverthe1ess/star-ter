@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   Home,
   FileText,
@@ -8,9 +9,16 @@ import {
   X,
   Settings,
   Menu,
+  LogIn,
 } from "lucide-react";
+
+import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence, Variants, Transition } from "motion/react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { logout } from "@/services/auth/auth.api";
+import { useUserStore } from "@/store/use-user-store";
+import { ProfilePopup } from "./ProfilePopup";
 
 interface SidebarProps {
   activeMenu: string;
@@ -39,6 +47,51 @@ const SIDEBAR_VARIANTS: Variants = {
 const TRANSITION: Transition = { type: "spring", damping: 25, stiffness: 200 };
 
 export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarProps) {
+  const router = useRouter();
+  const authUser = useUserStore((state) => state.authUser);
+  const clearAuthUser = useUserStore((state) => state.clearAuthUser);
+  const setAuthUser = useUserStore((state) => state.setAuthUser);
+  const [showProfilePopup, setShowProfilePopup] = useState(false);
+  const [nickname, setNickname] = useState(authUser?.nickname ?? "사용자");
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setNickname(authUser?.nickname ?? "사용자");
+  }, [authUser?.nickname]);
+
+  const handleNicknameChange = (value: string) => {
+    setNickname(value);
+    setAuthUser({ ...authUser, nickname: value });
+  };
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setShowProfilePopup(false);
+    }
+  }, [isOpen]);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    setLogoutError(null);
+    try {
+      await logout();
+      clearAuthUser();
+      setShowProfilePopup(false);
+      router.push("/login");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "로그아웃에 실패했습니다.";
+      setLogoutError(message);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
   return (
     <>
       {!isOpen && (
@@ -59,10 +112,10 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
             animate="animate"
             exit="exit"
             transition={TRANSITION}
-            className="w-[350px] p-4 fixed h-full flex flex-col z-40"
+            className="w-350px p-4 fixed h-full flex flex-col z-40"
           >
             <div className="bg-white rounded-2xl shadow-lg h-full flex flex-col overflow-hidden">
-              <header className="h-16 px-6 flex items-center justify-between border-b border-gray-100 flex-shrink-0">
+              <header className="h-16 px-6 flex items-center justify-between border-b border-gray-100shrink-0">
                 <span className="text-lg font-black text-slate-900 tracking-tight">Starter</span>
                 <button
                   onClick={() => onToggle(false)}
@@ -119,32 +172,70 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
 
               <footer className="px-4 py-4 border-t border-gray-100 bg-white">
                 <div className="flex items-center gap-3 px-2 py-2">
-                  <div className="relative shrink-0">
-                    <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100">
-                      <ImageWithFallback
-                        src="https://images.unsplash.com/photo-1649433658557-54cf58577c68?q=80&w=200&h=200&auto=format&fit=crop"
-                        alt="Profile"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full shadow-sm" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-slate-900 truncate">김스타 사장님</p>
-                    <p className="text-[11px] text-slate-400 font-medium truncate">Premium Member</p>
-                  </div>
-                  <button
-                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all"
-                    aria-label="Settings"
-                  >
-                    <Settings className="w-4 h-4" />
-                  </button>
+                  {authUser ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setShowProfilePopup((prev) => !prev)}
+                        className="flex-1 min-w-0 flex items-center gap-3 text-left"
+                        aria-label="Open profile settings"
+                      >
+                        <div className="relative shrink-0">
+                          <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100">
+                            <ImageWithFallback
+                              src="https://images.unsplash.com/photo-1649433658557-54cf58577c68?q=80&w=200&h=200&auto=format&fit=crop"
+                              alt="Profile"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full shadow-sm" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-slate-900 truncate">{nickname}</p>
+                          <p className="text-[11px] text-slate-400 font-medium truncate">Premium Member</p>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => setShowProfilePopup((prev) => !prev)}
+                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all"
+                        aria-label="Settings"
+                      >
+                        <Settings className="w-4 h-4" />
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => router.push("/login")}
+                      className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                      <span>로그인</span>
+                      <LogIn className="w-4 h-4 text-slate-400" />
+                    </button>
+                  )}
                 </div>
               </footer>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {isMounted &&
+        createPortal(
+          <AnimatePresence>
+            {showProfilePopup && (
+              <ProfilePopup
+                nickname={nickname}
+                onNicknameChange={handleNicknameChange}
+                onClose={() => setShowProfilePopup(false)}
+                onLogout={handleLogout}
+                isLoggingOut={isLoggingOut}
+                logoutError={logoutError}
+              />
+            )}
+          </AnimatePresence>,
+          document.body,
+        )}
     </>
   );
 }

@@ -208,6 +208,13 @@ export class FloatingPopulationRepository {
     }[] = [];
     let metricField = 'tot_flpop_co';
 
+    // Search & Limit Logic
+    const keyword = query.keyword;
+    const searchCondition = keyword
+      ? `AND ${cfg.nameField} LIKE '%${keyword}%'`
+      : '';
+    const limitCondition = keyword ? '' : 'LIMIT 100';
+
     // 3. Fetch Ranking (Current Q)
     const isCombined =
       query.ageGroup &&
@@ -239,9 +246,9 @@ export class FloatingPopulationRepository {
               (CAST(${ageCol} AS NUMERIC) * CAST(${timeCol} AS NUMERIC) / NULLIF(CAST(tot_flpop_co AS NUMERIC), 0)) as amount,
               tot_flpop_co as metric_val
             FROM ${cfg.table}
-            WHERE stdr_yyqu_cd = '${currentQ}'
+            WHERE stdr_yyqu_cd = '${currentQ}' ${searchCondition}
             ORDER BY amount DESC
-            LIMIT 100
+            ${limitCondition}
           `;
 
       try {
@@ -276,10 +283,17 @@ export class FloatingPopulationRepository {
         if (timeMap[query.timeSlot]) metricField = timeMap[query.timeSlot];
       }
 
+      // Prisma findMany doesn't support dynamic WHERE easily with mixed types, using Raw for search consistecy if keyword exists
+      // But findMany is safer. Let's construct where object.
+      const where: any = { stdr_yyqu_cd: currentQ };
+      if (keyword) {
+        where[cfg.nameField] = { contains: keyword };
+      }
+
       const results = await (this.prisma as any)[cfg.model].findMany({
-        where: { stdr_yyqu_cd: currentQ },
+        where,
         orderBy: { [metricField]: 'desc' },
-        take: 100,
+        take: keyword ? undefined : 100, // Remove limit if searching
       });
 
       items = results.map((r: any) => ({
@@ -347,6 +361,7 @@ export class FloatingPopulationRepository {
    */
   async findMZRanking(
     level: 'gu' | 'dong' | 'commercial' = 'commercial',
+    keyword?: string, // 추가
   ): Promise<PopulationRankingItemDto[]> {
     const configMap = {
       gu: {
@@ -370,6 +385,11 @@ export class FloatingPopulationRepository {
     };
     const cfg = configMap[level];
 
+    const searchCondition = keyword
+      ? `AND f.${cfg.nameField} LIKE '%${keyword}%'`
+      : '';
+    const limitCondition = keyword ? '' : 'LIMIT 100';
+
     const sql = `
       WITH latest_quarter AS (
         SELECT MAX(stdr_yyqu_cd) as q FROM ${cfg.table}
@@ -387,9 +407,9 @@ export class FloatingPopulationRepository {
       FROM ${cfg.table} f
       CROSS JOIN latest_quarter lq
       LEFT JOIN ${cfg.changeTable} c ON f.${cfg.codeField} = c.${cfg.codeField} AND c.stdr_yyqu_cd = lq.q
-      WHERE f.stdr_yyqu_cd = lq.q
-      ORDER BY mz_ratio DESC, mz_pop DESC
-      LIMIT 100
+      WHERE f.stdr_yyqu_cd = lq.q ${searchCondition}
+      ORDER BY mz_pop DESC, mz_ratio DESC
+      ${limitCondition}
     `;
 
     try {
@@ -414,6 +434,7 @@ export class FloatingPopulationRepository {
   async findGenderRanking(
     level: 'gu' | 'dong' | 'commercial' = 'commercial',
     gender: 'male' | 'female' = 'female',
+    keyword?: string, // 추가
   ): Promise<PopulationRankingItemDto[]> {
     const configMap = {
       gu: {
@@ -438,6 +459,11 @@ export class FloatingPopulationRepository {
     const cfg = configMap[level];
     const genderCol = gender === 'male' ? 'ml_flpop_co' : 'fml_flpop_co';
 
+    const searchCondition = keyword
+      ? `AND f.${cfg.nameField} LIKE '%${keyword}%'`
+      : '';
+    const limitCondition = keyword ? '' : 'LIMIT 100';
+
     const sql = `
       WITH latest_quarter AS (
         SELECT MAX(stdr_yyqu_cd) as q FROM ${cfg.table}
@@ -455,9 +481,9 @@ export class FloatingPopulationRepository {
       FROM ${cfg.table} f
       CROSS JOIN latest_quarter lq
       LEFT JOIN ${cfg.changeTable} c ON f.${cfg.codeField} = c.${cfg.codeField} AND c.stdr_yyqu_cd = lq.q
-      WHERE f.stdr_yyqu_cd = lq.q
+      WHERE f.stdr_yyqu_cd = lq.q ${searchCondition}
       ORDER BY gender_ratio DESC, gender_pop DESC
-      LIMIT 100
+      ${limitCondition}
     `;
 
     try {

@@ -49,6 +49,24 @@ const hotLocations: LocationUI[] = [
     badgeType: 'rapid',
     rank: 4,
   },
+  {
+    id: '5',
+    name: '을지로 2',
+    revenue: '₩90억 3,420만',
+    growthRate: 6.4,
+    badge: '급성장',
+    badgeType: 'rapid',
+    rank: 4,
+  },
+  {
+    id: '6',
+    name: '을지로 3',
+    revenue: '₩90억 3,420만',
+    growthRate: 6.4,
+    badge: '급성장',
+    badgeType: 'rapid',
+    rank: 4,
+  },
 ];
 
 export function LocationListPage() {
@@ -153,7 +171,7 @@ export function LocationListPage() {
         </div>
       </div>
 
-      <div className="px-8 pb-8">
+      <div className="px-5 pb-8">
         <div className="space-y-12 pb-12">
           <section>
             <div className="flex items-center justify-between mb-6">
@@ -172,7 +190,7 @@ export function LocationListPage() {
                 }
               `}</style>
               {hotLocations.map((loc) => (
-                <div key={loc.id} className="w-[320px] shrink-0">
+                <div key={loc.id} className="w-100 shrink-0">
                   <LocationSuggestionCard location={loc} />
                 </div>
               ))}
@@ -186,23 +204,27 @@ export function LocationListPage() {
                 급상승 중인 신흥 트렌드 상권
               </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div
+              className="flex overflow-x-auto gap-6 pb-6 -mx-4 px-4 no-scrollbar"
+              style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
+            >
               {isLoading
                 ? Array.from({ length: 4 }).map((_, i) => (
                     <div
                       key={i}
-                      className="bg-white rounded-3xl p-6 border border-slate-100 h-95 animate-pulse"
+                      className="w-100 shrink-0 bg-white rounded-3xl p-6 border border-slate-100 h-48 animate-pulse"
                     >
-                      <div className="w-full h-40 bg-slate-100 rounded-2xl mb-5" />
                       <div className="h-6 bg-slate-100 rounded w-3/4 mb-2" />
                       <div className="h-4 bg-slate-100 rounded w-1/2" />
                     </div>
                   ))
                 : trendingLocationsData.map((loc) => (
-                    <LocationSuggestionCard
-                      key={loc.id}
-                      location={loc}
-                    />
+                    <div key={loc.id} className="w-100 shrink-0">
+                      <LocationSuggestionCard
+                        key={loc.id}
+                        location={loc}
+                      />
+                    </div>
                   ))}
             </div>
           </section>
@@ -214,23 +236,27 @@ export function LocationListPage() {
                 꾸준한 수익, 안정형 상권
               </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div
+              className="flex overflow-x-auto gap-6 pb-6 -mx-4 px-4 no-scrollbar"
+              style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
+            >
               {isStableLoading
                 ? Array.from({ length: 4 }).map((_, i) => (
                     <div
                       key={i}
-                      className="bg-white rounded-3xl p-6 border border-slate-100 h-95 animate-pulse"
+                      className="w-100 shrink-0 bg-white rounded-3xl p-6 border border-slate-100 h-48 animate-pulse"
                     >
-                      <div className="w-full h-40 bg-slate-100 rounded-2xl mb-5" />
                       <div className="h-6 bg-slate-100 rounded w-3/4 mb-2" />
                       <div className="h-4 bg-slate-100 rounded w-1/2" />
                     </div>
                   ))
                 : stableLocationsData.map((loc) => (
+                   <div key={loc.id} className="w-100 shrink-0">
                     <LocationSuggestionCard
                       key={loc.id}
                       location={loc}
                     />
+                   </div>
                   ))}
             </div>
           </section>

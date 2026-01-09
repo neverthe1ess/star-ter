@@ -4,8 +4,6 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  Min,
-  Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -112,4 +110,36 @@ export class StoreLocationsResponseDto {
   industryCode: string;
   count: number;
   stores: StoreLocationDto[];
+}
+
+// 폐업률 랭킹 DTOs
+export class GetClosureRateRankingQueryDto {
+  @IsString()
+  @IsOptional()
+  @IsIn(['gu', 'dong', 'commercial'])
+  level?: 'gu' | 'dong' | 'commercial';
+
+  @IsString()
+  @IsOptional()
+  industryCode?: string;
+
+  @IsOptional()
+  @IsString()
+  keyword?: string; // 검색 키워드 추가
+}
+
+export class ClosureRateRankingItemDto {
+  code: string;
+  name: string;
+  closureRate: number; // 폐업률 (%)
+  closedStoreCount: number; // 폐업 점포 수
+  currentStoreCount: number; // 현재 점포 수
+  previousStoreCount: number; // 전분기 점포 수
+  changeType?: string; // 상권 상태
+}
+
+export class ClosureRateRankingResponseDto {
+  level: string;
+  quarter: string;
+  items: ClosureRateRankingItemDto[];
 }

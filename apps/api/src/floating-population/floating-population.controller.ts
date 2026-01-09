@@ -37,18 +37,24 @@ export class FloatingPopulationController {
   @Get('ranking/mz')
   async getMZRanking(
     @Query('level') level?: 'gu' | 'dong' | 'commercial',
+    @Query('keyword') keyword?: string, // 추가
   ): Promise<PopulationRankingResponseDto> {
-    return this.floatingPopulationService.getMZRanking(level || 'commercial');
+    return this.floatingPopulationService.getMZRanking(
+      level || 'commercial',
+      keyword,
+    );
   }
 
   @Get('ranking/gender')
   async getGenderRanking(
     @Query('level') level?: 'gu' | 'dong' | 'commercial',
     @Query('gender') gender?: 'male' | 'female',
+    @Query('keyword') keyword?: string, // 추가
   ): Promise<PopulationRankingResponseDto> {
     return this.floatingPopulationService.getGenderRanking(
       level || 'commercial',
       gender || 'female',
+      keyword,
     );
   }
 }

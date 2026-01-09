@@ -1,20 +1,22 @@
-import Link from "next/link";
-
-import { Button } from "./ui/button";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
+import Link from 'next/link';
+import { Button } from '../../ui/button';
+import { ImageWithFallback } from '../../figma/ImageWithFallback';
+import dummyMap from './img/dummy_map.png';
 
 export function HeroSection() {
   return (
-    <section className="bg-gray-50 pt-32 pb-16 px-6">
-      <div className="max-w-[1400px] mx-auto">
+    <section className="bg-gray-50 pt-32 pb-16">
+      <div className="max-w-[1200px] mx-auto px-4">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           <div className="max-w-xl">
-            <h1 className="text-6xl font-extrabold text-gray-900 mb-6 leading-[1.15]">
-              실패 없는 창업의 시작,<br />
-              <span className="text-blue-900">Starter</span> 상권분석
+            <h1 className="text-5xl font-extrabold text-gray-900 mb-6 leading-[1.15]">
+              명당을 찾아주는
+              <br />
+              상권 분석 서비스 <span className="text-blue-900">Starter</span>
             </h1>
             <p className="text-xl text-gray-600 mb-10 leading-relaxed">
-              빅데이터와 AI가 분석하는 가장 정밀한 상권 리포트.<br />
+              빅데이터와 AI가 분석하는 가장 정밀한 상권 리포트.
+              <br />
               예상 매출액부터 유동인구, 경쟁사 분석까지 한 번에 확인하세요.
             </p>
             <div className="flex gap-4">
@@ -30,13 +32,13 @@ export function HeroSection() {
           <div className="relative">
             <div className="absolute -inset-4 bg-blue-100/50 blur-3xl rounded-full -z-10"></div>
             <div className="bg-white p-3 rounded-[2.5rem] shadow-2xl border border-gray-100 overflow-hidden group">
-              <div className="relative h-[480px] rounded-[2rem] overflow-hidden">
+              <div className="relative h-[480px] rounded-4xl overflow-hidden">
                 <ImageWithFallback
-                  src="https://images.unsplash.com/photo-1764850559658-1dc6af1bda0b?q=80&w=1080"
-                  alt="Commercial Area Analysis"
+                  src={dummyMap.src}
+                  alt="성수동 카페거리"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent"></div>
 
                 <div className="absolute top-6 left-6 right-6 flex justify-between items-start">
                   <div className="bg-white/90 backdrop-blur px-4 py-2 rounded-xl shadow-lg border border-white/20">
@@ -52,15 +54,23 @@ export function HeroSection() {
 
                 <div className="absolute bottom-6 left-6 right-6 grid grid-cols-2 gap-3">
                   <div className="bg-white/90 backdrop-blur p-4 rounded-2xl shadow-lg border border-white/20">
-                    <div className="text-xs text-gray-500 mb-1">일 평균 유동인구</div>
-                    <div className="text-lg font-bold text-gray-900">142,500명</div>
+                    <div className="text-xs text-gray-500 mb-1">
+                      일 평균 유동인구
+                    </div>
+                    <div className="text-lg font-bold text-gray-900">
+                      142,500명
+                    </div>
                     <div className="text-[10px] text-green-600 font-bold">
-                      ▲ 12.4% vs last week
+                      ▲ 12.4%
                     </div>
                   </div>
                   <div className="bg-white/90 backdrop-blur p-4 rounded-2xl shadow-lg border border-white/20">
-                    <div className="text-xs text-gray-500 mb-1">예상 월 매출액</div>
-                    <div className="text-lg font-bold text-gray-900">₩4,280만</div>
+                    <div className="text-xs text-gray-500 mb-1">
+                      예상 월 매출액
+                    </div>
+                    <div className="text-lg font-bold text-gray-900">
+                      ₩4,280만
+                    </div>
                     <div className="text-[10px] text-blue-600 font-bold">
                       신뢰도 98% 분석 완료
                     </div>
