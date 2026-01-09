@@ -1,4 +1,3 @@
-
 export function TrafficContent() {
   return (
     <div className="space-y-8">

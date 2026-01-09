@@ -1,4 +1,3 @@
-
 export function AnalysisContent() {
   return (
     <div className="space-y-8">

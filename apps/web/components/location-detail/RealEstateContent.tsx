@@ -1,4 +1,3 @@
-
 export function RealEstateContent() {
   return (
     <div className="space-y-8">

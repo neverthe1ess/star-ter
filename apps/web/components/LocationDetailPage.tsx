@@ -11,12 +11,12 @@ import {
   Sparkles,
   X,
 } from 'lucide-react';
-import { ImageWithFallback } from './figma/ImageWithFallback';
 import { ChatContent } from './location-detail/ChatContent';
 import { MatchingContent } from './location-detail/MatchingContent';
 import { TrafficContent } from './location-detail/TrafficContent';
 import { AnalysisContent } from './location-detail/AnalysisContent';
 import { RealEstateContent } from './location-detail/RealEstateContent';
+import { MapSection } from './location-detail/MapSection';
 import { useState } from 'react';
 import { Button } from './ui/button';
 import { Resizable } from 're-resizable';
@@ -125,19 +125,8 @@ export function LocationDetailPage({
             }}
             className="flex-shrink-0"
           >
-            <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-slate-200 h-full relative">
-              <ImageWithFallback
-                src="https://images.unsplash.com/photo-1588214224125-ee5e4fa8a426?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzZW91bCUyMG1hcCUyMGFlcmlhbHxlbnwxfHx8fDE3Njc4OTA3MDh8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
-                alt="상권 지도"
-                className="w-full h-full object-cover opacity-60"
-              />
-              <div className="absolute bottom-6 left-6 right-6 bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-gray-200">
-                <p className="text-xs text-gray-600 mb-1">현재 분석 반경</p>
-                <p className="text-sm font-bold text-blue-800">
-                  반경 500m 이내 고밀도 분석
-                </p>
-              </div>
-            </div>
+            {/* MapSection: 탭에 따라 다른 오버레이 표시 (추후 확장) */}
+            <MapSection mode={activeTab} />
           </Resizable>
 
           <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden">
