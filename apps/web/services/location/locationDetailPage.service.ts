@@ -30,29 +30,13 @@ export async function getCommercialBasicInfo(
     const data = await res.json();
     if (!data) return null;
 
-    // 폴리곤에서 중심점 계산 (간단 버전: 첫 좌표 사용)
-    // TODO: 실제 centroid 계산 로직 추가
-    let x = 0,
-      y = 0;
-    if (data.polygons?.coordinates) {
-      const coords = data.polygons.coordinates;
-      // MultiPolygon 또는 Polygon 처리
-      const firstRing = Array.isArray(coords[0]?.[0]?.[0])
-        ? coords[0][0]
-        : coords[0];
-      if (firstRing?.length > 0) {
-        x = firstRing[0][0];
-        y = firstRing[0][1];
-      }
-    }
-
     return {
       code: data.code || code,
       name: data.properties?.commercialName || '알 수 없는 상권',
-      guCode: data.properties?.guCode || '',
-      dongCode: data.properties?.dongCode || '',
-      x,
-      y,
+      guName: data.properties?.guCode || '',
+      dongName: data.properties?.dongCode || '',
+      x: data.properties.x || '',
+      y: data.properties.y || '',
       polygons: data.polygons,
     };
   } catch (error) {
