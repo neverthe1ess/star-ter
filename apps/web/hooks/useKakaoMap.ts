@@ -33,9 +33,25 @@ declare global {
             handler: () => void,
           ) => void;
         };
+        Polygon: new (options: {
+          path: KakaoLatLng[] | KakaoLatLng[][];
+          strokeWeight?: number;
+          strokeColor?: string;
+          strokeOpacity?: number;
+          strokeStyle?: string;
+          fillColor?: string;
+          fillOpacity?: number;
+          zIndex?: number;
+        }) => KakaoPolygon;
       };
     };
   }
+}
+
+export interface KakaoPolygon {
+  setMap: (map: KakaoMap | null) => void;
+  setPath: (path: KakaoLatLng[] | KakaoLatLng[][]) => void;
+  getBounds: () => KakaoBounds;
 }
 
 // ============================================================

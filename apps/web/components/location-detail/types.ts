@@ -1,32 +1,22 @@
 // Location Detail 페이지용 타입 정의
 // Next.js App Router 정석 패턴: Server Component에서 받아온 데이터 타입
 
-// TODO: 추후 store/use-app-store.ts의 Location 타입으로 통합 필요 (현재는 중복 정의됨)
-export interface Location {
-  id: string;
-  name: string;
-  district: string;
-  category: string;
-  revenue: string;
-  growthRate: number;
-  badge: string;
-  badgeType: 'explosive' | 'rapid' | 'stable';
-  imageUrl: string;
-  rank?: number;
-}
-
 /**
  * 상권 기본 정보 (폴리곤 API에서)
  * API: GET /polygon/commercial/code?code={code}
  */
+export interface PolygonData {
+  type: 'MultiPolygon';
+  coordinates: number[][][][];
+}
 export interface CommercialBasicInfo {
   code: string;
   name: string;
-  guCode: string;
-  dongCode: string;
+  guName: string;
+  dongName: string;
   x: number; // 중심점 경도 (폴리곤에서 계산 필요)
   y: number; // 중심점 위도
-  polygons?: unknown; // 지도에 영역 그리기용
+  polygons: PolygonData | null; // 지도에 영역 그리기용
 }
 
 /**

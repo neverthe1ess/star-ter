@@ -17,7 +17,7 @@ import { TrafficContent } from './location-detail/TrafficContent';
 import { AnalysisContent } from './location-detail/AnalysisContent';
 import { RealEstateContent } from './location-detail/RealEstateContent';
 import { MapSection } from './location-detail/MapSection';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from './ui/button';
 import { Resizable } from 're-resizable';
 import Link from 'next/link';
@@ -26,6 +26,7 @@ import type {
   MarketAnalytics,
   RealEstateItem,
 } from './location-detail/types';
+import { addToHistory } from '@/hooks/useLocationHistory';
 
 interface LocationDetailPageProps {
   basicInfo: CommercialBasicInfo;
@@ -63,6 +64,12 @@ export function LocationDetailPage({
     },
   ];
 
+  useEffect(() => {
+    if(basicInfo?.code) {
+      addToHistory(basicInfo.code);
+    }
+  }, [basicInfo?.code]);
+
   return (
     <div className="min-h-screen bg-[#f7f7f8]">
       <div className="px-8 py-12">
@@ -75,13 +82,13 @@ export function LocationDetailPage({
               >
                 <ArrowLeft className="w-6 h-6 text-gray-900" />
               </Link>
-              <h1 className="text-6xl font-semibold text-gray-900">
+              <h1 className="text-6xl font-bold text-gray-900">
                 {basicInfo.name}
               </h1>
             </div>
           </div>
           <div className="flex items-center gap-4 mb-8">
-            <p className="text-3xl text-gray-400">서울</p>
+            <p className="text-3xl text-gray-500">서울시 {basicInfo.guName} {basicInfo.dongName}</p>
           </div>
         </div>
 
@@ -119,7 +126,10 @@ export function LocationDetailPage({
             className="flex-shrink-0"
           >
             {/* MapSection: 탭에 따라 다른 오버레이 표시 (추후 확장) */}
-            <MapSection mode={activeTab} />
+            <MapSection
+              mode={activeTab}
+              polygonData={basicInfo.polygons}
+            />
           </Resizable>
 
           <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden">
