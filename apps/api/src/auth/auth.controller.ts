@@ -6,6 +6,7 @@ import {
   Logger,
   UseGuards,
   HttpCode,
+  Get,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -13,6 +14,7 @@ import { User } from './decorators/user.decorator';
 import type { Response } from 'express';
 import type { AuthenticatedUser } from './types/authenticatedUser';
 import { LocalAuthGuard } from './guard/local-auth.guard';
+import { JwtAuthGuard } from './guard/jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -54,5 +56,15 @@ export class AuthController {
     this.logger.log(`Logging out user`);
     res.clearCookie('access_token');
     return res.sendStatus(200);
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  me(@User() user: AuthenticatedUser) {
+    return {
+      id: user.id,
+      nickname: user.nickname,
+      on_boarding_completed: user.on_boarding_completed,
+    };
   }
 }

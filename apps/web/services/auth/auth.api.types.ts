@@ -23,3 +23,9 @@ export type LoginResponse = {
   nickname: string;
   on_boarding_completed: boolean;
 };
+
+export type UserProfile = {
+  id: string;
+  nickname: string;
+  on_boarding_completed: boolean;
+};

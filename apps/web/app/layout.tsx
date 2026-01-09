@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import "./globals.css";
+import { AuthBootstrap } from "@/components/AuthBootstrap";
 
 export const metadata: Metadata = {
   title: "Starter",
@@ -14,7 +15,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <AuthBootstrap />
+        {children}
+      </body>
     </html>
   );
 }
