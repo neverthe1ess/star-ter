@@ -38,4 +38,8 @@ export class GetPopulationRankingQueryDto {
   @IsString()
   @IsOptional()
   dayOfWeek?: string; // Optional expansion
+
+  @IsString()
+  @IsOptional()
+  keyword?: string; // 검색 키워드 추가
 }
