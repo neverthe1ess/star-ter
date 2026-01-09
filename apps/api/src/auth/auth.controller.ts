@@ -34,7 +34,11 @@ export class AuthController {
       sameSite: 'lax' as const,
       maxAge: 1000 * 60 * 60 * 8, // 8hours
     });
-    return res.status(200).json({ id: user.id, nickname: user.nickname });
+    return res.status(200).json({
+      id: user.id,
+      nickname: user.nickname,
+      on_boarding_completed: user.on_boarding_completed,
+    });
   }
 
   @Post('logout')

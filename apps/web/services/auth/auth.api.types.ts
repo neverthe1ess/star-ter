@@ -21,4 +21,5 @@ export type LoginParams = {
 export type LoginResponse = {
   id: string;
   nickname: string;
+  on_boarding_completed: boolean;
 };

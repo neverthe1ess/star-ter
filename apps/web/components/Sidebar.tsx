@@ -11,7 +11,7 @@ import {
   Menu,
   LogIn,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence, Variants } from "motion/react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
@@ -47,6 +47,7 @@ const TRANSITION = { type: "spring", damping: 25, stiffness: 200 };
 
 export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const authUser = useUserStore((state) => state.authUser);
   const clearAuthUser = useUserStore((state) => state.clearAuthUser);
   const setAuthUser = useUserStore((state) => state.setAuthUser);
@@ -205,7 +206,10 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
                   ) : (
                     <button
                       type="button"
-                      onClick={() => router.push("/login")}
+                      onClick={() => {
+                        const next = pathname ? `?next=${encodeURIComponent(pathname)}` : "";
+                        router.push(`/login${next}`);
+                      }}
                       className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors"
                     >
                       <span>로그인</span>
