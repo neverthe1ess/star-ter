@@ -47,37 +47,4 @@ export class ImageController {
       throw error;
     }
   }
-
-  @Post('upload')
-  @UseGuards(JwtAuthGuard)
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: memoryStorage(),
-      limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB 제한
-      },
-      fileFilter: (req, file, callback) => {
-        // 이미지 파일만 허용
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
-          return callback(
-            new BadRequestException('이미지 파일만 업로드 가능합니다.'),
-            false,
-          );
-        }
-        callback(null, true);
-      },
-    }),
-  )
-  async uploadImage(
-    @User() user: AuthenticatedUser,
-    @UploadedFile() file: Express.Multer.File,
-  ) {
-    if (!file) {
-      throw new BadRequestException('파일이 없습니다.');
-    }
-
-    const result = await this.imageService.uploadImage(user.id, file);
-
-    return { key: result };
-  }
 }

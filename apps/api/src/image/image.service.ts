@@ -44,14 +44,14 @@ export class ImageService {
     });
 
     await this.s3Client.send(command);
-    await this.prisma.imageInfo.create({
+    const imageInfo = await this.prisma.imageInfo.create({
       data: {
         s3_key: key,
         user_id: userId,
       },
     });
 
-    return key;
+    return { id: imageInfo.id, key };
   }
 
   async getImage(key: string) {

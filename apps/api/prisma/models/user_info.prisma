@@ -11,6 +11,8 @@ model user_info {
   on_boarding_completed Boolean @default(false)
   createdAt            DateTime               @default(now())
   updatedAt            DateTime               @updatedAt
+  profile_image_id     String?                @db.Uuid @unique
+  profile_image        imageInfo?             @relation("UserProfileImage", fields: [profile_image_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
   bookmark             bookmark[]
   real_estate_bookmark real_estate_bookmark[]
   real_estate_info     real_estate_info[]
