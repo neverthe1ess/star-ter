@@ -1,9 +1,10 @@
-import { Controller, Post, Body, Res, Logger } from '@nestjs/common';
+import { Controller, Post, Body, Res, Logger, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { User } from './decorators/user.decorator';
 import type { Response } from 'express';
 import type { AuthenticatedUser } from './types/authenticatedUser';
+import { LocalAuthGuard } from './guard/local-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -23,6 +24,7 @@ export class AuthController {
 
   // 로그인
   @Post('login')
+  @UseGuards(LocalAuthGuard)
   login(@Res() res: Response, @User() user: AuthenticatedUser) {
     this.logger.log(`Logging in user with id: ${user.id}`);
     const { access_token } = this.authService.getJwtToken(user);
@@ -32,7 +34,7 @@ export class AuthController {
       sameSite: 'lax' as const,
       maxAge: 1000 * 60 * 60 * 8, // 8hours
     });
-    return res.status(200).json({ ok: true });
+    return res.status(200).json({ id: user.id, nickname: user.nickname });
   }
 
   @Post('logout')

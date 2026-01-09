@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { UserData } from "@/store/use-app-store";
+import type { UserData } from "@/store/use-user-store";
 import { Button } from "./ui/button";
 import { Logo } from "./Logo";
 import {
