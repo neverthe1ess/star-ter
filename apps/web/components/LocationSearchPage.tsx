@@ -32,7 +32,6 @@ const isMZTab = (tab: string) => tab === "MZ 선호 순";
 export function LocationSearchPage({
   onSelectLocation,
 }: {
-  onBack?: () => void;
   onSelectLocation?: (loc: LocationRankItem) => void;
 }) {
   const router = useRouter();
@@ -74,14 +73,7 @@ export function LocationSearchPage({
   }, [searchQuery]);
 
   const tabs = ["실시간 상권 차트", "지금 뜨는 카테고리"];
-  const subTabs = [
-    "전체",
-    "평균 매출 순",
-    "매출 성장 순",
-    "유동인구 순",
-    "폐업률 높은 순",
-    "MZ 선호 순",
-  ];
+  const subTabs = ["평균 매출 순", "매출 성장 순", "유동인구 순", "폐업률 높은 순", "MZ 선호 순"];
 
   // 현재 선택된 업종명 찾기
   const selectedIndustryName = useMemo(() => {
@@ -162,7 +154,8 @@ export function LocationSearchPage({
 
   const handleLocationClick = (item: LocationRankItem | PopulationRankItem | ClosureRateRankItem) => {
     onSelectLocation?.(item as LocationRankItem);
-    router.push(`/detail?code=${item.code}&name=${encodeURIComponent(item.name)}`);
+    // 상세 페이지로 이동 (code, name 파라미터 전달)
+    router.push(`/locations/detail?code=${item.code}&name=${encodeURIComponent(item.name)}`);
   };
 
   const handleLoadMore = () => {
@@ -233,7 +226,7 @@ export function LocationSearchPage({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="flex bg-gray-100 p-1 rounded-xl gap-1">
-                {subTabs.slice(1, 7).map((tab) => (
+              {subTabs.map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setSubTab(tab)}
@@ -565,8 +558,7 @@ export function LocationSearchPage({
                   <span className="w-6 text-lg font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
                     {item.rank}
                   </span>
-                  <div className="relative">
-                  </div>
+
                   <div className="text-left">
                     <div className="text-[15px] font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                       {item.name}
