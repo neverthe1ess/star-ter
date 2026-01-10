@@ -33,53 +33,39 @@ export class LocationRecommendService {
     dto: RecommendRequestDto,
   ): Promise<RecommendResponseDto> {
     console.log('[LocationRecommend] Request:', dto);
+    const startTime = Date.now();
 
-    // 1. 상권별 매출 데이터 가져오기 (상위 50개)
-    const salesData = await this.prisma.salesCommercial.findMany({
-      orderBy: { thsmon_selng_amt: 'desc' },
-      take: 50,
-      distinct: ['trdar_cd'],
-    });
+    // 1. 병렬로 데이터 조회 (성능 최적화)
+    const [salesData, rentDataList] = await Promise.all([
+      // 상권별 매출 데이터 (전체 조회 - 정확한 맞춤 추천을 위해)
+      this.prisma.salesCommercial.findMany({
+        distinct: ['trdar_cd'],
+      }),
+      // 상권별 임대료 데이터 (PostGIS 공간 조인)
+      this.rentRepository.getAllCommercialRents(),
+    ]);
 
     console.log(
-      `[LocationRecommend] Found ${salesData.length} commercial areas`,
+      `[LocationRecommend] Phase 1 done in ${Date.now() - startTime}ms: ${salesData.length} sales, ${rentDataList.length} rent areas`,
     );
 
     // 상권 코드 목록
     const commercialCodes = salesData.map((s) => s.trdar_cd);
 
-    // 2. 상권별 임대료 데이터 가져오기 (PostGIS 공간 조인)
-    const rentDataList = await this.rentRepository.getAllCommercialRents();
+    // 임대료 Map 생성
     const rentDataMap = new Map<string, CommercialRentData>();
     rentDataList.forEach((rent) => {
       rentDataMap.set(rent.trdar_cd, rent);
     });
 
-    console.log(
-      `[LocationRecommend] Found ${rentDataList.length} commercial areas with rent data`,
-    );
-
-    // 디버그: 임대료 데이터 샘플 출력
-    if (rentDataList.length > 0) {
-      console.log(
-        '[LocationRecommend] Rent data sample:',
-        rentDataList.slice(0, 3),
-      );
-      const matchCount = commercialCodes.filter((code) =>
-        rentDataMap.has(code),
-      ).length;
-      console.log(
-        `[LocationRecommend] Matched ${matchCount}/${commercialCodes.length} commercial codes with rent data`,
-      );
-    }
-
-    // 3. 상권별 인구/시설 데이터 가져오기 (지역 테마 점수용)
+    // 2. 인구/시설 데이터 가져오기 (상권 코드 필요)
     const regionDataMap =
       await this.populationRepository.getRegionDataForCommercials(
         commercialCodes,
       );
+
     console.log(
-      `[LocationRecommend] Found ${regionDataMap.size} commercial areas with region data`,
+      `[LocationRecommend] Phase 2 done in ${Date.now() - startTime}ms: ${regionDataMap.size} region data`,
     );
 
     // 최대 유동인구 계산 (정규화용)
