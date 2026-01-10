@@ -21,6 +21,7 @@ import { RealEstateModule } from './real-estate/real_estate.module';
 import { RealEstateBookmarkModule } from './real-estate-bookmark/real_estate_bookmark.module';
 import { ImageModule } from './image/image.module';
 import { LocationRecommendModule } from './location-recommend/location-recommend.module';
+import { NewsModule } from './news/news.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { LocationRecommendModule } from './location-recommend/location-recommend
     RealEstateBookmarkModule,
     ImageModule,
     LocationRecommendModule,
+    NewsModule,
   ],
   controllers: [HealthController],
   providers: [],
