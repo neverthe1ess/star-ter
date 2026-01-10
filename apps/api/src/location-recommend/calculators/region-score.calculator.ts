@@ -24,10 +24,11 @@ export class RegionScoreCalculator {
   calculate(
     theme: string,
     data: RegionData | undefined,
-    maxPopulation: number = 100000,
+    maxPopulation: number,
   ): number {
     if (!data) return 0.5; // 데이터 없으면 중립 점수
 
+    // 상권의 전체 직장인구 수 + 전체 거주자 수 + 유동인구 수
     const totalPop =
       data.tot_wrc_popltn_co + data.tot_repop_co + data.tot_flpop_co;
 
