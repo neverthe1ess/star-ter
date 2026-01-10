@@ -1,13 +1,14 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useKakaoMap, type KakaoPolygon, type KakaoCustomOverlay } from "../../hooks/useKakaoMap";
 import { PolygonData, RealEstateItem } from "./types";
 import { PriceFilterBar } from "./PriceFilterBar";
+import { IndustryAnalysisBar, INDUSTRIES, MOCK_INDUSTRY_LOCATIONS, type IndustryId } from "./IndustryAnalysisBar";
 
 /**
  * 【MapSection 컴포넌트】
- * @param mode - 현재 활성화된 탭 ('realestate'일 때 마커 표시)
+ * @param mode - 현재 활성화된 탭 ('realestate'일 때 마커 표시, 'analysis'일 때 업종 분석)
  * @param polygonData - GeoJSON MultiPolygon 형태의 폴리곤 데이터
  * @param centerX - 중심점 경도 (longitude)
  * @param centerY - 중심점 위도 (latitude)
@@ -62,7 +63,11 @@ export function MapSection({
   const mapRef = useRef<HTMLDivElement>(null);
   const polygonRef = useRef<KakaoPolygon | null>(null);
   const markersRef = useRef<KakaoCustomOverlay[]>([]);
+  const industryMarkersRef = useRef<KakaoCustomOverlay[]>([]);  // 업종 분석 마커용
   const isDraggingRef = useRef(false);  // 드래그 상태 추적
+  
+  // 【업종 분석 상태】
+  const [selectedIndustry, setSelectedIndustry] = useState<IndustryId | null>(null);
   
   const { map, loaded } = useKakaoMap(mapRef);
 
@@ -132,6 +137,80 @@ export function MapSection({
       }
     };
   }, [map, loaded, polygonData, centerX, centerY, onBoundsChange]);
+
+  /**
+   * 【업종 분석 모드: 점도표(Dot Markers) 렌더링】
+   * 선택된 업종의 밀집 위치를 점으로 표시
+   * count가 클수록 더 크고 진한 색상으로 표시
+   */
+  useEffect(() => {
+    if (!map || !loaded) return;
+
+    // 기존 업종 마커 제거
+    industryMarkersRef.current.forEach(marker => marker.setMap(null));
+    industryMarkersRef.current = [];
+
+    // analysis 모드가 아니거나 업종이 선택되지 않았으면 종료
+    if (mode !== 'analysis' || !selectedIndustry) return;
+
+    const locations = MOCK_INDUSTRY_LOCATIONS[selectedIndustry] || [];
+    const industry = INDUSTRIES.find(i => i.id === selectedIndustry);
+    
+    // 업종별 색상 매핑
+    const colorMap: Record<string, string> = {
+      blue: '#3B82F6',
+      orange: '#F97316',
+      green: '#22C55E',
+      purple: '#A855F7',
+    };
+    const baseColor = colorMap[industry?.color || 'blue'];
+
+    // 최대 count 찾기 (정규화용)
+    const maxCount = Math.max(...locations.map(l => l.count), 1);
+
+    locations.forEach(loc => {
+      const position = new window.kakao.maps.LatLng(loc.lat, loc.lng);
+      
+      // count에 따른 크기와 투명도 계산
+      const ratio = loc.count / maxCount;
+      const size = 16 + (ratio * 24);  // 16px ~ 40px
+      const opacity = 0.4 + (ratio * 0.5);  // 0.4 ~ 0.9
+
+      const content = `
+        <div style="
+          width: ${size}px;
+          height: ${size}px;
+          background: ${baseColor};
+          opacity: ${opacity};
+          border-radius: 50%;
+          border: 2px solid white;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          cursor: pointer;
+          transition: transform 0.2s;
+        " 
+        onmouseenter="this.style.transform='scale(1.2)'"
+        onmouseleave="this.style.transform='scale(1)'"
+        title="${industry?.name}: ${loc.count}개 점포"
+        ></div>
+      `;
+
+      const overlay = new window.kakao.maps.CustomOverlay({
+        position: position,
+        content: content,
+        yAnchor: 0.5,
+        xAnchor: 0.5,
+        zIndex: Math.round(loc.count),  // count가 높을수록 위에 표시
+      });
+
+      overlay.setMap(map);
+      industryMarkersRef.current.push(overlay);
+    });
+
+    return () => {
+      industryMarkersRef.current.forEach(marker => marker.setMap(null));
+      industryMarkersRef.current = [];
+    };
+  }, [map, loaded, mode, selectedIndustry]);
 
   /**
    * 【중요 개념: 카카오맵 CustomOverlay와 클릭 이벤트】
@@ -254,6 +333,15 @@ export function MapSection({
           filteredCount={filteredCount}
         />
       )}
+
+      {/* 업종 분석 바 (analysis 모드일 때만 표시) */}
+      {mode === 'analysis' && (
+        <IndustryAnalysisBar
+          selectedIndustry={selectedIndustry}
+          onSelectIndustry={setSelectedIndustry}
+        />
+      )}
     </div>
   );
 }
+

@@ -280,7 +280,7 @@ export function LocationDetailPage({
                         <MatchingContent locationName={basicInfo.name} />
                       )}
                       {activeTab === 'traffic' && <TrafficContent analytics={analytics} />}
-                      {activeTab === 'analysis' && <AnalysisContent analytics={analytics} />}
+                      {activeTab === 'analysis' && <AnalysisContent analytics={analytics} regionCode={basicInfo.code} />}
                       {activeTab === 'realestate' && (
                         <RealEstateContent 
                           items={filteredItems} 

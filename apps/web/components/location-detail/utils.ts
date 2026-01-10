@@ -19,6 +19,21 @@ export function formatToKoreaCurrency(cheonWon: number | null): string {
 }
 
 /**
+ * 매출액 포맷팅: 원 단위 → 만원/억 단위 표시 (소수점 포함)
+ * @param amount - 원 단위 금액
+ * @returns 포맷된 문자열 (예: "1.5억원", "5,000만원")
+ */
+export function formatRevenue(amount: number): string {
+  if (amount >= 100000000) {
+    return `${(amount / 100000000).toFixed(1)}억원`;
+  }
+  if (amount >= 10000) {
+    return `${Math.floor(amount / 10000).toLocaleString()}만원`;
+  }
+  return `${amount.toLocaleString()}원`;
+}
+
+/**
  * 면적 포맷팅: m² → 평 변환 포함
  * 1평 = 3.3058 m²
  * @param sizeM2 - 면적 (m² 단위)

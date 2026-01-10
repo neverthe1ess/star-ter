@@ -99,7 +99,7 @@ export function PriceFilterBar({
               </div>
               <div>
                 <p className="text-gray-900 font-bold text-xl leading-tight">가격 필터</p>
-                <p className="text-blue-600 text-sm font-semibold mt-0.5">
+                <p className="text-blue-600 text-md font-semibold mt-0.5">
                   {filteredCount.toLocaleString()}개 / {totalCount.toLocaleString()}개 매물
                 </p>
               </div>
@@ -174,13 +174,13 @@ export function PriceFilterBar({
             <div className="bg-white/30 rounded-3xl p-4 border border-white/50 shadow-sm">
               <div className="flex justify-between items-center mb-4">
                 <span className="text-gray-600 text-lg font-bold tracking-wide">월세</span>
-                <span className="text-rose-600 text-base font-bold bg-rose-100/50 px-3 py-1.5 rounded-xl">
+                <span className="text-orange-600 text-base font-bold bg-rose-100 px-3 py-1.5 rounded-xl">
                   {formatToKoreaCurrency(rentRange[0])} ~ {formatToKoreaCurrency(rentRange[1])}
                 </span>
               </div>
               <div className="relative h-3 bg-gray-200/60 rounded-full mx-2">
                 <div 
-                  className="absolute h-full bg-gradient-to-r from-rose-200 to-rose-500 rounded-full opacity-90"
+                  className="absolute h-full bg-gradient-to-r from-orange-200 to-orange-500 rounded-full opacity-90"
                   style={{
                     left: `${rentLeftPercent}%`,
                     width: `${rentRightPercent - rentLeftPercent}%`
