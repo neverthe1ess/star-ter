@@ -30,9 +30,8 @@ const isClosureRateTab = (tab: string) => tab === "폐업률 높은 순";
 const isMZTab = (tab: string) => tab === "MZ 선호 순";
 
 export function LocationSearchPage({
-  onSelectLocation,
 }: {
-  onSelectLocation?: (loc: LocationRankItem) => void;
+  onBack?: () => void;
 }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("실시간 상권 차트");
@@ -153,9 +152,7 @@ export function LocationSearchPage({
   }, [isIndustryOpen]);
 
   const handleLocationClick = (item: LocationRankItem | PopulationRankItem | ClosureRateRankItem) => {
-    onSelectLocation?.(item as LocationRankItem);
-    // 상세 페이지로 이동 (code, name 파라미터 전달)
-    router.push(`/locations/detail?code=${item.code}&name=${encodeURIComponent(item.name)}`);
+    router.push(`/locations/detail/${item.code}`);
   };
 
   const handleLoadMore = () => {
