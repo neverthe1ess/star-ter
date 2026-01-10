@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Home,
   FileText,
@@ -43,6 +43,7 @@ const COLLECTIONS = [
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
 const DEFAULT_PROFILE_IMAGE =
   "https://images.unsplash.com/photo-1649433658557-54cf58577c68?q=80&w=200&h=200&auto=format&fit=crop";
+const LAYOUT_SWITCH_DELAY_MS = 180;
 
 const getProfileImageUrl = (profileImageKey?: string | null) =>
   profileImageKey ? `${API_BASE_URL}/image/${encodeURIComponent(profileImageKey)}` : DEFAULT_PROFILE_IMAGE;
@@ -65,6 +66,8 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
   const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
   const [initialPreferences, setInitialPreferences] = useState<OnboardingData | undefined>();
   const [isMounted, setIsMounted] = useState(false);
+  const layoutTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [useCompactLayout, setUseCompactLayout] = useState(!isOpen);
 
   useEffect(() => {
     setNickname(authUser?.nickname ?? "사용자");
@@ -79,6 +82,12 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
 
   useEffect(() => {
     setIsMounted(true);
+    return () => {
+      if (layoutTimeoutRef.current) {
+        clearTimeout(layoutTimeoutRef.current);
+        layoutTimeoutRef.current = null;
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -86,6 +95,23 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
       setShowProfilePopup(false);
       setShowPreferencesPopup(false);
     }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (layoutTimeoutRef.current) {
+      clearTimeout(layoutTimeoutRef.current);
+      layoutTimeoutRef.current = null;
+    }
+
+    if (isOpen) {
+      setUseCompactLayout(false);
+      return;
+    }
+
+    layoutTimeoutRef.current = setTimeout(() => {
+      setUseCompactLayout(true);
+      layoutTimeoutRef.current = null;
+    }, LAYOUT_SWITCH_DELAY_MS);
   }, [isOpen]);
 
   const handleLogout = async () => {
@@ -159,11 +185,19 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
     setAuthUser({ ...authUser, profileImageKey: key });
   };
 
+  const handleSidebarToggle = () => {
+    if (layoutTimeoutRef.current) {
+      clearTimeout(layoutTimeoutRef.current);
+      layoutTimeoutRef.current = null;
+    }
+    onToggle(!isOpen);
+  };
+
   const sidebarContainerClass = `fixed left-0 top-0 h-full z-40 flex flex-col transition-all duration-300 ease-in-out ${
     isOpen ? "w-[350px] p-4" : "w-20 px-3 py-4"
   }`;
   const sidebarHeaderClass = `h-16 flex items-center border-b border-gray-100 shrink-0 ${
-    isOpen ? "px-6 justify-between" : "justify-center"
+    useCompactLayout ? "justify-center" : "px-6 justify-between"
   }`;
 
   return (
@@ -171,13 +205,13 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
       <div className={sidebarContainerClass}>
         <div className="bg-white rounded-2xl shadow-lg h-full flex flex-col overflow-hidden">
           <header className={sidebarHeaderClass}>
-            {isOpen && (
+            {!useCompactLayout && (
               <span className="text-lg font-black text-slate-900 tracking-tight whitespace-nowrap">
                 Starter
               </span>
             )}
             <button
-              onClick={() => onToggle(!isOpen)}
+              onClick={handleSidebarToggle}
               className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
               aria-label={isOpen ? "Close sidebar" : "Open sidebar"}
             >
@@ -185,8 +219,8 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
             </button>
           </header>
 
-          {isOpen ? (
-            <>
+          {!useCompactLayout ? (
+            <div className={`flex flex-col flex-1 ${isOpen ? "" : "pointer-events-none"}`}>
               <div className="px-4 py-4 border-b border-gray-100">
                 <button className="w-full min-w-0 flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors group">
                   <span className="min-w-0 truncate group-hover:text-slate-900">New chat</span>
@@ -278,7 +312,7 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
                   )}
                 </div>
               </footer>
-            </>
+            </div>
           ) : (
             <div className="flex-1 flex flex-col px-2 py-3">
               <div className="flex flex-col items-center gap-2">
