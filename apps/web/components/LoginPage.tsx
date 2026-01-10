@@ -35,10 +35,8 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   };
 
   const handleGoogleLogin = () => {
-      // Existing google login logic or placeholder if it's handled via href/redirect usually
-      // The original code didn't have a handler, just a button. I'll keep it as a button for now but normally this triggers a redirect.
-      // If there was no onClick in original, I won't add one that breaks things, but the UI had a button.
-      // Current design is just UI.
+    // 백엔드의 Google OAuth 시작 엔드포인트로 리다이렉트
+    window.location.href = 'http://localhost:4000/auth/google';
   };
 
   const handleGuestLogin = () => {
