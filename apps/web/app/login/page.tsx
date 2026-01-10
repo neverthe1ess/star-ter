@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { LoginPage } from "@/components/LoginPage";
+import { getOnboarding } from "@/services/user/user.api";
 
 export default function Page() {
   const router = useRouter();

@@ -3,6 +3,7 @@ export type UpdateOnboardingParams = {
   region: string;
   operatingTime: string;
   capital: string;
+  industryCode?: string | null;
 };
 
 export type UpdateOnboardingResponse = {
