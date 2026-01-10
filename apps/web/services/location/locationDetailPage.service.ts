@@ -6,12 +6,71 @@ import type {
   MarketAnalytics,
   RealEstateItem,
   LocationDetailData,
+  PolygonData,
 } from '@/components/location-detail/types';
+
+/**
+ * 【polylabel 라이브러리】
+ *
+ * 폴리곤의 "시각적 중심점(pole of inaccessibility)"을 계산하는 라이브러리
+ * - 일반적인 centroid(무게중심)와 다름
+ * - 폴리곤 내부에서 경계로부터 가장 먼 점을 찾음
+ * - L자형 등 복잡한 폴리곤에서도 내부에 있는 점을 반환
+ *
+ */
+// @ts-expect-error: polylabel 타입 정의 없음
+import polylabel from '@mapbox/polylabel';
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
 /**
+ * 폴리곤 데이터에서 중심점(x, y) 좌표 계산
+ *
+ * 【함수 추출 패턴】
+ * 중심점 계산 로직을 별도 함수로 분리하여:
+ * 1. 코드 재사용성 향상
+ * 2. 테스트 용이성
+ * 3. 가독성 개선
+ *
+ * @param polygons - GeoJSON MultiPolygon 데이터
+ * @returns { x: 경도, y: 위도 } 또는 null
+ */
+function calculatePolygonCenter(
+  polygons: PolygonData | null,
+): { x: number; y: number } | null {
+  if (!polygons?.coordinates) return null;
+
+  try {
+    // MultiPolygon 구조: coordinates[폴리곤인덱스][링인덱스][좌표인덱스]
+    // coordinates[0] = 첫 번째 폴리곤
+    // coordinates[0][0] = 외부 링 (exterior ring)
+    const polygonRings = polygons.coordinates[0];
+
+    if (!polygonRings || polygonRings.length === 0) return null;
+
+    // polylabel: 폴리곤 링 배열과 정밀도(1.0)를 받아 중심점 반환
+    // 반환값: [경도(lng), 위도(lat)]
+    const center = polylabel(polygonRings, 1.0) as [number, number];
+
+    return {
+      x: center[0], // 경도 (longitude)
+      y: center[1], // 위도 (latitude)
+    };
+  } catch (error) {
+    console.error('Failed to calculate polygon center:', error);
+    return null;
+  }
+}
+
+/**
  * 상권 기본 정보 조회 (폴리곤 포함)
+ *
+ * 【서버 사이드 데이터 페칭】
+ * Next.js Server Component에서 호출되어 서버에서 API 요청
+ * - 클라이언트에 API URL 노출 안 됨
+ * - 서버 간 통신으로 더 빠름
+ * - SEO에 유리 (데이터가 초기 HTML에 포함)
+ *
  * @param code 상권 고유 코드
  */
 export async function getCommercialBasicInfo(
@@ -30,13 +89,17 @@ export async function getCommercialBasicInfo(
     const data = await res.json();
     if (!data) return null;
 
+    // 폴리곤에서 중심점 계산
+    const center = calculatePolygonCenter(data.polygons);
+
     return {
       code: data.code || code,
       name: data.properties?.commercialName || '알 수 없는 상권',
       guName: data.properties?.guCode || '',
       dongName: data.properties?.dongCode || '',
-      x: data.properties.x || '',
-      y: data.properties.y || '',
+      // 중심점 좌표 (부동산 조회, 지도 중심 설정 등에 사용)
+      x: center?.x ?? 0,
+      y: center?.y ?? 0,
       polygons: data.polygons,
     };
   } catch (error) {
@@ -84,8 +147,8 @@ export async function getRealEstateByLocation(
   try {
     const params = new URLSearchParams({
       minx: String(x - radius),
-      maxx: String(x + radius),
       miny: String(y - radius),
+      maxx: String(x + radius),
       maxy: String(y + radius),
     });
 

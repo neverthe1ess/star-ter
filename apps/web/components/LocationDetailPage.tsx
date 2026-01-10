@@ -125,10 +125,12 @@ export function LocationDetailPage({
             }}
             className="flex-shrink-0"
           >
-            {/* MapSection: 탭에 따라 다른 오버레이 표시 (추후 확장) */}
+            {/* MapSection: 서버에서 계산된 중심점 좌표와 폴리곤 데이터 전달 */}
             <MapSection
               mode={activeTab}
               polygonData={basicInfo.polygons}
+              centerX={basicInfo.x}
+              centerY={basicInfo.y}
             />
           </Resizable>
 
