@@ -2,7 +2,8 @@
 
 import { useRouter } from "next/navigation";
 
-import { OnboardingPage, type OnboardingData } from "@/components/OnboardingPage";
+import { OnboardingPage } from "@/components/OnboardingPage";
+import type { OnboardingData } from "@/components/onboarding/onboarding-options";
 import { updateOnboarding } from "@/services/user/user.api";
 
 export default function Page() {
