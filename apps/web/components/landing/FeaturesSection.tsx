@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { FEATURES } from './mock/features-data';
 import { FaRobot, FaHome, FaDatabase } from 'react-icons/fa';
-import { VscGraph } from 'react-icons/vsc';
 import { IoMdPerson } from 'react-icons/io';
 
 export function FeaturesSection() {
