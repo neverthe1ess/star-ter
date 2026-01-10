@@ -102,7 +102,7 @@ export function LocationListPage() {
       try {
         const response = await getGrowthRanking();
         const mapped = response.items
-          .slice(0, 4)
+          .slice(0, 7)
           .map((item, index) => mapRankingToLocation(item, index));
         setTrendingLocationsData(mapped);
       } catch (error) {
@@ -118,7 +118,7 @@ export function LocationListPage() {
   useEffect(() => {
     async function fetchStableLocations() {
       try {
-        const items = await getStableLocations(4);
+        const items = await getStableLocations(7);
         const mapped = items.map((item, index) =>
           mapRankingToLocation(item, index),
         );
