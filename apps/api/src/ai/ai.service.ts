@@ -274,26 +274,6 @@ export class AiService {
     return responseText;
   }
 
-  async getAreaByMessage(message: string) {
-    const [categories, areaList, tables] = await Promise.all([
-      this.getCategories(message),
-      this.buildAreaList(message),
-      this.getTables(message),
-    ]);
-
-    if (tables.length === 0) return [];
-
-    const query = await getRecommendCommercialAreasQuery(
-      message,
-      categories,
-      areaList,
-      tables,
-    );
-    console.log('Generated SQL:', getText(query));
-    const result = await this.aiRepository.runSql(getText(query));
-    return result;
-  }
-
   async getAnalysis(topic: string, areaName: string, metrics: string) {
     const response = await getAiAnalysis(topic, areaName, metrics);
     return getText(response);
@@ -304,7 +284,7 @@ export class AiService {
     return getText(response);
   }
 
-  private async buildAreaList(message: string) {
+  async buildAreaList(message: string) {
     const areaText = getText(await getLocationByMessage(message));
     if (areaText === '""') return [];
     const messageAreaList = areaText.split(',').map((area) => area.trim());
@@ -337,7 +317,7 @@ export class AiService {
     return results;
   }
 
-  private async getCategories(message: string) {
+  async getCategories(message: string) {
     const categoryResponse = await getCategoryByMessage(message);
     const categoryText = getText(categoryResponse);
     console.log(
@@ -368,7 +348,7 @@ export class AiService {
     return categoryList;
   }
 
-  private async getTables(message: string) {
+  async getTables(message: string) {
     const tableList = await getTablesByMessage(message);
     if (getText(tableList) === '""') return [];
     const categories = getText(tableList)
