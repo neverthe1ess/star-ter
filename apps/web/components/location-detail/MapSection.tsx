@@ -3,6 +3,7 @@
 import { useRef, useEffect } from "react";
 import { useKakaoMap, type KakaoPolygon, type KakaoCustomOverlay } from "../../hooks/useKakaoMap";
 import { PolygonData, RealEstateItem } from "./types";
+import { PriceFilterBar } from "./PriceFilterBar";
 
 /**
  * 【MapSection 컴포넌트】
@@ -25,9 +26,22 @@ interface MapSectionProps {
   centerX?: number;
   centerY?: number;
   realEstateItems?: RealEstateItem[];
-  // 【새로 추가된 Props】
-  selectedItemId?: string | null;  // 현재 선택된 매물 ID (마커 스타일 변경용)
-  onMarkerClick?: (item: RealEstateItem) => void;  // 마커 클릭 시 호출될 콜백 함수
+  selectedItemId?: string | null;
+  onMarkerClick?: (item: RealEstateItem) => void;
+  // 【가격 필터 Props】
+  priceFilter?: {
+    minDeposit: number;
+    maxDeposit: number;
+    minRent: number;
+    maxRent: number;
+    depositRange: [number, number];
+    rentRange: [number, number];
+  };
+  onDepositChange?: (range: [number, number]) => void;
+  onRentChange?: (range: [number, number]) => void;
+  onBoundsChange?: (bounds: { sw: { lat: number; lng: number }; ne: { lat: number; lng: number } }) => void;
+  filteredCount?: number;
+  totalCount?: number;
 }
 
 export function MapSection({ 
@@ -38,6 +52,12 @@ export function MapSection({
   realEstateItems = [],
   selectedItemId,
   onMarkerClick,
+  priceFilter,
+  onDepositChange,
+  onRentChange,
+  onBoundsChange,
+  filteredCount = 0,
+  totalCount = 0,
 }: MapSectionProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const polygonRef = useRef<KakaoPolygon | null>(null);
@@ -46,7 +66,7 @@ export function MapSection({
   
   const { map, loaded } = useKakaoMap(mapRef);
 
-  // 폴리곤 렌더링 + 드래그 이벤트 등록
+  // 폴리곤 렌더링 + 드래그/idle 이벤트 등록
   useEffect(() => {
     if (!map || !loaded) return;
 
@@ -56,6 +76,19 @@ export function MapSection({
     });
     window.kakao.maps.event.addListener(map, 'dragend', () => {
       setTimeout(() => { isDraggingRef.current = false; }, 100);
+    });
+
+    // 지도 이동/줌 완료 시 bounds 콜백 호출
+    window.kakao.maps.event.addListener(map, 'idle', () => {
+      if (onBoundsChange) {
+        const bounds = map.getBounds();
+        const sw = bounds.getSouthWest();
+        const ne = bounds.getNorthEast();
+        onBoundsChange({
+          sw: { lat: sw.getLat(), lng: sw.getLng() },
+          ne: { lat: ne.getLat(), lng: ne.getLng() }
+        });
+      }
     });
 
     if (!polygonData) return;
@@ -98,7 +131,7 @@ export function MapSection({
         polygonRef.current = null;
       }
     };
-  }, [map, loaded, polygonData, centerX, centerY]);
+  }, [map, loaded, polygonData, centerX, centerY, onBoundsChange]);
 
   /**
    * 【중요 개념: 카카오맵 CustomOverlay와 클릭 이벤트】
@@ -205,6 +238,22 @@ export function MapSection({
         ref={mapRef}
         className="w-full h-full rounded-[32px] overflow-hidden"
       />
+
+      {/* 가격 필터 슬라이더 (realestate 모드일 때만 표시) */}
+      {mode === 'realestate' && priceFilter && onDepositChange && onRentChange && (
+        <PriceFilterBar
+          minDeposit={priceFilter.minDeposit}
+          maxDeposit={priceFilter.maxDeposit}
+          minRent={priceFilter.minRent}
+          maxRent={priceFilter.maxRent}
+          depositRange={priceFilter.depositRange}
+          rentRange={priceFilter.rentRange}
+          onDepositChange={onDepositChange}
+          onRentChange={onRentChange}
+          totalCount={totalCount}
+          filteredCount={filteredCount}
+        />
+      )}
     </div>
   );
 }

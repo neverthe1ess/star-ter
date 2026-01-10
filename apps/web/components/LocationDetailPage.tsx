@@ -18,7 +18,7 @@ import { AnalysisContent } from './location-detail/AnalysisContent';
 import { RealEstateContent } from './location-detail/RealEstateContent';
 import { MapSection } from './location-detail/MapSection';
 import { RealEstateDetailPanel } from './location-detail/RealEstateDetailPanel';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Button } from './ui/button';
 import { Resizable } from 're-resizable';
 import Link from 'next/link';
@@ -54,14 +54,62 @@ export function LocationDetailPage({
    */
   const [selectedItem, setSelectedItem] = useState<RealEstateItem | null>(null);
   
-  /**
-   * 【콜백 함수 패턴】
-   * MapSection에서 마커 클릭 시 호출될 핸들러.
-   * 자식 → 부모 방향으로 데이터(선택된 매물)를 전달합니다.
-   */
-  const handleMarkerClick = (item: RealEstateItem) => {
+  // 【최소/최대 가격 계산】 useMemo로 최적화
+  const priceRange = useMemo(() => {
+    if (realEstate.length === 0) return { minDeposit: 0, maxDeposit: 10000, minRent: 0, maxRent: 1000 };
+    const deposits = realEstate.map(i => i.deposit ?? 0);
+    const rents = realEstate.map(i => i.monthlyrent ?? 0);
+    return {
+      minDeposit: Math.min(...deposits),
+      maxDeposit: Math.max(...deposits),
+      minRent: Math.min(...rents),
+      maxRent: Math.max(...rents),
+    };
+  }, [realEstate]);
+  
+  // 【지도 범위 상태】
+  const [mapBounds, setMapBounds] = useState<{
+    sw: { lat: number; lng: number };
+    ne: { lat: number; lng: number };
+  } | null>(null);
+
+  // 【가격 필터 상태】 초기값을 priceRange에서 가져옴
+  const [depositRange, setDepositRange] = useState<[number, number]>(
+    () => [priceRange.minDeposit, priceRange.maxDeposit]
+  );
+  const [rentRange, setRentRange] = useState<[number, number]>(
+    () => [priceRange.minRent, priceRange.maxRent]
+  );
+  
+  // 【필터링된 매물 목록】
+  const filteredItems = useMemo(() => {
+    return realEstate.filter(item => {
+      // 가격 필터
+      const deposit = item.deposit ?? 0;
+      const rent = item.monthlyrent ?? 0;
+      if (deposit < depositRange[0] || deposit > depositRange[1]) return false;
+      if (rent < rentRange[0] || rent > rentRange[1]) return false;
+      
+      // 지도 범위 필터
+      if (mapBounds && item.centerlatitude && item.centerlongitude) {
+        const lat = item.centerlatitude;
+        const lng = item.centerlongitude;
+        if (lat < mapBounds.sw.lat || lat > mapBounds.ne.lat) return false;
+        if (lng < mapBounds.sw.lng || lng > mapBounds.ne.lng) return false;
+      }
+      
+      return true;
+    });
+  }, [realEstate, depositRange, rentRange, mapBounds]);
+  
+  // 【콜백 핸들러】 useCallback으로 리렌더 최적화
+  const handleMarkerClick = useCallback((item: RealEstateItem) => {
     setSelectedItem(item);
-  };
+  }, []);
+  
+  const handleBoundsChange = useCallback((bounds: { sw: { lat: number; lng: number }; ne: { lat: number; lng: number } }) => {
+    setMapBounds(bounds);
+  }, []);
 
   const tabs = [
     {
@@ -144,15 +192,24 @@ export function LocationDetailPage({
             className="flex-shrink-0"
           >
             {/* MapSection: 서버에서 계산된 중심점 좌표와 폴리곤 데이터 전달 */}
-            {/* 【Props 전달】 마커 클릭 이벤트를 위한 콜백과 선택 상태 전달 */}
             <MapSection
               mode={activeTab}
               polygonData={basicInfo.polygons}
               centerX={basicInfo.x}
               centerY={basicInfo.y}
-              realEstateItems={realEstate}
+              realEstateItems={filteredItems}
               selectedItemId={selectedItem?.id}
               onMarkerClick={handleMarkerClick}
+              priceFilter={{
+                ...priceRange,
+                depositRange,
+                rentRange,
+              }}
+              onDepositChange={setDepositRange}
+              onRentChange={setRentRange}
+              onBoundsChange={handleBoundsChange}
+              filteredCount={filteredItems.length}
+              totalCount={realEstate.length}
             />
           </Resizable>
 
@@ -226,7 +283,7 @@ export function LocationDetailPage({
                       {activeTab === 'analysis' && <AnalysisContent analytics={analytics} />}
                       {activeTab === 'realestate' && (
                         <RealEstateContent 
-                          items={realEstate} 
+                          items={filteredItems} 
                           onItemClick={handleMarkerClick}
                         />
                       )}
