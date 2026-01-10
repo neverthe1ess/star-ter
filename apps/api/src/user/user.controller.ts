@@ -6,7 +6,6 @@ import {
   Body,
   HttpCode,
   Logger,
-  Get,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
