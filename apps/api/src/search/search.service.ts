@@ -8,7 +8,6 @@ import {
 @Injectable()
 export class SearchService {
   constructor(
-    private readonly searchService: SearchService,
     private readonly aiService: AiService,
     private readonly aiRepository: AiRepository,
   ) {}

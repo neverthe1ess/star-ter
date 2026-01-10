@@ -8,5 +8,6 @@ import { AiToolsService } from './ai-tools.service';
 @Module({
   controllers: [AiController],
   providers: [AiService, AiRepository, ToolsRepository, AiToolsService],
+  exports: [AiService, AiRepository],
 })
 export class AiModule {}

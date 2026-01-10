@@ -6,7 +6,6 @@ import {
   getLocationByMessage,
   getAiAnalysis,
   getRealEstateSummary,
-  getRecommendCommercialAreasQuery,
   getTablesByMessage,
   getText,
   toolCallAi,
