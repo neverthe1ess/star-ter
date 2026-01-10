@@ -30,6 +30,7 @@ type ProfilePopupProps = {
   profileError: string | null;
   profileImageKey?: string | null;
   onProfileImageChange: (key: string) => void;
+  isSidebarOpen?: boolean;
 };
 
 export function ProfilePopup({
@@ -45,6 +46,7 @@ export function ProfilePopup({
   profileError,
   profileImageKey,
   onProfileImageChange,
+  isSidebarOpen = true,
 }: ProfilePopupProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isCropOpen, setIsCropOpen] = useState(false);
@@ -58,6 +60,9 @@ export function ProfilePopup({
   const profileImageUrl = profileImageKey
     ? `${API_BASE_URL}/image/${encodeURIComponent(profileImageKey)}`
     : fallbackImage;
+  const popupPositionClass = isSidebarOpen
+    ? 'bottom-28 left-6 w-[calc(350px-3rem)]'
+    : 'bottom-20 left-6 w-[calc(350px-3rem)]';
 
   useEffect(() => {
     return () => {
@@ -110,7 +115,7 @@ export function ProfilePopup({
         initial={{ opacity: 0, scale: 0.95, y: 16 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 16 }}
-        className="fixed bottom-28 left-6 z-50 w-[calc(350px-3rem)] bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col"
+        className={`fixed z-50 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col ${popupPositionClass}`}
       >
         <div className="p-6 border-b border-gray-50 bg-slate-50/50">
           <div className="flex items-center gap-4">
