@@ -123,7 +123,7 @@ export function LocationDetailPage({
     { id: 'traffic' as const, label: '유동인구', icon: Users },
     {
       id: 'analysis' as const,
-      label: '업종/매출 분석',
+      label: '업종 / 매출 분석',
       icon: BarChart3,
     },
     {
@@ -140,10 +140,12 @@ export function LocationDetailPage({
   }, [basicInfo?.code]);
 
   return (
-    <div className="min-h-screen bg-[#f7f7f8]">
-      <div className="px-8 py-12">
-        <div className="mb-16">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+    <div className="h-screen bg-[#f7f7f8]">
+      {/* 사이드바와 맞춤: 상하좌 p-4, 오른쪽만 pr-8 추가 */}
+      <div className="py-6 pl-4 pr-16 h-full flex flex-col">
+        {/* 헤더: 고정 높이 (shrink 방지) */}
+        <div className="mb-4 shrink-0">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-2">
             <div className="flex items-center gap-4">
               <Link
                 href="/locations"
@@ -151,17 +153,18 @@ export function LocationDetailPage({
               >
                 <ArrowLeft className="w-6 h-6 text-gray-900" />
               </Link>
-              <h1 className="text-6xl font-bold text-gray-900">
+              <h1 className="text-5xl font-bold text-gray-900">
                 {basicInfo.name}
               </h1>
             </div>
           </div>
-          <div className="flex items-center gap-4 mb-8">
-            <p className="text-3xl text-gray-500">서울시 {basicInfo.guName} {basicInfo.dongName}</p>
+          <div className="flex items-center gap-4 ml-16">
+            <p className="text-2xl text-gray-500">서울시 {basicInfo.guName} {basicInfo.dongName}</p>
           </div>
         </div>
 
-        <div className="flex gap-8 h-[calc(100vh-280px)] min-h-[700px] items-stretch overflow-hidden">
+        {/* 메인 콘텐츠: 남은 공간 모두 채움 */}
+        <div className="flex gap-4 flex-1 items-stretch overflow-hidden">
           <Resizable
             size={{ width: mapWidth, height: '100%' }}
             onResizeStop={(e, direction, ref) => {

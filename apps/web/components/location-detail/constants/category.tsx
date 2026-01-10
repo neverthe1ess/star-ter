@@ -129,6 +129,6 @@ export const IndustryData: IndustryCategory[] = [
 
 // 대분류 목록 (업종전체 포함)
 export const MAJOR_CATEGORIES = [
-  { code: 'ALL', name: '업종전체' },
+  { code: 'ALL', name: '전체' },
   ...IndustryData.map(cat => ({ code: cat.code, name: cat.name })),
 ];
