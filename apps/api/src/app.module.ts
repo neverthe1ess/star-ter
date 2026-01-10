@@ -20,6 +20,7 @@ import { RentModule } from './rent/rent.module';
 import { RealEstateModule } from './real-estate/real_estate.module';
 import { UploadModule } from './upload/upload.module';
 import { RealEstateBookmarkModule } from './real-estate-bookmark/real_estate_bookmark.module';
+import { LocationRecommendModule } from './location-recommend/location-recommend.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { RealEstateBookmarkModule } from './real-estate-bookmark/real_estate_boo
     RealEstateModule,
     UploadModule,
     RealEstateBookmarkModule,
+    LocationRecommendModule,
   ],
   controllers: [HealthController],
   providers: [],
