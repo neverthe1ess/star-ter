@@ -62,6 +62,7 @@ export class UsersService {
         preferred_region: true,
         preferred_business_hours: true,
         startup_capital: true,
+        preferred_industry: true,
       },
     });
 
@@ -70,6 +71,7 @@ export class UsersService {
       region: user?.preferred_region ?? '',
       operatingTime: user?.preferred_business_hours ?? '',
       capital: user?.startup_capital ?? '',
+      industryCode: user?.preferred_industry ?? null,
     };
   }
 

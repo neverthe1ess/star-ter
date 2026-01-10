@@ -7,7 +7,7 @@ interface OnboardingStepIndustryProps {
   selectedMacro: MacroCategoryCode;
   onSelectMacro: (macro: MacroCategoryCode) => void;
   selectedIndustryCode: string | null;
-  onSelectIndustryCode: (industryCode: string) => void;
+  onSelectIndustryCode: (industryCode: string | null) => void;
 }
 
 export function OnboardingStepIndustry({
