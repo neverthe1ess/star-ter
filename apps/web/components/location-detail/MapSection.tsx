@@ -1,34 +1,33 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { useKakaoMap, type KakaoPolygon } from "../../hooks/useKakaoMap";
-import { PolygonData } from "./types";
+import { useKakaoMap, type KakaoPolygon, type KakaoCustomOverlay } from "../../hooks/useKakaoMap";
+import { PolygonData, RealEstateItem } from "./types";
 
 /**
  * 【MapSection 컴포넌트】
- * 
- * LocationDetailPage 내에서 사용되는 카카오맵 컴포넌트
- * 
- * 📚 핵심 개념: Props로 데이터 전달
- * - centerX, centerY: 부모에서 계산된 중심점 좌표 (서버에서 계산됨)
- * - polygonData: 지도에 그릴 폴리곤 데이터
- * 
- * 📚 리팩토링 포인트:
- * - 기존: 컴포넌트 내부에서 polylabel로 중심점 계산
- * - 변경: 서버에서 계산된 좌표를 props로 받음
- * - 이점: 중심점을 다른 곳(부동산 조회 등)에서도 재사용 가능
- * 
- * @param mode - 현재 활성화된 탭 (추후 탭별 오버레이 구현 예정)
+ * @param mode - 현재 활성화된 탭 ('realestate'일 때 마커 표시)
  * @param polygonData - GeoJSON MultiPolygon 형태의 폴리곤 데이터
  * @param centerX - 중심점 경도 (longitude)
  * @param centerY - 중심점 위도 (latitude)
+ * @param realEstateItems - 부동산 매물 리스트 (마커 표시용)
  */
 
+/**
+ * 【MapSectionProps 인터페이스】
+ * 
+ * 컴포넌트가 받을 수 있는 props(속성)들을 타입으로 정의합니다.
+ * TypeScript의 인터페이스를 사용하면 잘못된 props 전달을 컴파일 타임에 감지할 수 있습니다.
+ */
 interface MapSectionProps {
   mode?: "matching" | "traffic" | "analysis" | "realestate";
   polygonData: PolygonData | null;
-  centerX?: number;  // 중심점 경도
-  centerY?: number;  // 중심점 위도
+  centerX?: number;
+  centerY?: number;
+  realEstateItems?: RealEstateItem[];
+  // 【새로 추가된 Props】
+  selectedItemId?: string | null;  // 현재 선택된 매물 ID (마커 스타일 변경용)
+  onMarkerClick?: (item: RealEstateItem) => void;  // 마커 클릭 시 호출될 콜백 함수
 }
 
 export function MapSection({ 
@@ -36,29 +35,34 @@ export function MapSection({
   polygonData,
   centerX,
   centerY,
+  realEstateItems = [],
+  selectedItemId,
+  onMarkerClick,
 }: MapSectionProps) {
-  // 【useRef 훅】
-  // DOM 요소나 값을 컴포넌트 생명주기 동안 유지
-  // - mapRef: 지도가 렌더링될 DOM 요소
-  // - polygonRef: 현재 그려진 폴리곤 객체 (cleanup용)
   const mapRef = useRef<HTMLDivElement>(null);
   const polygonRef = useRef<KakaoPolygon | null>(null);
+  const markersRef = useRef<KakaoCustomOverlay[]>([]);
+  const isDraggingRef = useRef(false);  // 드래그 상태 추적
   
-  // 【커스텀 훅】
-  // useKakaoMap: 카카오맵 초기화 및 상태 관리
   const { map, loaded } = useKakaoMap(mapRef);
 
-  // 【useEffect 훅】
-  // 의존성 배열의 값이 변경될 때마다 실행
-  // - map, loaded, polygonData, centerX, centerY 중 하나라도 변경되면 재실행
+  // 폴리곤 렌더링 + 드래그 이벤트 등록
   useEffect(() => {
-    // 조건 체크: 맵 로드 완료 + 폴리곤 데이터 존재
-    if (!map || !loaded || !polygonData) return;
+    if (!map || !loaded) return;
 
-    const polygonRings = polygonData.coordinates[0]; // 첫 번째 폴리곤의 링 배열
-    const exteriorRing = polygonRings[0]; // 외부 링 (좌표 배열)
+    // 드래그 이벤트 리스너 등록 (마커 클릭 방지용)
+    window.kakao.maps.event.addListener(map, 'dragstart', () => {
+      isDraggingRef.current = true;
+    });
+    window.kakao.maps.event.addListener(map, 'dragend', () => {
+      setTimeout(() => { isDraggingRef.current = false; }, 100);
+    });
 
-    // 중심점 설정: props로 받은 좌표 사용, 없으면 폴리곤 첫 좌표 사용
+    if (!polygonData) return;
+
+    const polygonRings = polygonData.coordinates[0];
+    const exteriorRing = polygonRings[0];
+
     const centerLat = centerY ?? exteriorRing[0][1];
     const centerLng = centerX ?? exteriorRing[0][0];
     const centerLatLng = new window.kakao.maps.LatLng(centerLat, centerLng);
@@ -66,20 +70,15 @@ export function MapSection({
     map.setCenter(centerLatLng);
     map.setLevel(3);
 
-    // 기존 폴리곤 제거 (메모리 누수 방지)
     if (polygonRef.current) {
       polygonRef.current.setMap(null);
       polygonRef.current = null;
     }
 
-    // 【GeoJSON → Kakao 좌표 변환】
-    // GeoJSON: [경도, 위도] 순서
-    // Kakao Maps: LatLng(위도, 경도) → 순서가 반대!
     const kakaoPath = exteriorRing.map(
       (coord) => new window.kakao.maps.LatLng(coord[1], coord[0])
     );
 
-    // 【Kakao Polygon 생성】
     const kakaoPolygon = new window.kakao.maps.Polygon({
       path: kakaoPath,
       strokeWeight: 3,
@@ -93,9 +92,6 @@ export function MapSection({
     kakaoPolygon.setMap(map);
     polygonRef.current = kakaoPolygon;
 
-    // 【Cleanup 함수】
-    // 컴포넌트 언마운트 또는 의존성 변경 시 실행
-    // 이전에 그린 폴리곤을 제거하여 메모리 누수 방지
     return () => {
       if (polygonRef.current) {
         polygonRef.current.setMap(null);
@@ -104,12 +100,96 @@ export function MapSection({
     };
   }, [map, loaded, polygonData, centerX, centerY]);
 
-  // TODO: mode에 따른 오버레이 렌더링 로직 추가 예정
-  // - matching: 매칭 점수 마커
-  // - traffic: 유동인구 히트맵
-  // - analysis: 업종 분포 마커
-  // - realestate: 부동산 매물 마커
-  void mode; // 현재 미사용, lint 경고 방지
+  /**
+   * 【중요 개념: 카카오맵 CustomOverlay와 클릭 이벤트】
+   * - CustomOverlay는 HTML 문자열을 content로 받습니다
+   * - React의 onClick이 아닌 순수 HTML의 onclick 속성 사용
+   * - 클릭 핸들러는 window 전역 객체에 함수로 등록해야 함
+   */
+  useEffect(() => {
+    if (!map || !loaded) return;
+
+    // 기존 마커 제거 
+    markersRef.current.forEach(marker => marker.setMap(null));
+    markersRef.current = [];
+
+    // 'realestate' 모드가 아니면 종료
+    if (mode !== 'realestate' || realEstateItems.length === 0) return;
+
+    // 전역 함수 저장용 배열 (cleanup 시 제거하기 위함)
+    const globalFunctionNames: string[] = [];
+
+    // 새로운 마커 생성
+    realEstateItems.forEach(item => {
+      if (!item.centerlatitude || !item.centerlongitude) return;
+
+      const position = new window.kakao.maps.LatLng(
+        item.centerlatitude, 
+        item.centerlongitude
+      );
+
+      // 가격 포맷팅 (만원 단위)
+      const depositMan = item.deposit ? Math.round(item.deposit / 10) : 0;
+      const rentMan = item.monthlyrent ? Math.round(item.monthlyrent / 10) : 0;
+      
+      // 【선택 상태에 따른 스타일 분기】
+      // 선택된 마커: 파란 배경 + 흰 글씨 (반전)
+      // 기본 마커: 흰 배경 + 파란 글씨
+      const isSelected = selectedItemId === item.id;
+      const bgColor = isSelected ? '#2563EB' : '#FFFFFF';
+      const textColor = isSelected ? '#FFFFFF' : '#2563EB';
+      const borderWidth = isSelected ? '2px' : '1px';
+      const scale = isSelected ? 'scale(1.1)' : 'scale(1)';
+      
+      // 【전역 함수 등록】
+      // CustomOverlay의 onclick에서 호출할 수 있도록 window에 함수 등록
+      const funcName = `__markerClick_${item.id.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      globalFunctionNames.push(funcName);
+      (window as unknown as Record<string, () => void>)[funcName] = () => {
+        if (isDraggingRef.current) return;  // 드래그 중이면 클릭 무시
+        onMarkerClick?.(item);
+      };
+
+      const content = `
+        <div 
+          onclick="window.${funcName}()" 
+          style="
+            padding: 4px 8px; 
+            background: ${bgColor}; 
+            color: ${textColor}; 
+            font-size: 15px; 
+            font-weight: bold; 
+            border: ${borderWidth} solid #2563EB; 
+            border-radius: 6px; 
+            white-space: nowrap; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: transform 0.2s;
+            transform: ${scale};
+          "
+        >
+          ${depositMan} / ${rentMan}
+        </div>
+      `;
+
+      const overlay = new window.kakao.maps.CustomOverlay({
+        position: position,
+        content: content,
+        yAnchor: 1.2,
+        zIndex: isSelected ? 100 : 1  // 선택된 마커가 위에 표시되도록
+      });
+
+      overlay.setMap(map);
+      markersRef.current.push(overlay);
+    });
+
+    // 【Cleanup 함수】
+    // 컴포넌트 언마운트 또는 의존성 변경 시 전역 함수 정리
+    return () => {
+      markersRef.current.forEach(marker => marker.setMap(null));
+      markersRef.current = [];
+    };
+  }, [map, loaded, mode, realEstateItems, selectedItemId, onMarkerClick]);
 
   return (
     <div className="w-full h-full relative">

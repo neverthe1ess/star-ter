@@ -9,15 +9,6 @@ import type {
   PolygonData,
 } from '@/components/location-detail/types';
 
-/**
- * 【polylabel 라이브러리】
- *
- * 폴리곤의 "시각적 중심점(pole of inaccessibility)"을 계산하는 라이브러리
- * - 일반적인 centroid(무게중심)와 다름
- * - 폴리곤 내부에서 경계로부터 가장 먼 점을 찾음
- * - L자형 등 복잡한 폴리곤에서도 내부에 있는 점을 반환
- *
- */
 // @ts-expect-error: polylabel 타입 정의 없음
 import polylabel from '@mapbox/polylabel';
 
@@ -25,12 +16,6 @@ const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
 /**
  * 폴리곤 데이터에서 중심점(x, y) 좌표 계산
- *
- * 【함수 추출 패턴】
- * 중심점 계산 로직을 별도 함수로 분리하여:
- * 1. 코드 재사용성 향상
- * 2. 테스트 용이성
- * 3. 가독성 개선
  *
  * @param polygons - GeoJSON MultiPolygon 데이터
  * @returns { x: 경도, y: 위도 } 또는 null

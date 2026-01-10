@@ -17,6 +17,7 @@ import { TrafficContent } from './location-detail/TrafficContent';
 import { AnalysisContent } from './location-detail/AnalysisContent';
 import { RealEstateContent } from './location-detail/RealEstateContent';
 import { MapSection } from './location-detail/MapSection';
+import { RealEstateDetailPanel } from './location-detail/RealEstateDetailPanel';
 import { useEffect, useState } from 'react';
 import { Button } from './ui/button';
 import { Resizable } from 're-resizable';
@@ -44,6 +45,23 @@ export function LocationDetailPage({
   >('matching');
   const [mapWidth, setMapWidth] = useState<number | string>('30%');
   const [isChatMode, setIsChatMode] = useState(false);
+  
+  /**
+   * 【Lifting State Up 패턴】
+   * 선택된 매물 상태를 부모(LocationDetailPage)에서 관리합니다.
+   * 이렇게 하면 MapSection(마커)과 RealEstateDetailPanel(상세패널)이
+   * 동일한 상태를 공유할 수 있습니다.
+   */
+  const [selectedItem, setSelectedItem] = useState<RealEstateItem | null>(null);
+  
+  /**
+   * 【콜백 함수 패턴】
+   * MapSection에서 마커 클릭 시 호출될 핸들러.
+   * 자식 → 부모 방향으로 데이터(선택된 매물)를 전달합니다.
+   */
+  const handleMarkerClick = (item: RealEstateItem) => {
+    setSelectedItem(item);
+  };
 
   const tabs = [
     {
@@ -126,11 +144,15 @@ export function LocationDetailPage({
             className="flex-shrink-0"
           >
             {/* MapSection: 서버에서 계산된 중심점 좌표와 폴리곤 데이터 전달 */}
+            {/* 【Props 전달】 마커 클릭 이벤트를 위한 콜백과 선택 상태 전달 */}
             <MapSection
               mode={activeTab}
               polygonData={basicInfo.polygons}
               centerX={basicInfo.x}
               centerY={basicInfo.y}
+              realEstateItems={realEstate}
+              selectedItemId={selectedItem?.id}
+              onMarkerClick={handleMarkerClick}
             />
           </Resizable>
 
@@ -202,7 +224,12 @@ export function LocationDetailPage({
                       )}
                       {activeTab === 'traffic' && <TrafficContent analytics={analytics} />}
                       {activeTab === 'analysis' && <AnalysisContent analytics={analytics} />}
-                      {activeTab === 'realestate' && <RealEstateContent items={realEstate} />}
+                      {activeTab === 'realestate' && (
+                        <RealEstateContent 
+                          items={realEstate} 
+                          onItemClick={handleMarkerClick}
+                        />
+                      )}
                     </div>
                   )}
                 </div>
@@ -211,6 +238,18 @@ export function LocationDetailPage({
           </div>
         </div>
       </div>
+
+      {/* 
+        【조건부 렌더링 (Conditional Rendering)】
+        selectedItem이 존재할 때만 상세 패널을 렌더링합니다.
+        && 연산자: 왼쪽이 truthy일 때만 오른쪽을 평가/렌더링
+      */}
+      {selectedItem && (
+        <RealEstateDetailPanel
+          item={selectedItem}
+          onClose={() => setSelectedItem(null)}
+        />
+      )}
     </div>
   );
 }

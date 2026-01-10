@@ -39,11 +39,6 @@ export interface MarketAnalytics {
 /**
  * 부동산 매물 정보 (real-estate에서)
  * API: GET /real-estate?minx=...&maxy=...
- *
- * 【타입 정의 개념】
- * - interface: 객체의 형태(shape)를 정의하는 TypeScript 문법
- * - API 응답 데이터의 구조를 명시하여 타입 안전성 확보
- * - null 허용: 데이터베이스에서 값이 없을 수 있으므로 `| null` 사용
  */
 export interface RealEstateItem {
   id: string; // 매물 고유 ID
