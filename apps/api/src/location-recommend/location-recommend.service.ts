@@ -146,12 +146,6 @@ export class LocationRecommendService {
     // 5. 총점 기준 정렬
     scoredLocations.sort((a, b) => b.totalScore - a.totalScore);
 
-    // 6. 정규화: Top 1 = 100점 기준으로 스케일 변환
-    const maxScore = scoredLocations[0]?.totalScore || 1;
-    scoredLocations.forEach((loc) => {
-      loc.totalScore = Math.round((loc.totalScore / maxScore) * 100 * 10) / 10;
-    });
-
     console.log(`[LocationRecommend] Top 3:`, scoredLocations.slice(0, 3));
 
     return {
