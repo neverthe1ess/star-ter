@@ -4,7 +4,6 @@ import {
   RecommendResponseDto,
   ScoredLocation,
 } from './dto/recommend-response.dto';
-import { PrismaService } from '../prisma/prisma.service';
 import { AgeScoreCalculator } from './calculators/age-score.calculator';
 import { TimeScoreCalculator } from './calculators/time-score.calculator';
 import { RentScoreCalculator } from './calculators/rent-score.calculator';
@@ -14,6 +13,7 @@ import {
   CommercialRentData,
 } from './repositories/rent.repository';
 import { PopulationRepository } from './repositories/region.repository';
+import { SalesRepository } from './repositories/sales.repository';
 import { WEIGHTS } from './constants/weights';
 
 @Injectable()
@@ -24,7 +24,7 @@ export class LocationRecommendService {
   private regionCalculator = new RegionScoreCalculator();
 
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly salesRepository: SalesRepository,
     private readonly rentRepository: RentRepository,
     private readonly populationRepository: PopulationRepository,
   ) {}
@@ -32,25 +32,15 @@ export class LocationRecommendService {
   async getRecommendations(
     dto: RecommendRequestDto,
   ): Promise<RecommendResponseDto> {
-    console.log('[LocationRecommend] Request:', dto);
-    const startTime = Date.now();
-
-    // 1. 병렬로 데이터 조회 (성능 최적화)
-    const [salesData, rentDataList] = await Promise.all([
-      // 상권별 매출 데이터 (전체 조회 - 정확한 맞춤 추천을 위해)
-      this.prisma.salesCommercial.findMany({
-        distinct: ['trdar_cd'],
-      }),
+    // 1. 병렬로 전체 데이터 조회 (성능 최적화)
+    const [salesData, rentDataList, regionDataList] = await Promise.all([
+      // 상권별 매출 데이터 (SQL GROUP BY로 집계)
+      this.salesRepository.getAggregatedSalesByQuarter('20253'),
       // 상권별 임대료 데이터 (PostGIS 공간 조인)
       this.rentRepository.getAllCommercialRents(),
+      // 상권별 인구/시설 데이터 (SQL GROUP BY로 집계)
+      this.populationRepository.getRegionDataByQuarter('20253'),
     ]);
-
-    console.log(
-      `[LocationRecommend] Phase 1 done in ${Date.now() - startTime}ms: ${salesData.length} sales, ${rentDataList.length} rent areas`,
-    );
-
-    // 상권 코드 목록
-    const commercialCodes = salesData.map((s) => s.trdar_cd);
 
     // 임대료 Map 생성
     const rentDataMap = new Map<string, CommercialRentData>();
@@ -58,25 +48,18 @@ export class LocationRecommendService {
       rentDataMap.set(rent.trdar_cd, rent);
     });
 
-    // 2. 인구/시설 데이터 가져오기 (상권 코드 필요)
-    const regionDataMap =
-      await this.populationRepository.getRegionDataForCommercials(
-        commercialCodes,
-      );
-
-    console.log(
-      `[LocationRecommend] Phase 2 done in ${Date.now() - startTime}ms: ${regionDataMap.size} region data`,
-    );
+    // 인구/시설 Map 생성
+    const regionDataMap = new Map(regionDataList.map((r) => [r.trdar_cd, r]));
 
     // 최대 유동인구 계산 (정규화용)
     let maxFootTraffic = 1;
-    regionDataMap.forEach((data) => {
+    regionDataList.forEach((data) => {
       if (data.tot_flpop_co > maxFootTraffic) {
         maxFootTraffic = data.tot_flpop_co;
       }
     });
 
-    // 4. 각 상권에 대해 점수 계산
+    // 2. 각 상권에 대해 점수 계산
     const scoredLocations: ScoredLocation[] = salesData.map((sales) => {
       // Age Score
       const ageScore = this.ageCalculator.calculate(
@@ -120,7 +103,6 @@ export class LocationRecommendService {
         dto.capital,
         rentData?.avg_deposit ?? null,
         rentData?.avg_rent ?? null,
-        // rentData?.avg_premium ?? null,
       );
 
       // Total Score (가중 합산 - 4개 요소)
@@ -133,7 +115,7 @@ export class LocationRecommendService {
       return {
         id: sales.trdar_cd,
         name: sales.trdar_cd_nm || sales.trdar_cd,
-        totalScore: Math.round(totalScore * 10) / 10, // 소수점 1자리
+        totalScore: Math.round(totalScore * 10) / 10,
         scores: {
           age: Math.round(ageScore * 100) / 100,
           region: Math.round(regionScore * 100) / 100,
@@ -143,13 +125,11 @@ export class LocationRecommendService {
       };
     });
 
-    // 5. 총점 기준 정렬
+    // 3. 총점 기준 정렬
     scoredLocations.sort((a, b) => b.totalScore - a.totalScore);
 
-    console.log(`[LocationRecommend] Top 3:`, scoredLocations.slice(0, 3));
-
     return {
-      locations: scoredLocations.slice(0, 20), // 상위 20개 반환
+      locations: scoredLocations.slice(0, 20),
     };
   }
 }
