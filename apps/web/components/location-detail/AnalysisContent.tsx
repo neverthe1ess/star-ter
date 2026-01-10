@@ -8,6 +8,8 @@ import { MAJOR_CATEGORIES } from './constants/category';
 interface AnalysisContentProps {
   analytics: MarketAnalytics | null;
   regionCode?: string;
+  /** 카테고리 선택 변경 시 호출되는 콜백 (지도에 점포 표시용) */
+  onCategoryChange?: (categoryCode: string) => void;
 }
 
 
@@ -21,12 +23,17 @@ interface VitalityData {
   clsbizStoreCount: number;
 }
 
-export function AnalysisContent({ analytics, regionCode}: AnalysisContentProps) {
+export function AnalysisContent({ analytics, regionCode, onCategoryChange }: AnalysisContentProps) {
   // 선택된 대분류 탭
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   // 개폐업 데이터
   const [vitality, setVitality] = useState<VitalityData | null>(null);
   const [vitalityLoading, setVitalityLoading] = useState(false);
+
+  // 카테고리 변경 시 부모에 알림
+  useEffect(() => {
+    onCategoryChange?.(selectedCategory);
+  }, [selectedCategory, onCategoryChange]);
 
   // 【useEffect: 탭 변경 시 해당 대분류 데이터 fetch】
   useEffect(() => {

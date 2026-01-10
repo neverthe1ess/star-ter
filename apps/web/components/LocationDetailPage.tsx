@@ -54,6 +54,9 @@ export function LocationDetailPage({
    */
   const [selectedItem, setSelectedItem] = useState<RealEstateItem | null>(null);
   
+  // 【업종 분석 카테고리 선택 상태】 지도에 점포 마커 표시용
+  const [selectedAnalysisCategory, setSelectedAnalysisCategory] = useState<string>('ALL');
+  
   // 【최소/최대 가격 계산】 useMemo로 최적화
   const priceRange = useMemo(() => {
     if (realEstate.length === 0) return { minDeposit: 0, maxDeposit: 10000, minRent: 0, maxRent: 1000 };
@@ -210,6 +213,8 @@ export function LocationDetailPage({
               onBoundsChange={handleBoundsChange}
               filteredCount={filteredItems.length}
               totalCount={realEstate.length}
+              selectedAnalysisCategory={selectedAnalysisCategory}
+              regionCode={basicInfo.code}
             />
           </Resizable>
 
@@ -249,7 +254,7 @@ export function LocationDetailPage({
 
               <Button
                 onClick={() => setIsChatMode(!isChatMode)}
-                className={`rounded-xl px-6 py-2.5 font-bold transition-all ${
+                className={`rounded-xl px-6 py-7 font-bold text-xl transition-all ${
                   isChatMode
                     ? 'bg-white text-slate-900 border border-slate-200 hover:bg-slate-50'
                     : 'bg-blue-950 text-white hover:bg-blue-900 shadow-lg'
@@ -263,7 +268,7 @@ export function LocationDetailPage({
                 ) : (
                   <>
                     <MessageSquare className="w-4 h-4 mr-2" />
-                    AI 분석 상담 시작
+                    AI 분석 상담하기
                   </>
                 )}
               </Button>
@@ -280,7 +285,7 @@ export function LocationDetailPage({
                         <MatchingContent locationName={basicInfo.name} />
                       )}
                       {activeTab === 'traffic' && <TrafficContent analytics={analytics} />}
-                      {activeTab === 'analysis' && <AnalysisContent analytics={analytics} regionCode={basicInfo.code} />}
+                      {activeTab === 'analysis' && <AnalysisContent analytics={analytics} regionCode={basicInfo.code} onCategoryChange={setSelectedAnalysisCategory} />}
                       {activeTab === 'realestate' && (
                         <RealEstateContent 
                           items={filteredItems} 
