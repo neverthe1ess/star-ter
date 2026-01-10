@@ -103,6 +103,7 @@ export class LocationRecommendService {
         dto.capital,
         rentData?.avg_deposit ?? null,
         rentData?.avg_rent ?? null,
+        rentData?.avg_premium ?? null,
       );
 
       // Total Score (가중 합산 - 4개 요소)
