@@ -16,7 +16,7 @@ interface IndustrySelectSectionProps {
   selectedMacro: MacroCategoryCode;
   onSelectMacro: (macro: MacroCategoryCode) => void;
   selectedIndustryCode: string | null;
-  onSelectIndustryCode: (industryCode: string) => void;
+  onSelectIndustryCode: (industryCode: string | null) => void;
 }
 
 export function IndustrySelectSection({
@@ -65,20 +65,23 @@ export function IndustrySelectSection({
 
         <div className="relative mt-8 flex-1 min-h-0">
           <div className="grid h-full content-start items-start gap-6 overflow-y-auto pr-2 pb-6 pt-2 sm:grid-cols-2 xl:grid-cols-3">
-            {selectedIndustries.map((industry) => (
-              <button
-                key={industry.code}
-                onClick={() => onSelectIndustryCode(industry.code)}
-                className={`group rounded-2xl border-2 px-6 py-5 text-left transition-all hover:border-gray-900 hover:shadow-lg ${
-                  selectedIndustryCode === industry.code
-                    ? 'border-gray-900 bg-gray-50 shadow-lg'
+          {selectedIndustries.map((industry) => (
+            <button
+              key={industry.code}
+              onClick={() =>
+                onSelectIndustryCode(
+                  selectedIndustryCode === industry.code ? null : industry.code,
+                )
+              }
+              className={`group rounded-2xl border-2 px-6 py-5 text-left transition-all hover:border-gray-900 hover:shadow-lg ${
+                selectedIndustryCode === industry.code
+                  ? 'border-gray-900 bg-gray-50 shadow-lg'
                     : 'border-gray-300 bg-white'
                 }`}
               >
                 <div className="text-xl font-semibold text-gray-900">
                   {industry.name}
                 </div>
-                <div className="text-sm text-gray-500">{industry.code}</div>
               </button>
             ))}
           </div>

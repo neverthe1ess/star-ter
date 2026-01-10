@@ -17,6 +17,7 @@ export type OnboardingData = {
   region: string;
   operatingTime: string;
   capital: string;
+  industryCode?: string | null;
 };
 
 export const AGE_OPTIONS = [
