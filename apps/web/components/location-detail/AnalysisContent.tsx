@@ -76,9 +76,9 @@ export function AnalysisContent({ analytics, regionCode}: AnalysisContentProps) 
             <button
               key={cat.code}
               onClick={() => setSelectedCategory(cat.code)}
-              className={`px-4 py-2 rounded-full text-lg font-bold transition-all duration-200 ${
+              className={`px-4 py-2 rounded-xl text-lg font-bold transition-all duration-200 ${
                 selectedCategory === cat.code
-                  ? 'bg-gray-700 text-white shadow-md'
+                  ? 'bg-blue-950 text-white shadow-md'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -99,8 +99,8 @@ export function AnalysisContent({ analytics, regionCode}: AnalysisContentProps) 
             {/* 시장 활성도 카드 (개업 VS 폐업) */}
             <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition-shadow">
               <div className="flex items-center gap-2 mb-6">
-                <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
-                  <Activity className="w-4 h-4 text-blue-600" />
+                <div className="w-8 h-8 rounded-full border-blue-950 flex items-center justify-center">
+                  <Activity className="w-6 h-6 text-blue-950" />
                 </div>
                 <h3 className="font-bold text-gray-900 text-xl">시장 활성도</h3>
                 <span className="text-sm font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded-full">개업 VS 폐업</span>
@@ -184,8 +184,8 @@ export function AnalysisContent({ analytics, regionCode}: AnalysisContentProps) 
             <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition-shadow flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-6">
-                  <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center">
-                    <Store className="w-4 h-4 text-purple-600" />
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center">
+                    <Store className="w-6 h-6 text-blue-950" />
                   </div>
                   <h3 className="font-bold text-gray-900 text-xl">경쟁 밀집도</h3>
                   <span className="text-sm font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded-full">점포수 증감</span>
@@ -194,11 +194,11 @@ export function AnalysisContent({ analytics, regionCode}: AnalysisContentProps) 
                 <div className="flex items-center gap-5 mb-6">
                   <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm border ${
                     netChange >= 0 
-                      ? 'bg-emerald-50 border-emerald-100' 
-                      : 'bg-orange-50 border-orange-100'
+                      ? '' 
+                      : ''
                   }`}>
                      {netChange >= 0 ? (
-                       <TrendingUp className="w-8 h-8 text-emerald-500" />
+                       <TrendingUp className="w-8 h-8 text-emerald-600" />
                      ) : (
                        <TrendingDown className="w-8 h-8 text-orange-500" />
                      )}
@@ -218,7 +218,7 @@ export function AnalysisContent({ analytics, regionCode}: AnalysisContentProps) 
               </div>
 
                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <p className="text-gray-600 text-sm leading-relaxed">
+                <p className="text-blue-950 font-bold text-xl leading-relaxed">
                   지난 분기 동안 <span className="font-bold text-blue-600">{vitality.opbizStoreCount.toLocaleString()}개</span>가 새로 생기고,<br/>
                   <span className="font-bold text-rose-500">{vitality.clsbizStoreCount.toLocaleString()}개</span>가 문을 닫았습니다.
                 </p>
@@ -246,7 +246,7 @@ export function AnalysisContent({ analytics, regionCode}: AnalysisContentProps) 
             {sortedSectors.map((item, index) => {
               const share = totalRevenue > 0 ? Math.round((item.value / totalRevenue) * 100) : 0;
               // 1등은 Orange, 나머지는 Blue
-              const colorClass = index === 0 ? 'bg-orange-500' : 'bg-blue-500';
+              const colorClass = index === 0 ? 'bg-orange-500' : 'bg-blue-900';
               
               return (
                 <div key={item.name} className="space-y-2">
@@ -298,8 +298,8 @@ export function AnalysisContent({ analytics, regionCode}: AnalysisContentProps) 
           <p className="text-gray-500 text-sm mb-6">
           </p>
 
-          <div className="space-y-3">
-            {analytics.saturation.slice(0, 5).map((item) => {
+          <div className="grid grid-cols-2 gap-3">
+            {analytics.saturation.slice(0, 4).map((item) => {
               const statusColor = {
                 '위험': 'bg-red-500 text-white',
                 '경계': 'bg-yellow-500 text-white',
@@ -308,8 +308,8 @@ export function AnalysisContent({ analytics, regionCode}: AnalysisContentProps) 
 
               return (
                 <div key={item.name} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                  <span className="font-medium text-gray-900">{item.name}</span>
-                  <span className={`px-3 py-1 rounded-full text-sm font-bold ${statusColor}`}>
+                  <span className="text-2xl font-bold text-blue-950 p-4">{item.name}</span>
+                  <span className={`px-3 py-1 rounded-full text-md font-bold ${statusColor}`}>
                     {item.status}
                   </span>
                 </div>

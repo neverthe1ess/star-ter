@@ -235,7 +235,7 @@ export function LocationDetailPage({
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                      className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                      className={`px-6 py-2.5 rounded-xl text-lg font-bold transition-all ${
                         activeTab === tab.id
                           ? 'bg-blue-950 text-white shadow-md'
                           : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
