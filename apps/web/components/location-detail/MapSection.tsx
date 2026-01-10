@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
-import { useKakaoMap, type KakaoPolygon, type KakaoCustomOverlay } from "../../hooks/useKakaoMap";
+import { useRef, useEffect, useMemo, useState } from "react";
+import { useKakaoMap, type KakaoPolygon, type KakaoCustomOverlay, type KakaoCircle } from "../../hooks/useKakaoMap";
 import { PolygonData, RealEstateItem } from "./types";
 import { PriceFilterBar } from "./PriceFilterBar";
 import { IndustryAnalysisBar, type IndustryId } from "./IndustryAnalysisBar";
 import { useStoreLocations } from "./hooks";
+import { MAJOR_CATEGORIES } from "./constants/category";
 
 /**
  * 【MapSection 컴포넌트】
@@ -82,6 +83,35 @@ export function MapSection({
     mode === 'analysis' // analysis 모드일 때만 활성화
   );
   
+  // 【과열 지역 수 계산】 stores에서 밀집도 기반으로 hotspot 계산
+  const hotspotCount = useMemo(() => {
+    if (stores.length === 0) return 0;
+    
+    const GRID_SIZE = 50;
+    const getDistanceMeters = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+      const R = 6371000;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLng/2) * Math.sin(dLng/2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    };
+
+    // 밀집도 계산
+    const storesWithDensity = stores.map(store => {
+      const nearbyCount = stores.filter(other => 
+        other !== store && 
+        getDistanceMeters(store.lat, store.lng, other.lat, other.lng) <= GRID_SIZE * 2
+      ).length;
+      return nearbyCount;
+    });
+    
+    const maxNearby = Math.max(...storesWithDensity, 1);
+    // 밀집도 >= 0.6인 곳 = hotspot
+    return storesWithDensity.filter(count => count / maxNearby >= 0.6).length;
+  }, [stores]);
+  
   const { map, loaded } = useKakaoMap(mapRef);
 
   // 폴리곤 렌더링 + 드래그/idle 이벤트 등록
@@ -152,61 +182,170 @@ export function MapSection({
   }, [map, loaded, polygonData, centerX, centerY, onBoundsChange]);
 
   /**
-   * 【리팩토링: 커스텀 훅으로 데이터 분리】
+   * 【경쟁 구역 오버레이】
    * 
-   * Before: useEffect 내부에서 fetch + 마커 렌더링 모두 처리
-   * After: useStoreLocations 훅에서 fetch, useEffect에서는 마커 렌더링만
-   * 
-   * 장점: 관심사 분리, 데이터 fetch 로직 재사용 가능
+   * 점 마커 대신 밀집도 기반 원형 오버레이로 경쟁 강도 시각화
+   * - 가까운 곳에 점포 많음 → 🔴 빨간색 (위험)
+   * - 적당함 → 🟡 노란색
+   * - 적음 → 🟢 초록색
    */
   useEffect(() => {
     if (!map || !loaded) return;
 
-    // 기존 업종 마커 제거
+    // 기존 오버레이 제거
     industryMarkersRef.current.forEach(marker => marker.setMap(null));
     industryMarkersRef.current = [];
 
     // analysis 모드가 아니면 종료
-    if (mode !== 'analysis') return;
+    if (mode !== 'analysis' || stores.length === 0) return;
 
-    // 훅에서 가져온 stores 데이터로 마커 렌더링
-    stores.forEach((store) => {
-      const position = new window.kakao.maps.LatLng(store.lat, store.lng);
-      
-      const content = `
-        <div style="
-          width: 12px;
-          height: 12px;
-          background: #3B82F6;
-          border-radius: 50%;
-          border: 2px solid white;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-          cursor: pointer;
-          transition: transform 0.2s;
-        " 
-        onmouseenter="this.style.transform='scale(1.3)'"
-        onmouseleave="this.style.transform='scale(1)'"
-        title="${store.name}\n${store.address}"
-        ></div>
-      `;
+    // 밀집도 계산 함수
+    const getDistanceMeters = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+      const R = 6371000;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLng/2) * Math.sin(dLng/2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    };
 
-      const overlay = new window.kakao.maps.CustomOverlay({
-        position: position,
-        content: content,
-        yAnchor: 0.5,
-        xAnchor: 0.5,
-        zIndex: 1,
-      });
-
-      overlay.setMap(map);
-      industryMarkersRef.current.push(overlay);
+    // 각 점포의 주변 밀집도 계산
+    const GRID_SIZE = 50; // 50m 반경
+    const storesWithDensity = stores.map(store => {
+      const nearbyCount = stores.filter(other => 
+        other !== store && 
+        getDistanceMeters(store.lat, store.lng, other.lat, other.lng) <= GRID_SIZE * 2
+      ).length;
+      return { store, nearbyCount };
     });
 
+    const maxNearby = Math.max(...storesWithDensity.map(s => s.nearbyCount), 1);
+
+    // 클러스터링: 이미 처리된 근처 점포는 스킵
+    const processed = new Set<number>();
+    const circles: KakaoCircle[] = [];
+    const warningPositions: { lat: number; lng: number }[] = []; // 경고 마커 위치 추적
+
+    storesWithDensity
+      .sort((a, b) => b.nearbyCount - a.nearbyCount)
+      .forEach((item, index) => {
+        if (processed.has(index)) return;
+
+        // 이미 그려진 원과 가까우면 스킵
+        const isNearExisting = circles.some(circle => {
+          const pos = circle.getPosition();
+          const dist = getDistanceMeters(
+            item.store.lat, item.store.lng,
+            pos.getLat(), pos.getLng()
+          );
+          return dist < GRID_SIZE;
+        });
+
+        if (isNearExisting) {
+          processed.add(index);
+          return;
+        }
+
+        // 밀집도 (0~1)
+        const density = Math.min(item.nearbyCount / maxNearby, 1);
+        
+        // 색상: 초록 → 노랑 → 빨강
+        let fillColor: string;
+        let strokeColor: string;
+        const isHotspot = density >= 0.6; // 경쟁 과열 여부
+        
+        if (density < 0.3) {
+          fillColor = '#22C55E'; // green
+          strokeColor = '#16A34A';
+        } else if (density < 0.6) {
+          fillColor = '#FBBF24'; // amber
+          strokeColor = '#F59E0B';
+        } else {
+          fillColor = '#EF4444'; // red
+          strokeColor = '#DC2626';
+        }
+
+        // 반경: 30m ~ 60m
+        const radius = 30 + (30 * density);
+        
+        // Kakao Circle 생성
+        const circle = new window.kakao.maps.Circle({
+          center: new window.kakao.maps.LatLng(item.store.lat, item.store.lng),
+          radius: radius,
+          strokeWeight: 2,
+          strokeColor: strokeColor,
+          strokeOpacity: 0.8,
+          fillColor: fillColor,
+          fillOpacity: 0.3 + (density * 0.3), // 0.3 ~ 0.6
+        });
+
+        circle.setMap(map);
+        circles.push(circle);
+        
+        // 🔥 경쟁 과열 지역에 경고 마커 추가
+        // 이미 표시된 경고 마커와 100m 이내면 중복 표시 안 함
+        if (isHotspot) {
+          const isNearExistingWarning = warningPositions.some(pos => 
+            getDistanceMeters(item.store.lat, item.store.lng, pos.lat, pos.lng) < 100
+          );
+          
+          if (!isNearExistingWarning) {
+            const warningContent = `
+              <div style="
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                transform: translateY(-20px);
+              ">
+                <div style="
+                  background: linear-gradient(135deg, #DC2626, #B91C1C);
+                  color: white;
+                  padding: 6px 12px;
+                  border-radius: 20px;
+                  font-size: 16px;
+                  font-weight: bold;
+                  box-shadow: 0 4px 12px rgba(185, 28, 28, 0.4);
+                  white-space: nowrap;
+                  border: 2px solid white;
+                ">
+                  ⚠️ 경쟁 과열
+                </div>
+                <div style="
+                  width: 0;
+                  height: 0;
+                  border-left: 8px solid transparent;
+                  border-right: 8px solid transparent;
+                  border-top: 8px solid #DC2626;
+                  margin-top: -2px;
+                "></div>
+              </div>
+            `;
+            
+            const warningOverlay = new window.kakao.maps.CustomOverlay({
+              position: new window.kakao.maps.LatLng(item.store.lat, item.store.lng),
+              content: warningContent,
+              yAnchor: 1,
+              xAnchor: 0.5,
+              zIndex: 10,
+            });
+            
+            warningOverlay.setMap(map);
+            circles.push(warningOverlay as unknown as KakaoCircle);
+            warningPositions.push({ lat: item.store.lat, lng: item.store.lng });
+          }
+        }
+        
+        processed.add(index);
+      });
+
+    // ref에 저장 (cleanup용으로 any 캐스팅)
+    industryMarkersRef.current = circles as unknown as KakaoCustomOverlay[];
+
     return () => {
-      industryMarkersRef.current.forEach(marker => marker.setMap(null));
-      industryMarkersRef.current = [];
+      circles.forEach(circle => circle.setMap(null));
     };
-  }, [map, loaded, mode, stores]); // stores가 변경되면 마커 재렌더링
+  }, [map, loaded, mode, stores]);
 
   /**
    * 【중요 개념: 카카오맵 CustomOverlay와 클릭 이벤트】
@@ -335,6 +474,9 @@ export function MapSection({
         <IndustryAnalysisBar
           selectedIndustry={selectedIndustry}
           onSelectIndustry={setSelectedIndustry}
+          storeCount={stores.length}
+          hotspotCount={hotspotCount}
+          selectedCategoryName={MAJOR_CATEGORIES.find(c => c.code === selectedAnalysisCategory)?.name || '전체'}
         />
       )}
     </div>

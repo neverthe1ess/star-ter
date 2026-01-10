@@ -51,6 +51,15 @@ declare global {
           xAnchor?: number;
           yAnchor?: number;
         }) => KakaoCustomOverlay;
+        Circle: new (options: {
+          center: KakaoLatLng;
+          radius: number;
+          strokeWeight?: number;
+          strokeColor?: string;
+          strokeOpacity?: number;
+          fillColor?: string;
+          fillOpacity?: number;
+        }) => KakaoCircle;
       };
     };
   }
@@ -68,6 +77,12 @@ export interface KakaoCustomOverlay {
   setPosition: (position: KakaoLatLng) => void;
   getPosition: () => KakaoLatLng;
   setContent: (content: string | HTMLElement) => void;
+}
+
+export interface KakaoCircle {
+  setMap: (map: KakaoMap | null) => void;
+  getPosition: () => KakaoLatLng;
+  getRadius: () => number;
 }
 
 // ============================================================
