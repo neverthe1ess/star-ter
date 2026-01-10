@@ -2,6 +2,7 @@ import {
   Controller,
   UseGuards,
   Patch,
+  Get,
   Body,
   HttpCode,
   Logger,
@@ -21,6 +22,13 @@ import { imageFileInterceptor } from 'src/image/image-upload.interceptor';
 export class UsersController {
   private readonly logger = new Logger(UsersController.name);
   constructor(private readonly usersService: UsersService) {}
+
+  @Get('onboarding')
+  @UseGuards(JwtAuthGuard)
+  async getOnboarding(@User() user: AuthenticatedUser) {
+    this.logger.log(`Getting onboarding for user ID: ${user.id}`);
+    return await this.usersService.getOnboarding(user.id);
+  }
 
   @Patch('onboarding')
   @UseGuards(JwtAuthGuard)

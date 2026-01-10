@@ -11,6 +11,31 @@ type ErrorResponse = {
   message?: string;
 };
 
+export type OnboardingData = {
+  age: string | null;
+  region: string | null;
+  operatingTime: string | null;
+  capital: string | null;
+  completed: boolean;
+};
+
+export async function getOnboarding(): Promise<OnboardingData | null> {
+  try {
+    const response = await fetch(`${baseUrl}/users/onboarding`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return (await response.json()) as OnboardingData;
+  } catch {
+    return null;
+  }
+}
+
 export async function updateOnboarding(
   params: UpdateOnboardingParams,
 ): Promise<void> {
