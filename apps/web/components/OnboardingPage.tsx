@@ -102,7 +102,6 @@ export function OnboardingPage({
           <ArrowLeft className="w-5 h-5" />
           <span className="font-medium">뒤로</span>
         </button>
-        <Logo className="h-8" />
         <div className="w-20"></div>
       </header>
 

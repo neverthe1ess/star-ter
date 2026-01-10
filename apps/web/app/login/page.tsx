@@ -1,22 +1,23 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { LoginPage } from "@/components/LoginPage";
 import { getOnboarding } from "@/services/user/user.api";
 
 export default function Page() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextParam = searchParams.get("next");
+  const nextPath =
+    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("/login")
+      ? nextParam
+      : "/locations";
 
   return (
     <LoginPage
-      onLogin={async () => {
-        const onboarding = await getOnboarding();
-        if (!onboarding || !onboarding.completed) {
-          router.push("/onboarding/intro");
-          return;
-        }
-        router.push("/locations");
+      onLogin={({ on_boarding_completed }) => {
+        router.push(on_boarding_completed ? nextPath : "/onboarding/intro");
       }}
     />
   );

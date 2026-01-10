@@ -1,41 +1,21 @@
-"use client";
+'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import {
   Camera,
   ChevronRight,
   LogOut,
-  User,
-  Shield,
-  Bell,
-  CreditCard,
-  LifeBuoy,
+  SlidersHorizontal,
   type LucideIcon,
-} from "lucide-react";
-import { motion } from "motion/react";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
+} from 'lucide-react';
+import { motion } from 'motion/react';
+import { ImageWithFallback } from './figma/ImageWithFallback';
+import { ProfileImageCropModal } from './ProfileImageCropModal';
 
 type SettingsGroup = {
   title: string;
-  items: { label: string; icon: LucideIcon }[];
+  items: { label: string; icon: LucideIcon; onClick?: () => void }[];
 };
-
-const SETTINGS_GROUPS: SettingsGroup[] = [
-  {
-    title: "Account",
-    items: [
-      { label: "프로필 편집", icon: User },
-      { label: "보안 및 로그인", icon: Shield },
-    ],
-  },
-  {
-    title: "Support",
-    items: [
-      { label: "알림 설정", icon: Bell },
-      { label: "결제 관리", icon: CreditCard },
-      { label: "고객 지원", icon: LifeBuoy },
-    ],
-  },
-];
 
 type ProfilePopupProps = {
   nickname: string;
@@ -44,6 +24,12 @@ type ProfilePopupProps = {
   onLogout: () => void;
   isLoggingOut: boolean;
   logoutError: string | null;
+  onOpenPreferences: () => void;
+  onSaveProfile: () => void;
+  isSavingProfile: boolean;
+  profileError: string | null;
+  profileImageKey?: string | null;
+  onProfileImageChange: (key: string) => void;
 };
 
 export function ProfilePopup({
@@ -53,7 +39,62 @@ export function ProfilePopup({
   onLogout,
   isLoggingOut,
   logoutError,
+  onOpenPreferences,
+  onSaveProfile,
+  isSavingProfile,
+  profileError,
+  profileImageKey,
+  onProfileImageChange,
 }: ProfilePopupProps) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isCropOpen, setIsCropOpen] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const [selectedFileName, setSelectedFileName] = useState<string>('');
+
+  const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+  const fallbackImage =
+    'https://images.unsplash.com/photo-1649433658557-54cf58577c68?q=80&w=200&h=200&auto=format&fit=crop';
+  const profileImageUrl = profileImageKey
+    ? `${API_BASE_URL}/image/${encodeURIComponent(profileImageKey)}`
+    : fallbackImage;
+
+  useEffect(() => {
+    return () => {
+      if (selectedImageUrl) {
+        URL.revokeObjectURL(selectedImageUrl);
+      }
+    };
+  }, [selectedImageUrl]);
+
+  const handleSelectFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.currentTarget.value = '';
+    if (!file) return;
+
+    if (selectedImageUrl) {
+      URL.revokeObjectURL(selectedImageUrl);
+    }
+
+    const url = URL.createObjectURL(file);
+    setSelectedImageUrl(url);
+    setSelectedFileName(file.name);
+    setIsCropOpen(true);
+  };
+
+  const settingsGroups: SettingsGroup[] = [
+    {
+      title: 'Account',
+      items: [
+        {
+          label: '창업 조건 설정',
+          icon: SlidersHorizontal,
+          onClick: onOpenPreferences,
+        },
+      ],
+    },
+  ];
+
   return (
     <>
       <motion.div
@@ -76,12 +117,17 @@ export function ProfilePopup({
             <div className="relative">
               <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-md">
                 <ImageWithFallback
-                  src="https://images.unsplash.com/photo-1649433658557-54cf58577c68?q=80&w=200&h=200&auto=format&fit=crop"
+                  src={profileImageUrl}
                   alt="Profile"
                   className="w-full h-full object-cover"
                 />
               </div>
-              <button className="absolute -bottom-1 -right-1 p-1.5 bg-slate-900 text-white rounded-full shadow-lg hover:scale-110 transition-transform">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute -bottom-1 -right-1 p-1.5 bg-slate-900 text-white rounded-full shadow-lg hover:scale-110 transition-transform"
+                aria-label="프로필 이미지 변경"
+              >
                 <Camera className="w-3 h-3" />
               </button>
             </div>
@@ -93,13 +139,23 @@ export function ProfilePopup({
                 className="w-full text-lg font-black text-slate-900 bg-transparent border-none focus:ring-0 p-0 mb-0.5"
                 placeholder="닉네임 입력"
               />
-              <p className="text-xs font-bold text-blue-600">Premium Plan 사용 중</p>
+              <button
+                type="button"
+                onClick={onSaveProfile}
+                disabled={isSavingProfile || nickname.trim().length === 0}
+                className="text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors disabled:opacity-60"
+              >
+                {isSavingProfile ? '저장 중...' : '프로필 저장'}
+              </button>
             </div>
           </div>
+          {profileError && (
+            <p className="mt-3 text-xs text-red-500">{profileError}</p>
+          )}
         </div>
 
         <div className="p-2">
-          {SETTINGS_GROUPS.map((group) => (
+          {settingsGroups.map((group) => (
             <div key={group.title} className="mb-2">
               <p className="px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                 {group.title}
@@ -107,13 +163,16 @@ export function ProfilePopup({
               {group.items.map((item) => (
                 <button
                   key={item.label}
+                  onClick={item.onClick}
                   className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-slate-50 rounded-xl transition-all group"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-slate-400 group-hover:text-blue-600 shadow-sm">
                       <item.icon className="w-4 h-4" />
                     </div>
-                    <span className="text-sm font-bold text-slate-700">{item.label}</span>
+                    <span className="text-sm font-bold text-slate-700">
+                      {item.label}
+                    </span>
                   </div>
                   <ChevronRight className="w-4 h-4 text-slate-300" />
                 </button>
@@ -129,11 +188,39 @@ export function ProfilePopup({
             className="w-full flex items-center justify-center gap-2 py-3 text-sm font-bold text-red-500 hover:bg-white hover:shadow-sm rounded-xl transition-all disabled:opacity-60"
           >
             <LogOut className="w-4 h-4" />
-            {isLoggingOut ? "로그아웃 중..." : "로그아웃"}
+            {isLoggingOut ? '로그아웃 중...' : '로그아웃'}
           </button>
-          {logoutError && <p className="px-2 pt-2 text-xs text-red-500">{logoutError}</p>}
+          {logoutError && (
+            <p className="px-2 pt-2 text-xs text-red-500">{logoutError}</p>
+          )}
         </div>
       </motion.div>
+
+      <ProfileImageCropModal
+        isOpen={isCropOpen}
+        imageUrl={selectedImageUrl}
+        fileName={selectedFileName}
+        onClose={() => {
+          setIsCropOpen(false);
+          setSelectedImageUrl(null);
+          setSelectedFileName('');
+        }}
+        onReselect={() => fileInputRef.current?.click()}
+        onComplete={(key) => {
+          onProfileImageChange(key);
+          setIsCropOpen(false);
+          setSelectedImageUrl(null);
+          setSelectedFileName('');
+        }}
+      />
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleSelectFile}
+      />
     </>
   );
 }

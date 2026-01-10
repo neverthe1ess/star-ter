@@ -85,7 +85,7 @@ export function LocationListPage() {
         });
 
         if (response) {
-          setRecommendedLocations(response.locations.slice(0, 6));
+          setRecommendedLocations(response.locations.slice(0, 20));
         }
       } catch (error) {
         console.error('Failed to fetch recommendations:', error);
@@ -102,7 +102,7 @@ export function LocationListPage() {
       try {
         const response = await getGrowthRanking();
         const mapped = response.items
-          .slice(0, 4)
+          .slice(0, 7)
           .map((item, index) => mapRankingToLocation(item, index));
         setTrendingLocationsData(mapped);
       } catch (error) {
@@ -118,7 +118,7 @@ export function LocationListPage() {
   useEffect(() => {
     async function fetchStableLocations() {
       try {
-        const items = await getStableLocations(4);
+        const items = await getStableLocations(7);
         const mapped = items.map((item, index) =>
           mapRankingToLocation(item, index),
         );
@@ -359,7 +359,7 @@ function RecommendationCard({ location }: { location: ScoredLocation }) {
   return (
     <Link
       href={`/locations/detail/${location.id}`}
-      className="group bg-white rounded-3xl p-6 text-left hover:shadow-xl transition-all border border-slate-100 hover:border-blue-900/20 flex flex-col h-auto w-full block"
+      className="group bg-white rounded-3xl p-6 text-left hover:shadow-xl transition-all border border-slate-100 hover:border-blue-900/20 flex flex-col h-auto w-full"
     >
       {/* 배지 */}
       <div className="mb-4">
@@ -391,15 +391,27 @@ function RecommendationCard({ location }: { location: ScoredLocation }) {
           </div>
           <div className="text-right space-y-1">
             <div className="flex gap-2 text-[10px]">
-              <span className="text-slate-400">연령</span>
+              <span className="text-slate-400">타겟 연령층</span>
               <span className="font-bold text-slate-600">
                 {Math.round(location.scores.age * 100)}%
               </span>
             </div>
             <div className="flex gap-2 text-[10px]">
-              <span className="text-slate-400">임대료</span>
+              <span className="text-slate-400">창업 비용</span>
               <span className="font-bold text-slate-600">
                 {Math.round(location.scores.rent * 100)}%
+              </span>
+            </div>
+            <div className="flex gap-2 text-[10px]">
+              <span className="text-slate-400">상권 테마</span>
+              <span className="font-bold text-slate-600">
+                {Math.round(location.scores.region * 100)}%
+              </span>
+            </div>
+            <div className="flex gap-2 text-[10px]">
+              <span className="text-slate-400">운영 시간대</span>
+              <span className="font-bold text-slate-600">
+                {Math.round(location.scores.time * 100)}%
               </span>
             </div>
           </div>
@@ -414,7 +426,7 @@ function LocationSuggestionCard({ location }: { location: LocationUI }) {
   return (
     <Link
       href={`/locations/detail/${location.id}`}
-      className="group bg-white rounded-3xl p-6 text-left hover:shadow-xl transition-all border border-slate-100 hover:border-blue-900/20 flex flex-col h-auto w-full block"
+      className="group bg-white rounded-3xl p-6 text-left hover:shadow-xl transition-all border border-slate-100 hover:border-blue-900/20 flex flex-col h-auto w-full "
     >
       {/* 배지 */}
       <div className="mb-4">

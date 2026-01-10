@@ -9,6 +9,7 @@ import { RentScoreCalculator } from './calculators/rent-score.calculator';
 import { RegionScoreCalculator } from './calculators/region-score.calculator';
 import { RentRepository } from './repositories/rent.repository';
 import { PopulationRepository } from './repositories/region.repository';
+import { SalesRepository } from './repositories/sales.repository';
 
 @Module({
   imports: [MarketModule, PrismaModule],
@@ -21,6 +22,7 @@ import { PopulationRepository } from './repositories/region.repository';
     RegionScoreCalculator,
     RentRepository,
     PopulationRepository,
+    SalesRepository,
   ],
 })
 export class LocationRecommendModule {}
