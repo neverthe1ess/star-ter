@@ -41,14 +41,26 @@ export interface MarketAnalytics {
  * API: GET /real-estate?minx=...&maxy=...
  */
 export interface RealEstateItem {
-  id: string;
-  name: string | null;
-  address: string | null;
-  deposit: number | null; // 보증금 (천원)
-  monthlyrent: number | null; // 월세 (천원)
-  size: number | null; // 면적 (m²)
+  id: string; // 매물 고유 ID
+  name: string | null; // 건물/매물명
+  address: string | null; // 지번 주소
+  roadaddress: string | null; // 도로명 주소
+  centerlatitude: number | null; // 위도 (지도 표시용)
+  centerlongitude: number | null; // 경도 (지도 표시용)
+  title: string | null; // 매물 제목
+  deposit: number | null; // 보증금 (천원 단위)
+  monthlyrent: number | null; // 월세 (천원 단위)
+  maintenancefee: number | null; // 관리비 (천원 단위)
+  premium: number | null; // 권리금 (천원 단위)
   areaprice: number | null; // 평당가
-  previewphotourl: string | null;
+  size: number | null; // 면적 (m² 단위)
+  floor: number | null; // 해당 층
+  groundfloor: number | null; // 건물 총 층수
+  businesslargecodename: string | null; // 업종 대분류
+  businessmiddlecodename: string | null; // 업종 중분류
+  nearsubwaystation: string | null; // 인근 지하철역
+  ismoveindate: boolean | null; // 즉시 입주 가능 여부
+  previewphotourl: string | null; // 미리보기 이미지 URL
 }
 
 /**

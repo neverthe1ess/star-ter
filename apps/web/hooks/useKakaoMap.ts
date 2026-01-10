@@ -43,6 +43,14 @@ declare global {
           fillOpacity?: number;
           zIndex?: number;
         }) => KakaoPolygon;
+        CustomOverlay: new (options: {
+          position: KakaoLatLng;
+          content: string | HTMLElement;
+          map?: KakaoMap | null;
+          zIndex?: number;
+          xAnchor?: number;
+          yAnchor?: number;
+        }) => KakaoCustomOverlay;
       };
     };
   }
@@ -52,6 +60,14 @@ export interface KakaoPolygon {
   setMap: (map: KakaoMap | null) => void;
   setPath: (path: KakaoLatLng[] | KakaoLatLng[][]) => void;
   getBounds: () => KakaoBounds;
+}
+
+export interface KakaoCustomOverlay {
+  setMap: (map: KakaoMap | null) => void;
+  getMap: () => KakaoMap | null;
+  setPosition: (position: KakaoLatLng) => void;
+  getPosition: () => KakaoLatLng;
+  setContent: (content: string | HTMLElement) => void;
 }
 
 // ============================================================

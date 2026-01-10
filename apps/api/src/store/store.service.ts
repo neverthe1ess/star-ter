@@ -139,7 +139,7 @@ export class StoreService {
     // 1. 지역 코드가 있으면 Polygon 검색 우선
     if (areaCode && level) {
       stores = await this.marketRepository.findStoresByIndustryAndArea({
-        industryCode,
+        industryCode: industryCode || '',
         areaCode,
         level,
         limit: limit || 1000,
@@ -155,14 +155,14 @@ export class StoreService {
           : undefined;
 
       stores = await this.marketRepository.findStoresByIndustryCode({
-        industryCode,
+        industryCode: industryCode || '',
         bbox,
         limit: limit || 100,
       });
     }
 
     return {
-      industryCode,
+      industryCode: industryCode || 'ALL',
       count: stores.length,
       stores,
     };
@@ -197,10 +197,10 @@ export class StoreService {
     // Raw Query로 최적화
     // 폐업 점포 수 = MAX(0, 전분기 점포 수 - 현분기 점포 수)
     // 폐업률 = (폐업 점포 수 / 전분기 점포 수) * 100
-    
+
     // 업종 필터 조건 (SQL Injection 방지를 위해 Prisma 파라미터 바인딩 사용)
-    const industryCondition = industryCode 
-      ? `AND svc_induty_cd = '${industryCode}'` 
+    const industryCondition = industryCode
+      ? `AND svc_induty_cd = '${industryCode}'`
       : '';
 
     // 검색 조건 추가
