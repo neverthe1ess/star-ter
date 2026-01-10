@@ -5,6 +5,7 @@ import { useKakaoMap, type KakaoPolygon, type KakaoCustomOverlay } from "../../h
 import { PolygonData, RealEstateItem } from "./types";
 import { PriceFilterBar } from "./PriceFilterBar";
 import { IndustryAnalysisBar, type IndustryId } from "./IndustryAnalysisBar";
+import { useStoreLocations } from "./hooks";
 
 /**
  * 【MapSection 컴포넌트】
@@ -73,6 +74,13 @@ export function MapSection({
   
   // 【업종 분석 상태】
   const [selectedIndustry, setSelectedIndustry] = useState<IndustryId | null>(null);
+  
+  // 【커스텀 훅 사용】 점포 위치 데이터 fetch
+  const { stores } = useStoreLocations(
+    regionCode,
+    selectedAnalysisCategory,
+    mode === 'analysis' // analysis 모드일 때만 활성화
+  );
   
   const { map, loaded } = useKakaoMap(mapRef);
 
@@ -144,8 +152,12 @@ export function MapSection({
   }, [map, loaded, polygonData, centerX, centerY, onBoundsChange]);
 
   /**
-   * 【업종 분석 모드: 점도표(Dot Markers) 렌더링】
-   * 선택된 업종 카테고리(selectedAnalysisCategory)의 점포를 API에서 가져와 표시
+   * 【리팩토링: 커스텀 훅으로 데이터 분리】
+   * 
+   * Before: useEffect 내부에서 fetch + 마커 렌더링 모두 처리
+   * After: useStoreLocations 훅에서 fetch, useEffect에서는 마커 렌더링만
+   * 
+   * 장점: 관심사 분리, 데이터 fetch 로직 재사용 가능
    */
   useEffect(() => {
     if (!map || !loaded) return;
@@ -154,74 +166,47 @@ export function MapSection({
     industryMarkersRef.current.forEach(marker => marker.setMap(null));
     industryMarkersRef.current = [];
 
-    // analysis 모드가 아니거나 카테고리가 선택되지 않았으면 종료
-    if (mode !== 'analysis' || !selectedAnalysisCategory || !regionCode) {
-      return;
-    }
+    // analysis 모드가 아니면 종료
+    if (mode !== 'analysis') return;
 
-    // API 호출
-    const fetchStores = async () => {
-      try {
-        const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
-        // 'ALL'이면 industryCode 없이 전체 조회, 아니면 해당 업종으로 필터
-        const industryParam = selectedAnalysisCategory === 'ALL' 
-          ? '' 
-          : `industryCode=${selectedAnalysisCategory}&`;
-        const url = `${API_URL}/store/locations?${industryParam}areaCode=${regionCode}&level=commercial&limit=500`;
-        
-        const res = await fetch(url);
-        if (!res.ok) {
-          console.error('[MapSection] Failed to fetch stores:', res.status);
-          return;
-        }
-        
-        const data = await res.json();
-        const stores: {lng: number; lat: number; name: string; address: string}[] = data.stores || [];
+    // 훅에서 가져온 stores 데이터로 마커 렌더링
+    stores.forEach((store) => {
+      const position = new window.kakao.maps.LatLng(store.lat, store.lng);
+      
+      const content = `
+        <div style="
+          width: 12px;
+          height: 12px;
+          background: #3B82F6;
+          border-radius: 50%;
+          border: 2px solid white;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+          cursor: pointer;
+          transition: transform 0.2s;
+        " 
+        onmouseenter="this.style.transform='scale(1.3)'"
+        onmouseleave="this.style.transform='scale(1)'"
+        title="${store.name}\n${store.address}"
+        ></div>
+      `;
 
-        // 점포 마커 렌더링
-        stores.forEach((store) => {
-          const position = new window.kakao.maps.LatLng(store.lat, store.lng);
-          
-          const content = `
-            <div style="
-              width: 12px;
-              height: 12px;
-              background: #3B82F6;
-              border-radius: 50%;
-              border: 2px solid white;
-              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-              cursor: pointer;
-              transition: transform 0.2s;
-            " 
-            onmouseenter="this.style.transform='scale(1.3)'"
-            onmouseleave="this.style.transform='scale(1)'"
-            title="${store.name}\n${store.address}"
-            ></div>
-          `;
+      const overlay = new window.kakao.maps.CustomOverlay({
+        position: position,
+        content: content,
+        yAnchor: 0.5,
+        xAnchor: 0.5,
+        zIndex: 1,
+      });
 
-          const overlay = new window.kakao.maps.CustomOverlay({
-            position: position,
-            content: content,
-            yAnchor: 0.5,
-            xAnchor: 0.5,
-            zIndex: 1,
-          });
-
-          overlay.setMap(map);
-          industryMarkersRef.current.push(overlay);
-        });
-      } catch (error) {
-        console.error('[MapSection] Error fetching stores:', error);
-      }
-    };
-
-    fetchStores();
+      overlay.setMap(map);
+      industryMarkersRef.current.push(overlay);
+    });
 
     return () => {
       industryMarkersRef.current.forEach(marker => marker.setMap(null));
       industryMarkersRef.current = [];
     };
-  }, [map, loaded, mode, selectedAnalysisCategory, regionCode]);
+  }, [map, loaded, mode, stores]); // stores가 변경되면 마커 재렌더링
 
   /**
    * 【중요 개념: 카카오맵 CustomOverlay와 클릭 이벤트】

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Activity, Store, TrendingUp, TrendingDown } from 'lucide-react';
 import type { MarketAnalytics } from './types';
 import { MAJOR_CATEGORIES } from './constants/category';
+import { useVitalityData } from './hooks';
 
 interface AnalysisContentProps {
   analytics: MarketAnalytics | null;
@@ -12,54 +13,30 @@ interface AnalysisContentProps {
   onCategoryChange?: (categoryCode: string) => void;
 }
 
-
-
 import { formatRevenue } from './utils';
 
-interface VitalityData {
-  opbizRt: number;
-  clsbizRt: number;
-  opbizStoreCount: number;
-  clsbizStoreCount: number;
-}
-
+/**
+ * 【리팩토링: 커스텀 훅 사용】
+ * 
+ * Before: 컴포넌트 내부에 useState + useEffect + fetch 로직이 있었음
+ * After: useVitalityData 훅으로 분리하여 컴포넌트가 더 깔끔해짐
+ * 
+ * 장점:
+ * 1. 컴포넌트는 UI 렌더링에만 집중
+ * 2. 데이터 fetch 로직은 재사용 가능
+ * 3. 테스트 용이성 향상
+ */
 export function AnalysisContent({ analytics, regionCode, onCategoryChange }: AnalysisContentProps) {
   // 선택된 대분류 탭
   const [selectedCategory, setSelectedCategory] = useState('ALL');
-  // 개폐업 데이터
-  const [vitality, setVitality] = useState<VitalityData | null>(null);
-  const [vitalityLoading, setVitalityLoading] = useState(false);
+  
+  // 【커스텀 훅 사용】 개폐업 데이터 fetch 로직이 훅으로 분리됨
+  const { vitality, loading: vitalityLoading } = useVitalityData(regionCode, selectedCategory);
 
   // 카테고리 변경 시 부모에 알림
   useEffect(() => {
     onCategoryChange?.(selectedCategory);
   }, [selectedCategory, onCategoryChange]);
-
-  // 【useEffect: 탭 변경 시 해당 대분류 데이터 fetch】
-  useEffect(() => {
-    if (!regionCode) return;
-
-    const fetchVitality = async () => {
-      setVitalityLoading(true);
-      try {
-        const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
-      
-        const url = `${API_URL}/report/summary?regionCode=${regionCode}&industryCode=${selectedCategory}`;
-        const res = await fetch(url);
-        
-        if (res.ok) {
-          const data = await res.json();
-          setVitality(data.marketTrends);
-        }
-      } catch (error) {
-        console.error('Failed to fetch vitality data:', error);
-      } finally {
-        setVitalityLoading(false);
-      }
-    };
-
-    fetchVitality();
-  }, [regionCode, selectedCategory]);
 
   // 섹터 데이터 가공
   const sectors = analytics?.sectors || [];
