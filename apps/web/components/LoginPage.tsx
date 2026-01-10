@@ -10,7 +10,7 @@ import { login } from "@/services/auth/auth.api";
 import { useUserStore } from "@/store/use-user-store";
 
 interface LoginPageProps {
-  onLogin: () => void;
+  onLogin: () => Promise<void> | void;
 }
 
 export function LoginPage({ onLogin }: LoginPageProps) {
@@ -27,7 +27,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
     try {
       const response = await login({ email, password });
       setAuthUser({ id: response.id, nickname: response.nickname });
-      onLogin();
+      await onLogin();
     } catch (err) {
       const message = err instanceof Error ? err.message : "로그인에 실패했습니다.";
       setError(message);
