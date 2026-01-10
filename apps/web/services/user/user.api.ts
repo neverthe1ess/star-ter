@@ -11,6 +11,7 @@ export type OnboardingData = {
   region: string | null;
   operatingTime: string | null;
   capital: string | null;
+  industryCode: string | null;
   completed: boolean;
 };
 

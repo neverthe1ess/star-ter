@@ -11,9 +11,13 @@ export default function Page() {
     <OnboardingPage
       onComplete={async (data: OnboardingData) => {
         await updateOnboarding(data);
-        router.push("/industry");
+        router.push("/locations");
       }}
       onBack={() => router.push("/onboarding/intro")}
+      onSkip={async (data) => {
+        await updateOnboarding(data);
+        router.push("/locations");
+      }}
     />
   );
 }

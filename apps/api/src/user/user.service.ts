@@ -14,6 +14,7 @@ export class UsersService {
         preferred_region: true,
         preferred_business_hours: true,
         startup_capital: true,
+        preferred_industry: true,
         on_boarding_completed: true,
       },
     });
@@ -27,6 +28,7 @@ export class UsersService {
       region: user.preferred_region,
       operatingTime: user.preferred_business_hours,
       capital: user.startup_capital,
+      industryCode: user.preferred_industry,
       completed: user.on_boarding_completed,
     };
   }
@@ -39,6 +41,7 @@ export class UsersService {
         preferred_region: dto.region,
         preferred_business_hours: dto.operatingTime,
         startup_capital: dto.capital,
+        preferred_industry: dto.industryCode,
         on_boarding_completed: true,
       },
     });
