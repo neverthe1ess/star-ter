@@ -1,4 +1,4 @@
-import { LocationListPage } from "@/components/LocationListPage";
+import { LocationListPage } from "@/components/LocationMainPage";
 
 export default function Page() {
   return <LocationListPage />;
