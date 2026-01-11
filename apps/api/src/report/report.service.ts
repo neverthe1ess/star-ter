@@ -215,7 +215,29 @@ export class ReportService {
     const peakFTDay =
       sortedFTDays[0].value > 0 ? sortedFTDays[0].name : '데이터 부족';
 
-    // 8) 경쟁/상권 구조
+    // -----------------------------------------
+    // 9) 유동인구 분석용 데이터 (footTrafficAnalysis)
+    // -----------------------------------------
+    // 성별 유동인구
+    const ftMale = Number(footTraffic?.ml_flpop_co || 0);
+    const ftFemale = Number(footTraffic?.fml_flpop_co || 0);
+    const ftGenderTotal = ftMale + ftFemale;
+
+    // 연령대별 유동인구 (6개 연령대)
+    const ftAgeData = [
+      { name: '10대', value: Number(footTraffic?.agrde_10_flpop_co || 0) },
+      { name: '20대', value: Number(footTraffic?.agrde_20_flpop_co || 0) },
+      { name: '30대', value: Number(footTraffic?.agrde_30_flpop_co || 0) },
+      { name: '40대', value: Number(footTraffic?.agrde_40_flpop_co || 0) },
+      { name: '50대', value: Number(footTraffic?.agrde_50_flpop_co || 0) },
+      {
+        name: '60대+',
+        value: Number(footTraffic?.agrde_60_above_flpop_co || 0),
+      },
+    ];
+    const ftAgeTotal = ftAgeData.reduce((sum, a) => sum + a.value, 0);
+
+    // 10) 경쟁/상권 구조
     const avgIncome = income?.mt_avrg_income_amt || 0;
     const linkedIndustries = topIndustries
       .filter((i) => i.industryName !== industryName)
@@ -496,6 +518,39 @@ export class ReportService {
           highlight: '로컬 마케팅',
         },
       ],
+      // -----------------------------------------
+      // 유동인구 분석 (TrafficContent 전용)
+      // -----------------------------------------
+      footTrafficAnalysis: {
+        dailyTotal: Number(footTraffic?.tot_flpop_co || 0),
+        peakTimeSlot: peakFTTime,
+        peakDay:
+          peakFTDay !== '데이터 부족' ? peakFTDay + '요일' : '데이터 부족',
+        genderRatio: {
+          male:
+            ftGenderTotal > 0
+              ? Number(((ftMale / ftGenderTotal) * 100).toFixed(1))
+              : 50,
+          female:
+            ftGenderTotal > 0
+              ? Number(((ftFemale / ftGenderTotal) * 100).toFixed(1))
+              : 50,
+        },
+        timeSlotRatio: ftTimes.map((t) => ({
+          timeRange: t.name,
+          ratio:
+            ftTotal > 0 ? Number(((t.value / ftTotal) * 100).toFixed(1)) : 0,
+          count: t.value,
+        })),
+        ageGroupRatio: ftAgeData.map((a) => ({
+          ageGroup: a.name,
+          ratio:
+            ftAgeTotal > 0
+              ? Number(((a.value / ftAgeTotal) * 100).toFixed(1))
+              : 0,
+          count: a.value,
+        })),
+      },
     };
 
     const result: SummaryReportResponse = {

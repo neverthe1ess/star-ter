@@ -43,3 +43,21 @@ export interface GenderRankingRow {
   gender_ratio: number;
   change_type: string | null;
 }
+
+/**
+ * 1시간 단위 인구 데이터 JSON 형태
+ */
+export interface RawHourlyJson extends Record<string, unknown> {
+  hour: number; // 0~23
+  ap: number; // avg_pop
+  sp: number; // sum_pop
+}
+
+/**
+ * 1시간 단위 Raw SQL 쿼리 결과 타입
+ */
+export interface RawHourlyQueryResult {
+  id: string; // cell_id
+  geom: string; // geometry
+  hours: RawHourlyJson[]; // hourly_data
+}

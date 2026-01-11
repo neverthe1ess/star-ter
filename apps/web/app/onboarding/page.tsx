@@ -2,7 +2,8 @@
 
 import { useRouter } from "next/navigation";
 
-import { OnboardingPage, type OnboardingData } from "@/components/OnboardingPage";
+import { OnboardingPage } from "@/components/OnboardingPage";
+import type { OnboardingData } from "@/components/onboarding/onboarding-options";
 import { updateOnboarding } from "@/services/user/user.api";
 
 export default function Page() {
@@ -11,9 +12,13 @@ export default function Page() {
     <OnboardingPage
       onComplete={async (data: OnboardingData) => {
         await updateOnboarding(data);
-        router.push("/industry");
+        router.push("/locations");
       }}
       onBack={() => router.push("/onboarding/intro")}
+      onSkip={async (data) => {
+        await updateOnboarding(data);
+        router.push("/locations");
+      }}
     />
   );
 }

@@ -99,7 +99,6 @@ export function RegisterPage({ onRegister }: RegisterPageProps) {
               required
               className="h-14 text-base"
             />
-            {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
           </div>
 
           <Button

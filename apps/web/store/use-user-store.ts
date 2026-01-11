@@ -5,6 +5,7 @@ import { create } from "zustand";
 export type AuthUser = {
   id?: string;
   nickname?: string;
+  profileImageKey?: string | null;
 };
 
 type UserState = {

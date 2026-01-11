@@ -1,6 +1,4 @@
-'use client';
-
-import { ChevronRight } from 'lucide-react';
+import NewsSection from '../NewsSection';
 
 import {
   growthData,
@@ -89,32 +87,8 @@ export function DataTable() {
             </Tabs>
           </div>
 
-          {/* TODO: 집어넣을 데이터 생각해야해 */}
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-lg">공지사항</h3>
-              <ChevronRight className="w-5 h-5 text-gray-400" />
-            </div>
-            <div className="space-y-4">
-              <div className="group cursor-pointer">
-                <div className="text-sm text-gray-900 group-hover:text-blue-800 mb-1">
-                  신규 상권 데이터 업데이트 안내
-                </div>
-                <div className="text-xs text-gray-500">2026.01.08</div>
-              </div>
-              <div className="group cursor-pointer">
-                <div className="text-sm text-gray-900 group-hover:text-blue-800 mb-1">
-                  2024년 4분기 상권 트렌드 리포트 발행
-                </div>
-                <div className="text-xs text-gray-500">2026.01.08</div>
-              </div>
-              <div className="group cursor-pointer">
-                <div className="text-sm text-gray-900 group-hover:text-blue-800 mb-1">
-                  서비스 이용약관 개정 안내
-                </div>
-                <div className="text-xs text-gray-500">2026.01.08</div>
-              </div>
-            </div>
+            <NewsSection></NewsSection>
           </div>
         </div>
       </div>

@@ -9,6 +9,8 @@ import {
   TimeSegmentedPopulationFeature,
   TimeSlotPopulation,
   GeoJsonGeometry,
+  HourlyPopulationFeature,
+  HourlyPopulation,
 } from './dto/floating-population-response.dto';
 import {
   GetPopulationRankingQueryDto,
@@ -18,6 +20,7 @@ import {
   RawQueryResult,
   MZRankingRow,
   GenderRankingRow,
+  RawHourlyQueryResult,
 } from './dto/repository.types';
 
 // 전역 상수 정의
@@ -157,6 +160,107 @@ export class FloatingPopulationRepository {
         'Database query failed in findTimeSegmentedLayer',
         error,
       );
+      throw error;
+    }
+  }
+
+  /**
+   * [1시간 단위 히트맵용 조회]
+   * tt 필드(0~23)를 그룹화하지 않고 시간별로 조회합니다.
+   * 24개 시간대 데이터를 반환하여 1시간 단위 히트맵 구현을 지원합니다.
+   */
+  async findHourlyLayer(
+    minLat: number,
+    minLng: number,
+    maxLat: number,
+    maxLng: number,
+  ): Promise<HourlyPopulationFeature[]> {
+    // 28개 기초 필드 SUM 구문 생성
+    const granularSums = GRANULAR_FIELDS.map(
+      (f) => `SUM(p."${f}") as ${f}`,
+    ).join(', ');
+
+    const query = `
+      WITH viewport_grids AS (
+        SELECT cell_id, geom 
+        FROM "seoul_250_grid"
+        WHERE ST_Intersects(geom, ST_MakeEnvelope(${minLng}, ${minLat}, ${maxLng}, ${maxLat}, 4326))
+      ),
+      hourly_stats AS (
+        SELECT 
+          p."cell_id" as cid,
+          CAST(p."tt" AS INTEGER) as hour,
+          AVG(p."spop") as ap,
+          SUM(p."spop") as sp,
+          ${granularSums}
+        FROM "seoul_250_population" p
+        WHERE p."cell_id" IN (SELECT cell_id FROM viewport_grids)
+        GROUP BY p."cell_id", CAST(p."tt" AS INTEGER)
+      )
+      SELECT 
+        g.cell_id as id, 
+        ST_AsGeoJSON(g.geom) as geom, 
+        json_agg(
+          json_build_object(
+            'hour', s.hour,
+            'ap', s.ap,
+            'sp', s.sp,
+            ${GRANULAR_FIELDS.map((f) => `'${f}', s.${f}`).join(',\n')}
+          ) ORDER BY s.hour
+        ) FILTER (WHERE s.hour IS NOT NULL) as hours
+      FROM viewport_grids g
+      LEFT JOIN hourly_stats s ON g.cell_id = s.cid
+      GROUP BY g.cell_id, g.geom;
+    `;
+
+    try {
+      const rawResults =
+        await this.prisma.$queryRawUnsafe<RawHourlyQueryResult[]>(query);
+
+      return rawResults.map((row) => ({
+        cell_id: row.id,
+        geometry: JSON.parse(row.geom) as GeoJsonGeometry,
+        hourly_data: (row.hours || []).map((h) => {
+          // 성별 합계 계산
+          let maleTotal = 0;
+          let femaleTotal = 0;
+          GRANULAR_FIELDS.forEach((f) => {
+            const val = Number(h[f]) || 0;
+            if (f.startsWith('m')) {
+              maleTotal += val;
+            } else {
+              femaleTotal += val;
+            }
+          });
+
+          // 연령대 합계 계산 헬퍼
+          const getSum = (...fields: string[]): number =>
+            fields.reduce((sum, f) => sum + (Number(h[f]) || 0), 0);
+
+          return {
+            hour: Number(h.hour),
+            avg_population: Number(h.ap) || 0,
+            sum_population: Number(h.sp) || 0,
+            male_total: maleTotal,
+            female_total: femaleTotal,
+            age_10s_total: getSum('m10', 'm15', 'f10', 'f15'),
+            age_20s_total: getSum('m20', 'm25', 'f20', 'f25'),
+            age_30s_total: getSum('m30', 'm35', 'f30', 'f35'),
+            age_40s_total: getSum('m40', 'm45', 'f40', 'f45'),
+            age_50s_total: getSum('m50', 'm55', 'f50', 'f55'),
+            age_60s_plus_total: getSum(
+              'm60',
+              'm65',
+              'm70',
+              'f60',
+              'f65',
+              'f70',
+            ),
+          } as HourlyPopulation;
+        }),
+      }));
+    } catch (error) {
+      this.logger.error('Database query failed in findHourlyLayer', error);
       throw error;
     }
   }

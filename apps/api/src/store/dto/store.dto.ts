@@ -60,8 +60,8 @@ export class GetStoreQueryDto {
  */
 export class GetStoreLocationsQueryDto {
   @IsString()
-  @IsNotEmpty()
-  industryCode: string; // DB 업종 코드 (예: I21006 치킨)
+  @IsOptional()
+  industryCode?: string; // DB 업종 코드 (예: I21006 치킨), 없으면 전체 조회
 
   @Type(() => Number)
   @IsNumber()

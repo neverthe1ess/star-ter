@@ -17,7 +17,8 @@ import { TrafficContent } from './location-detail/TrafficContent';
 import { AnalysisContent } from './location-detail/AnalysisContent';
 import { RealEstateContent } from './location-detail/RealEstateContent';
 import { MapSection } from './location-detail/MapSection';
-import { useEffect, useState } from 'react';
+import { RealEstateDetailPanel } from './location-detail/RealEstateDetailPanel';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Button } from './ui/button';
 import { Resizable } from 're-resizable';
 import Link from 'next/link';
@@ -25,25 +26,132 @@ import type {
   CommercialBasicInfo,
   MarketAnalytics,
   RealEstateItem,
+  FootTrafficAnalysis,
 } from './location-detail/types';
 import { addToHistory } from '@/hooks/useLocationHistory';
+import { GenderFilter, AgeFilter } from './location-detail/types';
 
 interface LocationDetailPageProps {
   basicInfo: CommercialBasicInfo;
   analytics: MarketAnalytics | null;
   realEstate: RealEstateItem[];
+  footTraffic?: FootTrafficAnalysis | null;
 }
 
 export function LocationDetailPage({
   basicInfo,
   analytics,
   realEstate,
+  footTraffic,
 }: LocationDetailPageProps) {
   const [activeTab, setActiveTab] = useState<
     'matching' | 'traffic' | 'analysis' | 'realestate'
   >('matching');
   const [mapWidth, setMapWidth] = useState<number | string>('30%');
   const [isChatMode, setIsChatMode] = useState(false);
+  
+  /**
+   * 【Lifting State Up 패턴】
+   * 선택된 매물 상태를 부모(LocationDetailPage)에서 관리합니다.
+   * 이렇게 하면 MapSection(마커)과 RealEstateDetailPanel(상세패널)이
+   * 동일한 상태를 공유할 수 있습니다.
+   */
+  const [selectedItem, setSelectedItem] = useState<RealEstateItem | null>(null);
+  
+  // 【업종 분석 카테고리 선택 상태】 지도에 점포 마커 표시용
+  const [selectedAnalysisCategory, setSelectedAnalysisCategory] = useState<string>('ALL');
+  
+  // 【최소/최대 가격 계산】 useMemo로 최적화
+  const priceRange = useMemo(() => {
+    if (realEstate.length === 0) return { minDeposit: 0, maxDeposit: 10000, minRent: 0, maxRent: 1000 };
+    const deposits = realEstate.map(i => i.deposit ?? 0);
+    const rents = realEstate.map(i => i.monthlyrent ?? 0);
+    return {
+      minDeposit: Math.min(...deposits),
+      maxDeposit: Math.max(...deposits),
+      minRent: Math.min(...rents),
+      maxRent: Math.max(...rents),
+    };
+  }, [realEstate]);
+  
+  // 【지도 범위 상태】
+  const [mapBounds, setMapBounds] = useState<{
+    sw: { lat: number; lng: number };
+    ne: { lat: number; lng: number };
+  } | null>(null);
+
+  // 【가격 필터 상태】 초기값을 priceRange에서 가져옴
+  const [depositRange, setDepositRange] = useState<[number, number]>(
+    () => [priceRange.minDeposit, priceRange.maxDeposit]
+  );
+  const [rentRange, setRentRange] = useState<[number, number]>(
+    () => [priceRange.minRent, priceRange.maxRent]
+  );
+  
+  // 【필터링된 매물 목록】
+  const filteredItems = useMemo(() => {
+    return realEstate.filter(item => {
+      // 가격 필터
+      const deposit = item.deposit ?? 0;
+      const rent = item.monthlyrent ?? 0;
+      if (deposit < depositRange[0] || deposit > depositRange[1]) return false;
+      if (rent < rentRange[0] || rent > rentRange[1]) return false;
+      
+      // 지도 범위 필터
+      if (mapBounds && item.centerlatitude && item.centerlongitude) {
+        const lat = item.centerlatitude;
+        const lng = item.centerlongitude;
+        if (lat < mapBounds.sw.lat || lat > mapBounds.ne.lat) return false;
+        if (lng < mapBounds.sw.lng || lng > mapBounds.ne.lng) return false;
+      }
+      
+      return true;
+    });
+  }, [realEstate, depositRange, rentRange, mapBounds]);
+  
+  // 【콜백 핸들러】 useCallback으로 리렌더 최적화
+  const handleMarkerClick = useCallback((item: RealEstateItem) => {
+    setSelectedItem(item);
+  }, []);
+  
+  const handleBoundsChange = useCallback((bounds: { sw: { lat: number; lng: number }; ne: { lat: number; lng: number } }) => {
+    setMapBounds(bounds);
+  }, []);
+
+  // 【유동인구 히트맵 상태】 시간대별 자동 재생 및 필터
+  const [trafficState, setTrafficState] = useState({
+    isPlaying: true,
+    currentTimeIndex: 12, // 기본: 점심 12시
+    genderFilter: 'all' as GenderFilter,
+    ageFilter: 'all' as AgeFilter,
+  });
+
+  // 【시간대 자동 전환 타이머】 1초마다 다음 시간대로 이동 (0~23시 순환)
+  useEffect(() => {
+    if (!trafficState.isPlaying || activeTab !== 'traffic') return;
+    
+    const timer = setInterval(() => {
+      setTrafficState(prev => ({
+        ...prev,
+        currentTimeIndex: (prev.currentTimeIndex + 1) % 24, // 24시간 순환
+      }));
+    }, 250);
+    
+    return () => clearInterval(timer);
+  }, [trafficState.isPlaying, activeTab]);
+
+  // 【트래픽 핸들러】
+  const handleTrafficPlayToggle = useCallback(() => {
+    setTrafficState(prev => ({ ...prev, isPlaying: !prev.isPlaying }));
+  }, []);
+
+  const handleTrafficTimeChange = useCallback((hour: number) => {
+    setTrafficState(prev => ({ ...prev, currentTimeIndex: hour, isPlaying: false }));
+  }, []);
+
+  const handleTrafficFilterChange = useCallback((gender: GenderFilter, age: AgeFilter) => {
+    setTrafficState(prev => ({ ...prev, genderFilter: gender, ageFilter: age }));
+  }, []);
 
   const tabs = [
     {
@@ -54,7 +162,7 @@ export function LocationDetailPage({
     { id: 'traffic' as const, label: '유동인구', icon: Users },
     {
       id: 'analysis' as const,
-      label: '업종/매출 분석',
+      label: '업종 / 매출 분석',
       icon: BarChart3,
     },
     {
@@ -71,10 +179,12 @@ export function LocationDetailPage({
   }, [basicInfo?.code]);
 
   return (
-    <div className="min-h-screen bg-[#f7f7f8]">
-      <div className="px-8 py-12">
-        <div className="mb-16">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+    <div className="h-screen bg-[#f7f7f8]">
+      {/* 사이드바와 맞춤: 상하좌 p-4, 오른쪽만 pr-8 추가 */}
+      <div className="py-6 pl-4 pr-16 h-full flex flex-col">
+        {/* 헤더: 고정 높이 (shrink 방지) */}
+        <div className="mb-4 shrink-0">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-2">
             <div className="flex items-center gap-4">
               <Link
                 href="/locations"
@@ -82,17 +192,18 @@ export function LocationDetailPage({
               >
                 <ArrowLeft className="w-6 h-6 text-gray-900" />
               </Link>
-              <h1 className="text-6xl font-bold text-gray-900">
+              <h1 className="text-5xl font-bold text-gray-900">
                 {basicInfo.name}
               </h1>
             </div>
           </div>
-          <div className="flex items-center gap-4 mb-8">
-            <p className="text-3xl text-gray-500">서울시 {basicInfo.guName} {basicInfo.dongName}</p>
+          <div className="flex items-center gap-4 ml-16">
+            <p className="text-2xl text-gray-500">서울시 {basicInfo.guName} {basicInfo.dongName}</p>
           </div>
         </div>
 
-        <div className="flex gap-8 h-[calc(100vh-280px)] min-h-[700px] items-stretch overflow-hidden">
+        {/* 메인 콘텐츠: 남은 공간 모두 채움 */}
+        <div className="flex gap-4 flex-1 items-stretch overflow-hidden">
           <Resizable
             size={{ width: mapWidth, height: '100%' }}
             onResizeStop={(e, direction, ref) => {
@@ -125,10 +236,31 @@ export function LocationDetailPage({
             }}
             className="flex-shrink-0"
           >
-            {/* MapSection: 탭에 따라 다른 오버레이 표시 (추후 확장) */}
+            {/* MapSection: 서버에서 계산된 중심점 좌표와 폴리곤 데이터 전달 */}
             <MapSection
               mode={activeTab}
               polygonData={basicInfo.polygons}
+              centerX={basicInfo.x}
+              centerY={basicInfo.y}
+              realEstateItems={filteredItems}
+              selectedItemId={selectedItem?.id}
+              onMarkerClick={handleMarkerClick}
+              priceFilter={{
+                ...priceRange,
+                depositRange,
+                rentRange,
+              }}
+              onDepositChange={setDepositRange}
+              onRentChange={setRentRange}
+              onBoundsChange={handleBoundsChange}
+              filteredCount={filteredItems.length}
+              totalCount={realEstate.length}
+              selectedAnalysisCategory={selectedAnalysisCategory}
+              regionCode={basicInfo.code}
+              trafficFilter={trafficState}
+              onTrafficPlayToggle={handleTrafficPlayToggle}
+              onTrafficTimeChange={handleTrafficTimeChange}
+              onTrafficFilterChange={handleTrafficFilterChange}
             />
           </Resizable>
 
@@ -154,7 +286,7 @@ export function LocationDetailPage({
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                      className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                      className={`px-6 py-2.5 rounded-xl text-lg font-bold transition-all ${
                         activeTab === tab.id
                           ? 'bg-blue-950 text-white shadow-md'
                           : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
@@ -168,7 +300,7 @@ export function LocationDetailPage({
 
               <Button
                 onClick={() => setIsChatMode(!isChatMode)}
-                className={`rounded-xl px-6 py-2.5 font-bold transition-all ${
+                className={`rounded-xl px-6 py-7 font-bold text-xl transition-all ${
                   isChatMode
                     ? 'bg-white text-slate-900 border border-slate-200 hover:bg-slate-50'
                     : 'bg-blue-950 text-white hover:bg-blue-900 shadow-lg'
@@ -182,7 +314,7 @@ export function LocationDetailPage({
                 ) : (
                   <>
                     <MessageSquare className="w-4 h-4 mr-2" />
-                    AI 분석 상담 시작
+                    AI 분석 상담하기
                   </>
                 )}
               </Button>
@@ -198,9 +330,14 @@ export function LocationDetailPage({
                       {activeTab === 'matching' && (
                         <MatchingContent locationName={basicInfo.name} />
                       )}
-                      {activeTab === 'traffic' && <TrafficContent analytics={analytics} />}
-                      {activeTab === 'analysis' && <AnalysisContent analytics={analytics} />}
-                      {activeTab === 'realestate' && <RealEstateContent items={realEstate} />}
+                      {activeTab === 'traffic' && <TrafficContent footTraffic={footTraffic ?? null} regionCode={basicInfo.code} />}
+                      {activeTab === 'analysis' && <AnalysisContent analytics={analytics} regionCode={basicInfo.code} onCategoryChange={setSelectedAnalysisCategory} />}
+                      {activeTab === 'realestate' && (
+                        <RealEstateContent 
+                          items={filteredItems} 
+                          onItemClick={handleMarkerClick}
+                        />
+                      )}
                     </div>
                   )}
                 </div>
@@ -209,6 +346,18 @@ export function LocationDetailPage({
           </div>
         </div>
       </div>
+
+      {/* 
+        【조건부 렌더링 (Conditional Rendering)】
+        selectedItem이 존재할 때만 상세 패널을 렌더링합니다.
+        && 연산자: 왼쪽이 truthy일 때만 오른쪽을 평가/렌더링
+      */}
+      {selectedItem && (
+        <RealEstateDetailPanel
+          item={selectedItem}
+          onClose={() => setSelectedItem(null)}
+        />
+      )}
     </div>
   );
 }

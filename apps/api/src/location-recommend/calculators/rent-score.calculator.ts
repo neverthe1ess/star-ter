@@ -12,44 +12,49 @@ const CAPITAL_MAP: Record<string, number> = {
 @Injectable()
 export class RentScoreCalculator {
   /**
-   * 임대료 점수 계산 (0~1)
+   * 임대료 점수 계산 (0.1 ~ 1.0)
    *
-   * 새 로직:
-   * - 자본금과 임대비용이 가까울수록 높은 점수
-   * - ratio = min(capital, cost) / max(capital, cost)
-   * - 완전히 일치하면 1점, 차이가 클수록 0에 가까워짐
+   * 정책:
+   * - 상권 평균 비용이 사용자 창업 자본금 이내면 1점
+   * - 초과하면 (자본금 / 비용) 비율로 감점
    *
    * @param capital 자본금 문자열 ('10M', '30M', ...)
-   * @param avgDeposit 평균 보증금 (원)
-   * @param avgRent 평균 월세 (원)
+   * @param avgDeposit 평균 보증금 (천원 단위)
+   * @param avgRent 평균 월세 (천원 단위)
    */
   calculate(
     capital: string,
     avgDeposit: number | null,
     avgRent: number | null,
+    avgPremim: number | null,
   ): number {
     const capitalAmount = CAPITAL_MAP[capital] || 50000000;
 
-    // 임대료 정보가 없으면 0.5점 (중립)
+    // 평균 보증금, 평균 월세가 없으면 매물이 없는거임 - 0점 부여
     if (avgDeposit === null && avgRent === null) {
-      return 0.5;
+      return 0;
     }
 
-    // 총 비용 계산: 보증금 + 월세
-    // DB 값은 천원 단위이므로 * 1000 해서 원 단위로 변환
+    // 천원 → 원 단위 변환
     const deposit = (avgDeposit || 0) * 1000;
-    const rent = (avgRent || 0) * 1000;
-    const totalCost = deposit + rent;
+    const rent = (avgRent || 0) * 6 * 1000;
+    const premium = (avgPremim || 0) * 1000;
+    const totalCost = deposit + rent + premium;
 
-    if (totalCost <= 0) return 0.5; // 데이터 이상
+    // 데이터 이상 방어
+    if (totalCost <= 0) {
+      return 0;
+    }
 
-    // 가까울수록 높은 점수 (0~1)
-    // ratio = min / max → 일치하면 1, 차이 클수록 0에 가까움
-    const minVal = Math.min(capitalAmount, totalCost);
-    const maxVal = Math.max(capitalAmount, totalCost);
-    const score = minVal / maxVal;
+    // 예산 이내 → 만점
+    if (totalCost <= capitalAmount) {
+      return 1.0;
+    }
 
-    // 0.1 ~ 1.0 범위로 조정
-    return Math.max(0.1, Math.min(1, score));
+    // 예산 초과 → 비율 감점
+    const ratio = capitalAmount / totalCost;
+
+    // 최소 0.1 보장
+    return Math.max(0.1, Math.min(1, ratio));
   }
 }
