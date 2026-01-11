@@ -58,3 +58,34 @@ export class TimeSegmentedPopulationFeature {
 export class TimeSegmentedLayerResponse {
   features: TimeSegmentedPopulationFeature[];
 }
+
+// ====================================
+// 1시간 단위 히트맵용 DTO
+// ====================================
+
+/** 1시간 단위 인구 데이터 */
+export class HourlyPopulation {
+  hour: number; // 0~23
+  avg_population: number;
+  sum_population: number;
+  male_total: number;
+  female_total: number;
+  age_10s_total: number;
+  age_20s_total: number;
+  age_30s_total: number;
+  age_40s_total: number;
+  age_50s_total: number;
+  age_60s_plus_total: number;
+}
+
+/** 1시간 단위 그리드 셀 Feature */
+export class HourlyPopulationFeature {
+  cell_id: string;
+  geometry: GeoJsonGeometry;
+  hourly_data: HourlyPopulation[];
+}
+
+/** 1시간 단위 레이어 응답 */
+export class HourlyLayerResponse {
+  features: HourlyPopulationFeature[];
+}

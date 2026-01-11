@@ -121,21 +121,21 @@ export function LocationDetailPage({
   // 【유동인구 히트맵 상태】 시간대별 자동 재생 및 필터
   const [trafficState, setTrafficState] = useState({
     isPlaying: true,
-    currentTimeIndex: 1, // 기본: 낮 (8~16시)
+    currentTimeIndex: 12, // 기본: 점심 12시
     genderFilter: 'all' as GenderFilter,
     ageFilter: 'all' as AgeFilter,
   });
 
-  // 【시간대 자동 전환 타이머】 3초마다 다음 시간대로 이동
+  // 【시간대 자동 전환 타이머】 1초마다 다음 시간대로 이동 (0~23시 순환)
   useEffect(() => {
     if (!trafficState.isPlaying || activeTab !== 'traffic') return;
     
     const timer = setInterval(() => {
       setTrafficState(prev => ({
         ...prev,
-        currentTimeIndex: (prev.currentTimeIndex + 1) % 3, // 3개 시간대 순환 (새벽/낮/밤)
+        currentTimeIndex: (prev.currentTimeIndex + 1) % 24, // 24시간 순환
       }));
-    }, 3000); // 3초마다 전환
+    }, 250);
     
     return () => clearInterval(timer);
   }, [trafficState.isPlaying, activeTab]);
@@ -145,8 +145,8 @@ export function LocationDetailPage({
     setTrafficState(prev => ({ ...prev, isPlaying: !prev.isPlaying }));
   }, []);
 
-  const handleTrafficTimeChange = useCallback((index: number) => {
-    setTrafficState(prev => ({ ...prev, currentTimeIndex: index, isPlaying: false }));
+  const handleTrafficTimeChange = useCallback((hour: number) => {
+    setTrafficState(prev => ({ ...prev, currentTimeIndex: hour, isPlaying: false }));
   }, []);
 
   const handleTrafficFilterChange = useCallback((gender: GenderFilter, age: AgeFilter) => {

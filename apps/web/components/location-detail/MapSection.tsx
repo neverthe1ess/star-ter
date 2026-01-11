@@ -8,8 +8,8 @@ import { IndustryAnalysisBar, type IndustryId } from "./IndustryAnalysisBar";
 import { TrafficFilterBar } from "./TrafficFilterBar";
 import { useStoreLocations } from "./hooks";
 import { MAJOR_CATEGORIES } from "./constants/category";
-import { usePopulationLayer } from "../../hooks/usePopulationLayer";
-import { TimeFilter, GenderFilter, AgeFilter, TIME_SLOTS } from "./types";
+import { usePopulationLayer } from "./hooks/usePopulationLayer";
+import { GenderFilter, AgeFilter } from "./types";
 
 /**
  * 【MapSection 컴포넌트】
@@ -132,13 +132,11 @@ export function MapSection({
   const { map, loaded } = useKakaoMap(mapRef);
 
   // 【유동인구 히트맵 훅】 traffic 모드일 때만 활성화
-  const currentTimeFilter: TimeFilter = trafficFilter
-    ? TIME_SLOTS[trafficFilter.currentTimeIndex]?.filter || 'day'
-    : 'day';
+  const currentHour = trafficFilter?.currentTimeIndex ?? 12;
   
   usePopulationLayer({
     map: map,
-    timeFilter: currentTimeFilter,
+    hour: currentHour,
     genderFilter: trafficFilter?.genderFilter || 'all',
     ageFilter: trafficFilter?.ageFilter || 'all',
     isVisible: mode === 'traffic' && loaded,
@@ -513,18 +511,17 @@ export function MapSection({
       )}
 
       {/* 유동인구 필터 바 (traffic 모드일 때만 표시) */}
-      {mode === 'traffic' && trafficFilter && onTrafficPlayToggle && onTrafficTimeChange && onTrafficFilterChange && (
+      {mode === 'traffic' && trafficFilter && (
         <TrafficFilterBar
           isPlaying={trafficFilter.isPlaying}
-          onTogglePlay={onTrafficPlayToggle}
-          currentTimeIndex={trafficFilter.currentTimeIndex}
-          onTimeChange={onTrafficTimeChange}
+          onTogglePlay={onTrafficPlayToggle || (() => {})}
+          currentHour={trafficFilter.currentTimeIndex}
+          onHourChange={onTrafficTimeChange || (() => {})}
           genderFilter={trafficFilter.genderFilter}
           ageFilter={trafficFilter.ageFilter}
-          onFilterChange={onTrafficFilterChange}
+          onFilterChange={onTrafficFilterChange || (() => {})}
         />
       )}
     </div>
   );
 }
-
