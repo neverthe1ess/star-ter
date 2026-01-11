@@ -31,7 +31,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       />
       <div
         className={`flex-1 h-screen overflow-y-auto transition-all duration-300 ease-in-out ${
-          isSidebarOpen ? "ml-[350px]" : "ml-0"
+          isSidebarOpen ? "ml-[350px]" : "ml-20"
         }`}
       >
         {children}

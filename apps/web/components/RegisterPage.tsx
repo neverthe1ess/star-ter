@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Logo } from "./Logo";
+import { Logo } from './landing/header/Logo';
 import { regist } from "@/services/auth/auth.api";
 import { useUserStore } from "@/store/use-user-store";
 
@@ -99,7 +99,6 @@ export function RegisterPage({ onRegister }: RegisterPageProps) {
               required
               className="h-14 text-base"
             />
-            {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
           </div>
 
           <Button

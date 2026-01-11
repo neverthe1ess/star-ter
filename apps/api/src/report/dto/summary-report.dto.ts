@@ -157,4 +157,36 @@ export interface SummaryReportResponse {
     industryName: string;
     salesAmount: number;
   }[];
+
+  // -----------------------------------------
+  // 12) 유동인구 분석 (TrafficContent 전용)
+  // -----------------------------------------
+  footTrafficAnalysis: {
+    /** 일일 총 유동인구 (명) */
+    dailyTotal: number;
+    /** 피크 시간대 (예: "17~21시") */
+    peakTimeSlot: string;
+    /** 피크 요일 (예: "화요일") */
+    peakDay: string;
+
+    /** 성별 비율 (%) - 합계 100% */
+    genderRatio: {
+      male: number;
+      female: number;
+    };
+
+    /** 시간대별 방문 비중 (%) */
+    timeSlotRatio: {
+      timeRange: string; // 예: "00~06시"
+      ratio: number; // 비율 (%)
+      count: number; // 실제 인원수
+    }[];
+
+    /** 연령대별 방문 비중 (%) */
+    ageGroupRatio: {
+      ageGroup: string; // 예: "10대", "20대", ...
+      ratio: number; // 비율 (%)
+      count: number; // 실제 인원수
+    }[];
+  };
 }

@@ -1,6 +1,9 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { FloatingPopulationService } from './floating-population.service';
-import { TimeSegmentedLayerResponse } from './dto/floating-population-response.dto';
+import {
+  TimeSegmentedLayerResponse,
+  HourlyLayerResponse,
+} from './dto/floating-population-response.dto';
 import {
   GetPopulationRankingQueryDto,
   PopulationRankingResponseDto,
@@ -27,6 +30,22 @@ export class FloatingPopulationController {
     );
   }
 
+  // 1시간 단위 히트맵용 엔드포인트
+  @Get('layer/hourly')
+  async getHourlyLayer(
+    @Query('minLat') minLat: string,
+    @Query('minLng') minLng: string,
+    @Query('maxLat') maxLat: string,
+    @Query('maxLng') maxLng: string,
+  ): Promise<HourlyLayerResponse> {
+    return this.floatingPopulationService.getHourlyLayerByBounds(
+      parseFloat(minLat),
+      parseFloat(minLng),
+      parseFloat(maxLat),
+      parseFloat(maxLng),
+    );
+  }
+
   @Get('ranking')
   async getRanking(
     @Query() query: GetPopulationRankingQueryDto,
@@ -37,18 +56,24 @@ export class FloatingPopulationController {
   @Get('ranking/mz')
   async getMZRanking(
     @Query('level') level?: 'gu' | 'dong' | 'commercial',
+    @Query('keyword') keyword?: string, // 추가
   ): Promise<PopulationRankingResponseDto> {
-    return this.floatingPopulationService.getMZRanking(level || 'commercial');
+    return this.floatingPopulationService.getMZRanking(
+      level || 'commercial',
+      keyword,
+    );
   }
 
   @Get('ranking/gender')
   async getGenderRanking(
     @Query('level') level?: 'gu' | 'dong' | 'commercial',
     @Query('gender') gender?: 'male' | 'female',
+    @Query('keyword') keyword?: string, // 추가
   ): Promise<PopulationRankingResponseDto> {
     return this.floatingPopulationService.getGenderRanking(
       level || 'commercial',
       gender || 'female',
+      keyword,
     );
   }
 }

@@ -37,11 +37,6 @@ export class AiController {
     return response;
   }
 
-  @Get('/area')
-  async getAreaByMessage(@Query('message') message: string) {
-    return this.aiService.getAreaByMessage(message);
-  }
-
   @Post('/analyze')
   async analyze(
     @Body('topic') topic: string,

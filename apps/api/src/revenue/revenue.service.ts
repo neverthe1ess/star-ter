@@ -14,6 +14,7 @@ import {
   RevenueResponseDto,
   MarketAnalyticsResponseDto,
   AnalyticsSaturationDto,
+  AverageSalesRankingResponseDto,
 } from './dto/revenue.dto';
 import {
   modelMap,
@@ -516,8 +517,12 @@ export class RevenueService {
   /**
    * 성장하는 상권 랭킹 - 전분기 대비 매출 증가율 기준
    */
+  /**
+   * 성장하는 상권 랭킹 - 전분기 대비 매출 증가율 기준
+   */
   async getGrowthRanking(
     level: RevenueLevel = 'commercial',
+    keyword?: string, // 검색 키워드 추가
   ): Promise<RevenueRankingResponseDto> {
     const modelConfig = modelMap[level];
     if (!modelConfig) {
@@ -528,104 +533,216 @@ export class RevenueService {
     const currentQ = await this.getLatestQuarter(client, modelConfig.modelName);
     const prevQ = this.getPreviousQuarter(currentQ);
 
-    // Current quarter data
-    const currentData = await client.groupBy({
-      by: [modelConfig.codeField],
-      where: { stdr_yyqu_cd: currentQ },
-      _sum: { thsmon_selng_amt: true },
-    });
+    const codeCol = modelConfig.codeField;
+    const nameCol = modelConfig.nameField;
+    const table = `sales_${level}`; // sales_commercial, sales_gu, sales_dong
+    const changeTable = `commercial_change_${level}`; // commercial_change_commercial etc.
 
-    // Previous quarter data
-    const prevData = await client.groupBy({
-      by: [modelConfig.codeField],
-      where: { stdr_yyqu_cd: prevQ },
-      _sum: { thsmon_selng_amt: true },
-    });
+    // 1. 검색 조건
+    const searchCondition = keyword ? `AND ${nameCol} LIKE '%${keyword}%'` : '';
+    // 2. LIMIT 조건 (검색 시 제한 없음)
+    const limitCondition = keyword ? '' : 'LIMIT 100';
 
-    // Get name mapping
-    const nameResult = await client.findMany({
-      where: { stdr_yyqu_cd: currentQ },
-      select: { [modelConfig.codeField]: true, [modelConfig.nameField]: true },
-      distinct: [modelConfig.codeField],
-    });
+    const query = `
+      WITH CurrentSales AS (
+        SELECT 
+          ${codeCol} as code,
+          MAX(${nameCol}) as name,
+          SUM(thsmon_selng_amt) as current_amt
+        FROM ${table}
+        WHERE stdr_yyqu_cd = '${currentQ}' ${searchCondition}
+        GROUP BY ${codeCol}
+      ),
+      PrevSales AS (
+        SELECT 
+          ${codeCol} as code,
+          SUM(thsmon_selng_amt) as prev_amt
+        FROM ${table}
+        WHERE stdr_yyqu_cd = '${prevQ}'
+        GROUP BY ${codeCol}
+      ),
+      ChangeStatus AS (
+        SELECT 
+          ${codeCol} as code,
+          MAX(trdar_chnge_ix) as change_type
+        FROM ${changeTable}
+        WHERE stdr_yyqu_cd = '${currentQ}'
+        GROUP BY ${codeCol}
+      )
+      SELECT 
+        c.code,
+        c.name,
+        c.current_amt,
+        COALESCE(p.prev_amt, 0) as prev_amt,
+        s.change_type,
+        CASE 
+          WHEN COALESCE(p.prev_amt, 0) > 0 
+          THEN ( (c.current_amt - p.prev_amt)::float / p.prev_amt::float ) * 100
+          ELSE 0 
+        END as growth_rate
+      FROM CurrentSales c
+      LEFT JOIN PrevSales p ON c.code = p.code
+      LEFT JOIN ChangeStatus s ON c.code = s.code
+      WHERE COALESCE(p.prev_amt, 0) > 0 -- 전분기 매출이 있어야 성장률 계산 가능
+      ORDER BY growth_rate DESC
+      ${limitCondition};
+    `;
 
-    const nameMap = new Map<string, string>();
-    nameResult.forEach((row: any) => {
-      nameMap.set(row[modelConfig.codeField], row[modelConfig.nameField]);
-    });
+    try {
+      const results: any[] = await this.prisma.$queryRawUnsafe(query);
 
-    // Calculate growth rate
-    const prevMap = new Map<string, number>();
-    prevData.forEach((row) => {
-      const codeVal = row[modelConfig.codeField] as unknown as string;
-      const sumVal = (row._sum as Record<string, unknown> | undefined)
-        ?.thsmon_selng_amt;
-      prevMap.set(codeVal, Number(sumVal || 0));
-    });
+      const items = results.map((row) => ({
+        code: row.code,
+        name: row.name,
+        amount: Number(row.current_amt),
+        count: 0,
+        changeType: row.change_type || undefined,
+        fluctuationRate: Number(row.growth_rate.toFixed(1)),
+      }));
 
-    const items = currentData
-      .map((row: any) => {
-        const code = row[modelConfig.codeField];
-        const currentAmt = Number(row._sum.thsmon_selng_amt || 0);
-        const prevAmt = prevMap.get(code) || 0;
-        const growthRate =
-          prevAmt > 0 ? ((currentAmt - prevAmt) / prevAmt) * 100 : 0;
+      return { level, items };
+    } catch (e) {
+      this.logger.error('Failed growth ranking query', e);
+      return { level, items: [] };
+    }
+  }
 
-        return {
-          code,
-          name: nameMap.get(code) || code,
-          amount: currentAmt,
-          count: 0,
-          changeType: undefined as string | undefined,
-          fluctuationRate: Number(growthRate.toFixed(1)),
-        };
-      })
-      .sort((a: any, b: any) => b.fluctuationRate - a.fluctuationRate)
-      .slice(0, 100);
-
-    // Fetch changeType based on level
-    const codes = items.map((item) => item.code);
-
-    if (level === 'gu') {
-      const changeRows = await this.prisma.commercialChangeGu.findMany({
-        where: { stdr_yyqu_cd: currentQ, signgu_cd: { in: codes } },
-        select: { signgu_cd: true, trdar_chnge_ix: true },
-      });
-      const changeMap = new Map<string, string>();
-      changeRows.forEach((row) => {
-        if (row.trdar_chnge_ix)
-          changeMap.set(row.signgu_cd, row.trdar_chnge_ix);
-      });
-      items.forEach((item) => {
-        item.changeType = changeMap.get(item.code);
-      });
-    } else if (level === 'dong') {
-      const changeRows = await this.prisma.commercialChangeDong.findMany({
-        where: { stdr_yyqu_cd: currentQ, adstrd_cd: { in: codes } },
-        select: { adstrd_cd: true, trdar_chnge_ix: true },
-      });
-      const changeMap = new Map<string, string>();
-      changeRows.forEach((row) => {
-        if (row.trdar_chnge_ix)
-          changeMap.set(row.adstrd_cd, row.trdar_chnge_ix);
-      });
-      items.forEach((item) => {
-        item.changeType = changeMap.get(item.code);
-      });
-    } else if (level === 'commercial') {
-      const changeRows = await this.prisma.commercialChangeCommercial.findMany({
-        where: { stdr_yyqu_cd: currentQ, trdar_cd: { in: codes } },
-        select: { trdar_cd: true, trdar_chnge_ix: true },
-      });
-      const changeMap = new Map<string, string>();
-      changeRows.forEach((row) => {
-        if (row.trdar_chnge_ix) changeMap.set(row.trdar_cd, row.trdar_chnge_ix);
-      });
-      items.forEach((item) => {
-        item.changeType = changeMap.get(item.code);
-      });
+  /**
+   * 평균 매출 순 랭킹 - 점포당 평균 매출 기준 (상권별 총 매출 / 점포 수)
+   */
+  /**
+   * 평균 매출 순 랭킹 - 점포당 평균 매출 기준 (상권별 총 매출 / 점포 수)
+   */
+  async getAverageSalesRanking(
+    level: RevenueLevel = 'commercial',
+    industryCode?: string,
+    sortBy: 'average' | 'growth' = 'average',
+    keyword?: string, // 키워드 추가
+  ): Promise<AverageSalesRankingResponseDto> {
+    const modelConfig = modelMap[level];
+    if (!modelConfig) {
+      throw new BadRequestException(`Invalid level: ${level}`);
     }
 
-    return { level, items };
+    const modelName = modelConfig.modelName;
+    // 테이블명 조회 (매핑 로직 대신 직접 할당)
+    const salesTable = `sales_${level}`;
+    const storeTable = `store_${level}`;
+    const changeTable = `commercial_change_${level}`;
+
+    const client = (this.prisma as any)[modelName] as PrismaModel;
+    const currentQ = await this.getLatestQuarter(client, modelName);
+    const prevQ = this.getPreviousQuarter(currentQ);
+
+    const codeCol = modelConfig.codeField;
+    const nameCol = modelConfig.nameField;
+
+    // 1. 조건절 생성
+    const industryCondition = industryCode
+      ? `AND svc_induty_cd = '${industryCode}'`
+      : '';
+    const searchCondition = keyword ? `AND ${nameCol} LIKE '%${keyword}%'` : '';
+
+    const limitCondition = keyword ? '' : 'LIMIT 100';
+
+    // 정렬 로직
+    // average: 평균 매출 순
+    // growth: 성장률 순
+    const orderByClause =
+      sortBy === 'growth' ? 'growth_rate DESC' : 'avg_sales DESC';
+
+    const query = `
+      WITH CurrentSales AS (
+        SELECT 
+          ${codeCol} as code,
+          MAX(${nameCol}) as name,
+          SUM(thsmon_selng_amt) as total_amt,
+          SUM(ml_selng_amt) as male_amt,
+          SUM(fml_selng_amt) as female_amt
+        FROM ${salesTable}
+        WHERE stdr_yyqu_cd = '${currentQ}' ${industryCondition} ${searchCondition}
+        GROUP BY ${codeCol}
+      ),
+      CurrentStore AS (
+        SELECT 
+          ${codeCol} as code,
+          SUM(stor_co) as store_count
+        FROM ${storeTable}
+        WHERE stdr_yyqu_cd = '${currentQ}' ${industryCondition}
+        GROUP BY ${codeCol}
+      ),
+      PrevSales AS (
+        SELECT 
+          ${codeCol} as code,
+          SUM(thsmon_selng_amt) as prev_amt
+        FROM ${salesTable}
+        WHERE stdr_yyqu_cd = '${prevQ}' ${industryCondition}
+        GROUP BY ${codeCol}
+      ),
+      ChangeStatus AS (
+        SELECT 
+          ${codeCol} as code,
+          MAX(trdar_chnge_ix) as change_type
+        FROM ${changeTable}
+        WHERE stdr_yyqu_cd = '${currentQ}'
+        GROUP BY ${codeCol}
+      )
+      SELECT 
+        s.code,
+        s.name,
+        s.total_amt,
+        st.store_count,
+        COALESCE(p.prev_amt, 0) as prev_amt,
+        sc.change_type,
+        
+        -- 평균 매출 (매출 0 아님, 점포수 > 0)
+        CASE 
+          WHEN st.store_count > 0 THEN FLOOR(s.total_amt / st.store_count)
+          ELSE 0 
+        END as avg_sales,
+
+        -- 성장률
+        CASE 
+          WHEN COALESCE(p.prev_amt, 0) > 0 
+          THEN ( (s.total_amt - p.prev_amt)::float / p.prev_amt::float ) * 100
+          ELSE 0 
+        END as growth_rate,
+
+        -- 성별 비율
+        CASE 
+          WHEN (s.male_amt + s.female_amt) > 0 
+          THEN ROUND( (s.male_amt::float / (s.male_amt + s.female_amt)::float) * 100 )
+          ELSE 0 
+        END as male_ratio
+
+      FROM CurrentSales s
+      INNER JOIN CurrentStore st ON s.code = st.code -- 점포 수 정보 필수
+      LEFT JOIN PrevSales p ON s.code = p.code
+      LEFT JOIN ChangeStatus sc ON s.code = sc.code
+      WHERE st.store_count > 0 AND s.total_amt > 0 -- 유효한 데이터만
+      ORDER BY ${orderByClause}
+      ${limitCondition};
+    `;
+
+    try {
+      const results: any[] = await this.prisma.$queryRawUnsafe(query);
+
+      const items = results.map((row) => ({
+        code: row.code,
+        name: row.name,
+        totalRevenue: Number(row.total_amt),
+        avgSalesPerStore: Number(row.avg_sales),
+        storeCount: Number(row.store_count),
+        maleRatio: Number(row.male_ratio),
+        femaleRatio: 100 - Number(row.male_ratio),
+        changeType: row.change_type || undefined,
+        fluctuationRate: Number(row.growth_rate.toFixed(1)),
+      }));
+
+      return { level, industryCode, items };
+    } catch (e) {
+      this.logger.error('Failed average sales ranking query', e);
+      return { level, industryCode, items: [] };
+    }
   }
 }

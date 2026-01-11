@@ -139,7 +139,7 @@ export class StoreService {
     // 1. 지역 코드가 있으면 Polygon 검색 우선
     if (areaCode && level) {
       stores = await this.marketRepository.findStoresByIndustryAndArea({
-        industryCode,
+        industryCode: industryCode || '',
         areaCode,
         level,
         limit: limit || 1000,
@@ -155,17 +155,131 @@ export class StoreService {
           : undefined;
 
       stores = await this.marketRepository.findStoresByIndustryCode({
-        industryCode,
+        industryCode: industryCode || '',
         bbox,
         limit: limit || 100,
       });
     }
 
     return {
-      industryCode,
+      industryCode: industryCode || 'ALL',
       count: stores.length,
       stores,
     };
+  }
+
+  /**
+   * 폐업률 높은 순 랭킹
+   * GET /store/ranking/closure?level=commercial&industryCode=CS100001
+   */
+  async getClosureRateRanking(
+    level: 'commercial',
+    industryCode?: string,
+    keyword?: string, // 키워드 추가
+  ): Promise<{
+    level: string;
+    quarter: string;
+    items: {
+      code: string;
+      name: string;
+      closureRate: number;
+      closedStoreCount: number;
+      currentStoreCount: number;
+      previousStoreCount: number;
+      changeType?: string;
+    }[];
+  }> {
+    const modelConfig = this.modelMap['commercial'];
+    const client = (this.prisma as any)[modelConfig.modelName];
+    const currentQ = await this.getLatestQuarter(client, modelConfig.modelName);
+    const prevQ = this.getPreviousQuarter(currentQ);
+
+    // Raw Query로 최적화
+    // 폐업 점포 수 = MAX(0, 전분기 점포 수 - 현분기 점포 수)
+    // 폐업률 = (폐업 점포 수 / 전분기 점포 수) * 100
+
+    // 업종 필터 조건 (SQL Injection 방지를 위해 Prisma 파라미터 바인딩 사용)
+    const industryCondition = industryCode
+      ? `AND svc_induty_cd = '${industryCode}'`
+      : '';
+
+    // 검색 조건 추가
+    const searchCondition = keyword
+      ? `AND ${modelConfig.nameField} LIKE '%${keyword}%'`
+      : '';
+    // LIMIT 조건: 검색어가 있으면 제한 없음, 없으면 100개
+    const limitCondition = keyword ? '' : 'LIMIT 100';
+
+    // 상권 코드와 이름 컬럼명 (commercial 기준)
+    const codeCol = 'trdar_cd';
+    const nameCol = 'trdar_cd_nm';
+    const table = 'store_commercial';
+
+    const query = `
+      WITH CurrentStats AS (
+        SELECT 
+          ${codeCol} as code, 
+          MAX(${nameCol}) as name, 
+          SUM(stor_co) as current_count
+        FROM ${table}
+        WHERE stdr_yyqu_cd = '${currentQ}' ${industryCondition} ${searchCondition}
+        GROUP BY ${codeCol}
+      ),
+      PrevStats AS (
+        SELECT 
+          ${codeCol} as code, 
+          SUM(stor_co) as prev_count
+        FROM ${table}
+        WHERE stdr_yyqu_cd = '${prevQ}' ${industryCondition}
+        GROUP BY ${codeCol}
+      )
+      SELECT 
+        c.code,
+        c.name,
+        c.current_count as "currentStoreCount",
+        COALESCE(p.prev_count, 0) as "previousStoreCount",
+        GREATEST(0, COALESCE(p.prev_count, 0) - c.current_count) as "closedStoreCount",
+        CASE 
+          WHEN COALESCE(p.prev_count, 0) > 0 
+          THEN (GREATEST(0, COALESCE(p.prev_count, 0) - c.current_count)::float / p.prev_count::float) * 100 
+          ELSE 0 
+        END as "closureRate"
+      FROM CurrentStats c
+      LEFT JOIN PrevStats p ON c.code = p.code
+      WHERE c.current_count > 0 
+      ORDER BY "closureRate" DESC
+      ${limitCondition};
+    `;
+
+    const results: any[] = await this.prisma.$queryRawUnsafe(query);
+
+    const items = results.map((row) => {
+      const closureRate = Number(row.closureRate.toFixed(1));
+      let changeType = '정체 상권';
+      if (closureRate < 3) changeType = '안정 상권';
+      else if (closureRate > 10) changeType = '위험 상권';
+
+      return {
+        code: row.code,
+        name: row.name,
+        closureRate,
+        closedStoreCount: Number(row.closedStoreCount),
+        currentStoreCount: Number(row.currentStoreCount),
+        previousStoreCount: Number(row.previousStoreCount),
+        changeType,
+      };
+    });
+
+    return { level, quarter: currentQ, items };
+  }
+
+  private getPreviousQuarter(quarter: string): string {
+    const year = parseInt(quarter.slice(0, 4), 10);
+    const q = parseInt(quarter.slice(4), 10);
+    if (q === 1) {
+      return `${year - 1}4`;
+    }
+    return `${year}${q - 1}`;
   }
 
   private async getLatestQuarter(

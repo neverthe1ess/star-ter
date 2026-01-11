@@ -1,0 +1,50 @@
+'use client';
+
+const AGE_OPTIONS = [
+  { value: '20s', label: '20대', desc: '젊은 층을 위한 트렌디한 업종' },
+  { value: '30s', label: '30대', desc: '안정적인 수익 창출이 가능한 업종' },
+  { value: '40s', label: '40대', desc: '경험을 활용할 수 있는 업종' },
+  { value: '50s', label: '50대', desc: '노하우 기반의 전문 업종' },
+  { value: '60s', label: '60대 이상', desc: '여유로운 운영이 가능한 업종' },
+] as const;
+
+interface OnboardingStepAgeProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+export function OnboardingStepAge({
+  value,
+  onChange,
+}: OnboardingStepAgeProps) {
+  return (
+    <div className="space-y-12">
+      <h1 className="text-5xl font-semibold text-gray-900">
+        타겟 연령층을 알려주세요.
+      </h1>
+
+      <div className="space-y-4">
+        {AGE_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            onClick={() => onChange(option.value)}
+            className={`w-full p-8 border-2 rounded-2xl text-left transition-all hover:border-gray-900 hover:shadow-lg ${
+              value === option.value
+                ? 'border-gray-900 bg-gray-50 shadow-lg'
+                : 'border-gray-300'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-semibold text-gray-900 mb-2">
+                  {option.label}
+                </div>
+                <div className="text-lg text-gray-600">{option.desc}</div>
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}

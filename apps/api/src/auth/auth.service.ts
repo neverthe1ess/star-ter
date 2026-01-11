@@ -35,14 +35,22 @@ export class AuthService {
     const user = await this.authRepository.findOneByEmail(email);
 
     if (user && (await bcrypt.compare(password, user.password))) {
-      return { id: user.id, nickname: user.nickname };
+      return {
+        id: user.id,
+        nickname: user.nickname,
+        on_boarding_completed: user.on_boarding_completed ?? false,
+      };
     }
 
     return null;
   }
 
   getJwtToken(user: AuthenticatedUser) {
-    const payload = { nickname: user.nickname, sub: user.id };
+    const payload = {
+      nickname: user.nickname,
+      sub: user.id,
+      on_boarding_completed: user.on_boarding_completed,
+    };
     return {
       access_token: this.jwtService.sign(payload),
     };

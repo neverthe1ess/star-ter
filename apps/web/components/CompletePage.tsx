@@ -1,8 +1,14 @@
-"use client";
+'use client';
 
-import { Button } from "./ui/button";
-import { CheckCircle, Sparkles, Calendar, FileText, CreditCard } from "lucide-react";
-import { Logo } from "./Logo";
+import { Button } from './ui/button';
+import {
+  CheckCircle,
+  Sparkles,
+  Calendar,
+  FileText,
+  CreditCard,
+} from 'lucide-react';
+import { Logo } from './landing/header/Logo';
 
 interface CompletePageProps {
   onRestart: () => void;
@@ -23,7 +29,8 @@ export function CompletePage({ onRestart }: CompletePageProps) {
 
           <h1 className="text-4xl font-bold mb-4">창업 준비 완료!</h1>
           <p className="text-gray-600 text-lg mb-8">
-            모든 분석과 계산이 완료되었습니다.<br />
+            모든 분석과 계산이 완료되었습니다.
+            <br />
             이제 실제 창업을 위한 다음 단계를 진행하세요.
           </p>
 
@@ -36,7 +43,9 @@ export function CompletePage({ onRestart }: CompletePageProps) {
                 </div>
                 <div>
                   <div className="font-medium">부동산 계약</div>
-                  <div className="text-sm text-gray-600">선택한 매물의 임대차 계약 진행</div>
+                  <div className="text-sm text-gray-600">
+                    선택한 매물의 임대차 계약 진행
+                  </div>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -45,7 +54,9 @@ export function CompletePage({ onRestart }: CompletePageProps) {
                 </div>
                 <div>
                   <div className="font-medium">사업자 등록</div>
-                  <div className="text-sm text-gray-600">관할 세무서에서 사업자등록증 발급</div>
+                  <div className="text-sm text-gray-600">
+                    관할 세무서에서 사업자등록증 발급
+                  </div>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -54,7 +65,9 @@ export function CompletePage({ onRestart }: CompletePageProps) {
                 </div>
                 <div>
                   <div className="font-medium">인테리어 & 준비</div>
-                  <div className="text-sm text-gray-600">매장 인테리어 및 물품 구매</div>
+                  <div className="text-sm text-gray-600">
+                    매장 인테리어 및 물품 구매
+                  </div>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -63,7 +76,9 @@ export function CompletePage({ onRestart }: CompletePageProps) {
                 </div>
                 <div>
                   <div className="font-medium">오픈 준비</div>
-                  <div className="text-sm text-gray-600">시운전 및 마케팅 준비</div>
+                  <div className="text-sm text-gray-600">
+                    시운전 및 마케팅 준비
+                  </div>
                 </div>
               </div>
             </div>
@@ -89,14 +104,20 @@ export function CompletePage({ onRestart }: CompletePageProps) {
               <Sparkles className="w-5 h-5 mr-2" />
               분석 리포트 다운로드
             </Button>
-            <Button onClick={onRestart} variant="outline" className="w-full py-6">
+            <Button
+              onClick={onRestart}
+              variant="outline"
+              className="w-full py-6"
+            >
               처음부터 다시 시작하기
             </Button>
           </div>
         </div>
 
         <div className="text-center mt-6 text-gray-600">
-          <p className="text-sm">창업 과정에서 궁금한 점이 있으시면 언제든지 문의해주세요!</p>
+          <p className="text-sm">
+            창업 과정에서 궁금한 점이 있으시면 언제든지 문의해주세요!
+          </p>
         </div>
       </div>
     </div>

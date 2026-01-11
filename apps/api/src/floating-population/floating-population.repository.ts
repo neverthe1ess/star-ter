@@ -9,6 +9,8 @@ import {
   TimeSegmentedPopulationFeature,
   TimeSlotPopulation,
   GeoJsonGeometry,
+  HourlyPopulationFeature,
+  HourlyPopulation,
 } from './dto/floating-population-response.dto';
 import {
   GetPopulationRankingQueryDto,
@@ -18,6 +20,7 @@ import {
   RawQueryResult,
   MZRankingRow,
   GenderRankingRow,
+  RawHourlyQueryResult,
 } from './dto/repository.types';
 
 // 전역 상수 정의
@@ -161,6 +164,107 @@ export class FloatingPopulationRepository {
     }
   }
 
+  /**
+   * [1시간 단위 히트맵용 조회]
+   * tt 필드(0~23)를 그룹화하지 않고 시간별로 조회합니다.
+   * 24개 시간대 데이터를 반환하여 1시간 단위 히트맵 구현을 지원합니다.
+   */
+  async findHourlyLayer(
+    minLat: number,
+    minLng: number,
+    maxLat: number,
+    maxLng: number,
+  ): Promise<HourlyPopulationFeature[]> {
+    // 28개 기초 필드 SUM 구문 생성
+    const granularSums = GRANULAR_FIELDS.map(
+      (f) => `SUM(p."${f}") as ${f}`,
+    ).join(', ');
+
+    const query = `
+      WITH viewport_grids AS (
+        SELECT cell_id, geom 
+        FROM "seoul_250_grid"
+        WHERE ST_Intersects(geom, ST_MakeEnvelope(${minLng}, ${minLat}, ${maxLng}, ${maxLat}, 4326))
+      ),
+      hourly_stats AS (
+        SELECT 
+          p."cell_id" as cid,
+          CAST(p."tt" AS INTEGER) as hour,
+          AVG(p."spop") as ap,
+          SUM(p."spop") as sp,
+          ${granularSums}
+        FROM "seoul_250_population" p
+        WHERE p."cell_id" IN (SELECT cell_id FROM viewport_grids)
+        GROUP BY p."cell_id", CAST(p."tt" AS INTEGER)
+      )
+      SELECT 
+        g.cell_id as id, 
+        ST_AsGeoJSON(g.geom) as geom, 
+        json_agg(
+          json_build_object(
+            'hour', s.hour,
+            'ap', s.ap,
+            'sp', s.sp,
+            ${GRANULAR_FIELDS.map((f) => `'${f}', s.${f}`).join(',\n')}
+          ) ORDER BY s.hour
+        ) FILTER (WHERE s.hour IS NOT NULL) as hours
+      FROM viewport_grids g
+      LEFT JOIN hourly_stats s ON g.cell_id = s.cid
+      GROUP BY g.cell_id, g.geom;
+    `;
+
+    try {
+      const rawResults =
+        await this.prisma.$queryRawUnsafe<RawHourlyQueryResult[]>(query);
+
+      return rawResults.map((row) => ({
+        cell_id: row.id,
+        geometry: JSON.parse(row.geom) as GeoJsonGeometry,
+        hourly_data: (row.hours || []).map((h) => {
+          // 성별 합계 계산
+          let maleTotal = 0;
+          let femaleTotal = 0;
+          GRANULAR_FIELDS.forEach((f) => {
+            const val = Number(h[f]) || 0;
+            if (f.startsWith('m')) {
+              maleTotal += val;
+            } else {
+              femaleTotal += val;
+            }
+          });
+
+          // 연령대 합계 계산 헬퍼
+          const getSum = (...fields: string[]): number =>
+            fields.reduce((sum, f) => sum + (Number(h[f]) || 0), 0);
+
+          return {
+            hour: Number(h.hour),
+            avg_population: Number(h.ap) || 0,
+            sum_population: Number(h.sp) || 0,
+            male_total: maleTotal,
+            female_total: femaleTotal,
+            age_10s_total: getSum('m10', 'm15', 'f10', 'f15'),
+            age_20s_total: getSum('m20', 'm25', 'f20', 'f25'),
+            age_30s_total: getSum('m30', 'm35', 'f30', 'f35'),
+            age_40s_total: getSum('m40', 'm45', 'f40', 'f45'),
+            age_50s_total: getSum('m50', 'm55', 'f50', 'f55'),
+            age_60s_plus_total: getSum(
+              'm60',
+              'm65',
+              'm70',
+              'f60',
+              'f65',
+              'f70',
+            ),
+          } as HourlyPopulation;
+        }),
+      }));
+    } catch (error) {
+      this.logger.error('Database query failed in findHourlyLayer', error);
+      throw error;
+    }
+  }
+
   async findRanking(
     query: GetPopulationRankingQueryDto,
   ): Promise<PopulationRankingItemDto[]> {
@@ -208,6 +312,13 @@ export class FloatingPopulationRepository {
     }[] = [];
     let metricField = 'tot_flpop_co';
 
+    // Search & Limit Logic
+    const keyword = query.keyword;
+    const searchCondition = keyword
+      ? `AND ${cfg.nameField} LIKE '%${keyword}%'`
+      : '';
+    const limitCondition = keyword ? '' : 'LIMIT 100';
+
     // 3. Fetch Ranking (Current Q)
     const isCombined =
       query.ageGroup &&
@@ -239,9 +350,9 @@ export class FloatingPopulationRepository {
               (CAST(${ageCol} AS NUMERIC) * CAST(${timeCol} AS NUMERIC) / NULLIF(CAST(tot_flpop_co AS NUMERIC), 0)) as amount,
               tot_flpop_co as metric_val
             FROM ${cfg.table}
-            WHERE stdr_yyqu_cd = '${currentQ}'
+            WHERE stdr_yyqu_cd = '${currentQ}' ${searchCondition}
             ORDER BY amount DESC
-            LIMIT 100
+            ${limitCondition}
           `;
 
       try {
@@ -276,10 +387,17 @@ export class FloatingPopulationRepository {
         if (timeMap[query.timeSlot]) metricField = timeMap[query.timeSlot];
       }
 
+      // Prisma findMany doesn't support dynamic WHERE easily with mixed types, using Raw for search consistecy if keyword exists
+      // But findMany is safer. Let's construct where object.
+      const where: any = { stdr_yyqu_cd: currentQ };
+      if (keyword) {
+        where[cfg.nameField] = { contains: keyword };
+      }
+
       const results = await (this.prisma as any)[cfg.model].findMany({
-        where: { stdr_yyqu_cd: currentQ },
+        where,
         orderBy: { [metricField]: 'desc' },
-        take: 100,
+        take: keyword ? undefined : 100, // Remove limit if searching
       });
 
       items = results.map((r: any) => ({
@@ -347,6 +465,7 @@ export class FloatingPopulationRepository {
    */
   async findMZRanking(
     level: 'gu' | 'dong' | 'commercial' = 'commercial',
+    keyword?: string, // 추가
   ): Promise<PopulationRankingItemDto[]> {
     const configMap = {
       gu: {
@@ -370,6 +489,11 @@ export class FloatingPopulationRepository {
     };
     const cfg = configMap[level];
 
+    const searchCondition = keyword
+      ? `AND f.${cfg.nameField} LIKE '%${keyword}%'`
+      : '';
+    const limitCondition = keyword ? '' : 'LIMIT 100';
+
     const sql = `
       WITH latest_quarter AS (
         SELECT MAX(stdr_yyqu_cd) as q FROM ${cfg.table}
@@ -387,9 +511,9 @@ export class FloatingPopulationRepository {
       FROM ${cfg.table} f
       CROSS JOIN latest_quarter lq
       LEFT JOIN ${cfg.changeTable} c ON f.${cfg.codeField} = c.${cfg.codeField} AND c.stdr_yyqu_cd = lq.q
-      WHERE f.stdr_yyqu_cd = lq.q
-      ORDER BY mz_ratio DESC, mz_pop DESC
-      LIMIT 100
+      WHERE f.stdr_yyqu_cd = lq.q ${searchCondition}
+      ORDER BY mz_pop DESC, mz_ratio DESC
+      ${limitCondition}
     `;
 
     try {
@@ -414,6 +538,7 @@ export class FloatingPopulationRepository {
   async findGenderRanking(
     level: 'gu' | 'dong' | 'commercial' = 'commercial',
     gender: 'male' | 'female' = 'female',
+    keyword?: string, // 추가
   ): Promise<PopulationRankingItemDto[]> {
     const configMap = {
       gu: {
@@ -438,6 +563,11 @@ export class FloatingPopulationRepository {
     const cfg = configMap[level];
     const genderCol = gender === 'male' ? 'ml_flpop_co' : 'fml_flpop_co';
 
+    const searchCondition = keyword
+      ? `AND f.${cfg.nameField} LIKE '%${keyword}%'`
+      : '';
+    const limitCondition = keyword ? '' : 'LIMIT 100';
+
     const sql = `
       WITH latest_quarter AS (
         SELECT MAX(stdr_yyqu_cd) as q FROM ${cfg.table}
@@ -455,9 +585,9 @@ export class FloatingPopulationRepository {
       FROM ${cfg.table} f
       CROSS JOIN latest_quarter lq
       LEFT JOIN ${cfg.changeTable} c ON f.${cfg.codeField} = c.${cfg.codeField} AND c.stdr_yyqu_cd = lq.q
-      WHERE f.stdr_yyqu_cd = lq.q
+      WHERE f.stdr_yyqu_cd = lq.q ${searchCondition}
       ORDER BY gender_ratio DESC, gender_pop DESC
-      LIMIT 100
+      ${limitCondition}
     `;
 
     try {

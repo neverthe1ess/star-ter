@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { FloatingPopulationRepository } from './floating-population.repository';
-import { TimeSegmentedLayerResponse } from './dto/floating-population-response.dto';
+import {
+  TimeSegmentedLayerResponse,
+  HourlyLayerResponse,
+} from './dto/floating-population-response.dto';
 import {
   GetPopulationRankingQueryDto,
   PopulationRankingResponseDto,
@@ -33,6 +36,27 @@ export class FloatingPopulationService {
     }
   }
 
+  // 1시간 단위 히트맵용 조회
+  async getHourlyLayerByBounds(
+    minLat: number,
+    minLng: number,
+    maxLat: number,
+    maxLng: number,
+  ): Promise<HourlyLayerResponse> {
+    try {
+      const features = await this.repository.findHourlyLayer(
+        minLat,
+        minLng,
+        maxLat,
+        maxLng,
+      );
+      return { features };
+    } catch (error) {
+      this.logger.error('Failed to fetch hourly population layer', error);
+      return { features: [] };
+    }
+  }
+
   async getRanking(
     query: GetPopulationRankingQueryDto,
   ): Promise<PopulationRankingResponseDto> {
@@ -42,16 +66,22 @@ export class FloatingPopulationService {
 
   async getMZRanking(
     level: 'gu' | 'dong' | 'commercial' = 'commercial',
+    keyword?: string, // 추가
   ): Promise<PopulationRankingResponseDto> {
-    const items = await this.repository.findMZRanking(level);
+    const items = await this.repository.findMZRanking(level, keyword);
     return { items };
   }
 
   async getGenderRanking(
     level: 'gu' | 'dong' | 'commercial' = 'commercial',
     gender: 'male' | 'female' = 'female',
+    keyword?: string, // 추가
   ): Promise<PopulationRankingResponseDto> {
-    const items = await this.repository.findGenderRanking(level, gender);
+    const items = await this.repository.findGenderRanking(
+      level,
+      gender,
+      keyword,
+    );
     return { items };
   }
 }
