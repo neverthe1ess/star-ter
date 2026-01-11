@@ -1,24 +1,26 @@
-"use client";
+import { LoginPageClient } from './LoginPageClient';
 
-import { useRouter, useSearchParams } from "next/navigation";
+type LoginSearchParams = {
+  next?: string | string[];
+};
 
-import { LoginPage } from "@/components/LoginPage";
-import { getOnboarding } from "@/services/user/user.api";
+function getNextPath(nextParam?: string) {
+  if (typeof nextParam !== 'string') return '/locations';
+  if (!nextParam.startsWith('/')) return '/locations';
+  if (nextParam.startsWith('/login')) return '/locations';
+  return nextParam;
+}
 
-export default function Page() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const nextParam = searchParams.get("next");
-  const nextPath =
-    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("/login")
-      ? nextParam
-      : "/locations";
+export default async function Page({
+  searchParams,
+}: {
+  searchParams?: Promise<LoginSearchParams>;
+}) {
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const nextParam = Array.isArray(resolvedSearchParams.next)
+    ? resolvedSearchParams.next[0]
+    : resolvedSearchParams.next;
+  const nextPath = getNextPath(nextParam);
 
-  return (
-    <LoginPage
-      onLogin={({ on_boarding_completed }) => {
-        router.push(on_boarding_completed ? nextPath : "/onboarding/intro");
-      }}
-    />
-  );
+  return <LoginPageClient nextPath={nextPath} />;
 }
