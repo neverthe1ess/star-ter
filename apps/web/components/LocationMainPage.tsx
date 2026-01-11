@@ -3,11 +3,13 @@
 import { ArrowRight } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   getRecommendations,
   ScoredLocation,
 } from '@/services/location/locationRecommend.service';
 import { getOnboarding } from '@/services/user/user.api';
+import { useUserStore } from '@/store/use-user-store';
 
 type DisplayLocation = {
   id: string;
@@ -48,6 +50,8 @@ const getScoreBadge = (score: number) => {
 };
 
 export function LocationListPage() {
+  const authUser = useUserStore((state) => state.authUser);
+  const pathname = usePathname();
   const [recommendedLocations, setRecommendedLocations] = useState<
     ScoredLocation[]
   >([]);
@@ -56,7 +60,18 @@ export function LocationListPage() {
   const [chatInput, setChatInput] = useState('');
   const chatInputRef = useRef<HTMLTextAreaElement | null>(null);
 
+  const isLoggedIn = Boolean(authUser);
+  const loginHref = pathname
+    ? `/login?next=${encodeURIComponent(pathname)}`
+    : '/login';
+
   useEffect(() => {
+    if (!isLoggedIn) {
+      setRecommendedLocations([]);
+      setIsLoadingRecommendations(false);
+      return;
+    }
+
     async function fetchRecommendations() {
       setIsLoadingRecommendations(true);
       try {
@@ -87,7 +102,7 @@ export function LocationListPage() {
       }
     }
     fetchRecommendations();
-  }, []);
+  }, [isLoggedIn]);
 
   useEffect(() => {
     const textarea = chatInputRef.current;
@@ -128,12 +143,32 @@ export function LocationListPage() {
     <div className="relative flex min-h-full flex-col bg-[#f7f7f8]">
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-6 pt-2 pb-32">
         <div className="text-center mb-10">
-          <h1 className="text-[34px] font-black text-slate-900">
-            사용자님에게 가장 적합한 상권
-          </h1>
-          <p className="mt-3 text-base text-slate-400">
-            데이터 분석을 통해 도출된 최적의 추천 리스트입니다
-          </p>
+          {isLoggedIn ? (
+            <>
+              <h1 className="text-[34px] font-black text-slate-900">
+                사용자님에게 가장 적합한 상권
+              </h1>
+              <p className="mt-3 text-base text-slate-400">
+                데이터 분석을 통해 도출된 최적의 추천 리스트입니다
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-[34px] font-black text-slate-900">
+                추천 상권을 받아보세요
+              </h1>
+              <p className="mt-3 text-base text-slate-400">
+                추천 상권을 받으려면{' '}
+                <Link
+                  href={loginHref}
+                  className="font-semibold text-slate-600 underline underline-offset-4 hover:text-slate-900"
+                >
+                  로그인
+                </Link>
+                해주세요
+              </p>
+            </>
+          )}
         </div>
 
         <div className="flex justify-center">
