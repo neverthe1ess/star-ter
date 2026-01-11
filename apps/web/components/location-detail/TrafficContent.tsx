@@ -127,7 +127,7 @@ export function TrafficContent({ footTraffic }: TrafficContentProps) {
                   style={{ width: `${footTraffic.genderRatio.female}%` }}
                 />
               </div>
-              <div className="flex justify-between text-md text-gray-500 mt-1 font-semibold">
+              <div className="flex justify-between text-md text-blue-950 mt-1 font-semibold">
                 <span>{footTraffic.genderRatio.male}%</span>
                 <span>{footTraffic.genderRatio.female}%</span>
               </div>

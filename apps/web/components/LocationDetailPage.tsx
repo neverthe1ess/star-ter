@@ -29,6 +29,7 @@ import type {
   FootTrafficAnalysis,
 } from './location-detail/types';
 import { addToHistory } from '@/hooks/useLocationHistory';
+import { GenderFilter, AgeFilter } from './location-detail/types';
 
 interface LocationDetailPageProps {
   basicInfo: CommercialBasicInfo;
@@ -115,6 +116,41 @@ export function LocationDetailPage({
   
   const handleBoundsChange = useCallback((bounds: { sw: { lat: number; lng: number }; ne: { lat: number; lng: number } }) => {
     setMapBounds(bounds);
+  }, []);
+
+  // 【유동인구 히트맵 상태】 시간대별 자동 재생 및 필터
+  const [trafficState, setTrafficState] = useState({
+    isPlaying: true,
+    currentTimeIndex: 1, // 기본: 낮 (8~16시)
+    genderFilter: 'all' as GenderFilter,
+    ageFilter: 'all' as AgeFilter,
+  });
+
+  // 【시간대 자동 전환 타이머】 3초마다 다음 시간대로 이동
+  useEffect(() => {
+    if (!trafficState.isPlaying || activeTab !== 'traffic') return;
+    
+    const timer = setInterval(() => {
+      setTrafficState(prev => ({
+        ...prev,
+        currentTimeIndex: (prev.currentTimeIndex + 1) % 3, // 3개 시간대 순환 (새벽/낮/밤)
+      }));
+    }, 3000); // 3초마다 전환
+    
+    return () => clearInterval(timer);
+  }, [trafficState.isPlaying, activeTab]);
+
+  // 【트래픽 핸들러】
+  const handleTrafficPlayToggle = useCallback(() => {
+    setTrafficState(prev => ({ ...prev, isPlaying: !prev.isPlaying }));
+  }, []);
+
+  const handleTrafficTimeChange = useCallback((index: number) => {
+    setTrafficState(prev => ({ ...prev, currentTimeIndex: index, isPlaying: false }));
+  }, []);
+
+  const handleTrafficFilterChange = useCallback((gender: GenderFilter, age: AgeFilter) => {
+    setTrafficState(prev => ({ ...prev, genderFilter: gender, ageFilter: age }));
   }, []);
 
   const tabs = [
@@ -221,6 +257,10 @@ export function LocationDetailPage({
               totalCount={realEstate.length}
               selectedAnalysisCategory={selectedAnalysisCategory}
               regionCode={basicInfo.code}
+              trafficFilter={trafficState}
+              onTrafficPlayToggle={handleTrafficPlayToggle}
+              onTrafficTimeChange={handleTrafficTimeChange}
+              onTrafficFilterChange={handleTrafficFilterChange}
             />
           </Resizable>
 

@@ -109,3 +109,77 @@ export interface LocationDetailData {
   footTraffic?: FootTrafficAnalysis | null;
   error?: string;
 }
+
+// =========================================
+// 유동인구 히트맵 필터 타입 (TrafficFilterBar용)
+// =========================================
+
+/** 시간대 필터 (3개 구간: 새벽/낮/밤) */
+export type TimeFilter =
+  | 'dawn' // 새벽: 0~8시
+  | 'day' // 낮: 8~16시
+  | 'night'; // 밤: 16~24시
+
+/** 성별 필터 */
+export type GenderFilter = 'all' | 'male' | 'female';
+
+/** 연령대 필터 */
+export type AgeFilter =
+  | 'all'
+  | 'age_10' // 10대
+  | 'age_20' // 20대
+  | 'age_30' // 30대
+  | 'age_40' // 40대
+  | 'age_50' // 50대
+  | 'age_60'; // 60대 이상
+
+/** 시간대 정보 상수 (라벨 및 순서) */
+export const TIME_SLOTS: {
+  filter: TimeFilter;
+  label: string;
+  apiKey: string;
+}[] = [
+  { filter: 'dawn', label: '새벽 (0~8시)', apiKey: '0-8' },
+  { filter: 'day', label: '낮 (8~16시)', apiKey: '8-18' },
+  { filter: 'night', label: '밤 (16~24시)', apiKey: '18-24' },
+];
+
+// =========================================
+// 유동인구 히트맵 API 응답 타입
+// =========================================
+
+/** GeoJSON Geometry (simplified) */
+export interface PopulationGeometry {
+  type: 'Polygon' | 'MultiPolygon';
+  coordinates: number[][][] | number[][][][];
+}
+
+/** 개별 그리드 셀 Feature */
+export interface CombinedFeature {
+  cell_id: string;
+  geometry: PopulationGeometry;
+  center?: { lat: number; lng: number };
+  time_slots?: TimeSlotData[];
+  [key: string]: unknown;
+}
+
+/** 시간대별 슬롯 데이터 */
+export interface TimeSlotData {
+  time_slot: string;
+  avg_population: number;
+  sum_population: number;
+  male_total: number;
+  female_total: number;
+  age_10s_total: number;
+  age_20s_total: number;
+  age_30s_total: number;
+  age_40s_total: number;
+  age_50s_total: number;
+  age_60s_plus_total: number;
+  [key: string]: unknown;
+}
+
+/** API 응답 최상위 타입 */
+export interface CombinedLayerResponse {
+  features: CombinedFeature[];
+}
