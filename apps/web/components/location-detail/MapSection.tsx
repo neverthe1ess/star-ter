@@ -5,8 +5,11 @@ import { useKakaoMap, type KakaoPolygon, type KakaoCustomOverlay, type KakaoCirc
 import { PolygonData, RealEstateItem } from "./types";
 import { PriceFilterBar } from "./PriceFilterBar";
 import { IndustryAnalysisBar, type IndustryId } from "./IndustryAnalysisBar";
+import { TrafficFilterBar } from "./TrafficFilterBar";
 import { useStoreLocations } from "./hooks";
 import { MAJOR_CATEGORIES } from "./constants/category";
+import { usePopulationLayer } from "./hooks/usePopulationLayer";
+import { GenderFilter, AgeFilter } from "./types";
 
 /**
  * 【MapSection 컴포넌트】
@@ -48,6 +51,16 @@ interface MapSectionProps {
   // 【업종 분석 카테고리 선택 Props】
   selectedAnalysisCategory?: string;
   regionCode?: string;
+  // 【유동인구 히트맵 Props (traffic 모드)】
+  trafficFilter?: {
+    isPlaying: boolean;
+    currentTimeIndex: number;
+    genderFilter: GenderFilter;
+    ageFilter: AgeFilter;
+  };
+  onTrafficPlayToggle?: () => void;
+  onTrafficTimeChange?: (index: number) => void;
+  onTrafficFilterChange?: (gender: GenderFilter, age: AgeFilter) => void;
 }
 
 export function MapSection({ 
@@ -66,6 +79,10 @@ export function MapSection({
   totalCount = 0,
   selectedAnalysisCategory,
   regionCode,
+  trafficFilter,
+  onTrafficPlayToggle,
+  onTrafficTimeChange,
+  onTrafficFilterChange,
 }: MapSectionProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const polygonRef = useRef<KakaoPolygon | null>(null);
@@ -113,6 +130,18 @@ export function MapSection({
   }, [stores]);
   
   const { map, loaded } = useKakaoMap(mapRef);
+
+  // 【유동인구 히트맵 훅】 traffic 모드일 때만 활성화
+  const currentHour = trafficFilter?.currentTimeIndex ?? 12;
+  
+  usePopulationLayer({
+    map: map,
+    hour: currentHour,
+    genderFilter: trafficFilter?.genderFilter || 'all',
+    ageFilter: trafficFilter?.ageFilter || 'all',
+    isVisible: mode === 'traffic' && loaded,
+    containerId: 'traffic-map-container',
+  });
 
   // 폴리곤 렌더링 + 드래그/idle 이벤트 등록
   useEffect(() => {
@@ -449,6 +478,7 @@ export function MapSection({
 
       {/* 카카오맵 컨테이너 */}
       <div
+        id="traffic-map-container"
         ref={mapRef}
         className="w-full h-full rounded-[32px] overflow-hidden"
       />
@@ -479,7 +509,19 @@ export function MapSection({
           selectedCategoryName={MAJOR_CATEGORIES.find(c => c.code === selectedAnalysisCategory)?.name || '전체'}
         />
       )}
+
+      {/* 유동인구 필터 바 (traffic 모드일 때만 표시) */}
+      {mode === 'traffic' && trafficFilter && (
+        <TrafficFilterBar
+          isPlaying={trafficFilter.isPlaying}
+          onTogglePlay={onTrafficPlayToggle || (() => {})}
+          currentHour={trafficFilter.currentTimeIndex}
+          onHourChange={onTrafficTimeChange || (() => {})}
+          genderFilter={trafficFilter.genderFilter}
+          ageFilter={trafficFilter.ageFilter}
+          onFilterChange={onTrafficFilterChange || (() => {})}
+        />
+      )}
     </div>
   );
 }
-

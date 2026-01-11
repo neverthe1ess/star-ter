@@ -26,19 +26,23 @@ import type {
   CommercialBasicInfo,
   MarketAnalytics,
   RealEstateItem,
+  FootTrafficAnalysis,
 } from './location-detail/types';
 import { addToHistory } from '@/hooks/useLocationHistory';
+import { GenderFilter, AgeFilter } from './location-detail/types';
 
 interface LocationDetailPageProps {
   basicInfo: CommercialBasicInfo;
   analytics: MarketAnalytics | null;
   realEstate: RealEstateItem[];
+  footTraffic?: FootTrafficAnalysis | null;
 }
 
 export function LocationDetailPage({
   basicInfo,
   analytics,
   realEstate,
+  footTraffic,
 }: LocationDetailPageProps) {
   const [activeTab, setActiveTab] = useState<
     'matching' | 'traffic' | 'analysis' | 'realestate'
@@ -112,6 +116,41 @@ export function LocationDetailPage({
   
   const handleBoundsChange = useCallback((bounds: { sw: { lat: number; lng: number }; ne: { lat: number; lng: number } }) => {
     setMapBounds(bounds);
+  }, []);
+
+  // 【유동인구 히트맵 상태】 시간대별 자동 재생 및 필터
+  const [trafficState, setTrafficState] = useState({
+    isPlaying: true,
+    currentTimeIndex: 12, // 기본: 점심 12시
+    genderFilter: 'all' as GenderFilter,
+    ageFilter: 'all' as AgeFilter,
+  });
+
+  // 【시간대 자동 전환 타이머】 1초마다 다음 시간대로 이동 (0~23시 순환)
+  useEffect(() => {
+    if (!trafficState.isPlaying || activeTab !== 'traffic') return;
+    
+    const timer = setInterval(() => {
+      setTrafficState(prev => ({
+        ...prev,
+        currentTimeIndex: (prev.currentTimeIndex + 1) % 24, // 24시간 순환
+      }));
+    }, 250);
+    
+    return () => clearInterval(timer);
+  }, [trafficState.isPlaying, activeTab]);
+
+  // 【트래픽 핸들러】
+  const handleTrafficPlayToggle = useCallback(() => {
+    setTrafficState(prev => ({ ...prev, isPlaying: !prev.isPlaying }));
+  }, []);
+
+  const handleTrafficTimeChange = useCallback((hour: number) => {
+    setTrafficState(prev => ({ ...prev, currentTimeIndex: hour, isPlaying: false }));
+  }, []);
+
+  const handleTrafficFilterChange = useCallback((gender: GenderFilter, age: AgeFilter) => {
+    setTrafficState(prev => ({ ...prev, genderFilter: gender, ageFilter: age }));
   }, []);
 
   const tabs = [
@@ -218,6 +257,10 @@ export function LocationDetailPage({
               totalCount={realEstate.length}
               selectedAnalysisCategory={selectedAnalysisCategory}
               regionCode={basicInfo.code}
+              trafficFilter={trafficState}
+              onTrafficPlayToggle={handleTrafficPlayToggle}
+              onTrafficTimeChange={handleTrafficTimeChange}
+              onTrafficFilterChange={handleTrafficFilterChange}
             />
           </Resizable>
 
@@ -287,7 +330,7 @@ export function LocationDetailPage({
                       {activeTab === 'matching' && (
                         <MatchingContent locationName={basicInfo.name} />
                       )}
-                      {activeTab === 'traffic' && <TrafficContent analytics={analytics} />}
+                      {activeTab === 'traffic' && <TrafficContent footTraffic={footTraffic ?? null} regionCode={basicInfo.code} />}
                       {activeTab === 'analysis' && <AnalysisContent analytics={analytics} regionCode={basicInfo.code} onCategoryChange={setSelectedAnalysisCategory} />}
                       {activeTab === 'realestate' && (
                         <RealEstateContent 

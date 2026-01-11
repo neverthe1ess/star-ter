@@ -7,6 +7,7 @@ import type {
   RealEstateItem,
   LocationDetailData,
   PolygonData,
+  FootTrafficAnalysis,
 } from '@/components/location-detail/types';
 
 // @ts-expect-error: polylabel 타입 정의 없음
@@ -119,6 +120,40 @@ export async function getCommercialAnalytics(
 }
 
 /**
+ * 유동인구 분석 데이터 조회
+ *
+ * 【report/summary API 호출】
+ * 이 API는 매출, 유동인구, 점포 정보 등 종합 리포트를 반환합니다.
+ * 여기서는 footTrafficAnalysis 필드만 추출하여 사용합니다.
+ *
+ * @param code 상권 고유 코드
+ */
+export async function getFootTrafficAnalysis(
+  code: string,
+): Promise<FootTrafficAnalysis | null> {
+  try {
+    // industryCode=ALL로 호출하여 전체 업종 기준 유동인구 데이터 조회
+    const res = await fetch(
+      `${API_URL}/report/summary?regionCode=${code}&industryCode=ALL`,
+      { next: { revalidate: 3600 } }, // 1시간 캐시
+    );
+
+    if (!res.ok) {
+      console.error(`Failed to fetch foot traffic: ${res.status}`);
+      return null;
+    }
+
+    const data = await res.json();
+
+    // 응답에서 footTrafficAnalysis 필드만 추출
+    return data.footTrafficAnalysis || null;
+  } catch (error) {
+    console.error('Error fetching foot traffic analysis:', error);
+    return null;
+  }
+}
+
+/**
  * 부동산 매물 조회 (좌표 기반)
  * @param x 중심점 경도
  * @param y 중심점 위도
@@ -169,19 +204,22 @@ export async function getLocationDetailData(
       basicInfo: null,
       analytics: null,
       realEstate: [],
+      footTraffic: null,
       error: '상권을 찾을 수 없습니다.',
     };
   }
 
-  // 2. 나머지 데이터 병렬 조회
-  const [analytics, realEstate] = await Promise.all([
+  // 2. 나머지 데이터 병렬 조회 (footTraffic 추가)
+  const [analytics, realEstate, footTraffic] = await Promise.all([
     getCommercialAnalytics(code),
     getRealEstateByLocation(basicInfo.x, basicInfo.y),
+    getFootTrafficAnalysis(code), // 유동인구 데이터 병렬 조회
   ]);
 
   return {
     basicInfo,
     analytics,
     realEstate,
+    footTraffic,
   };
 }
