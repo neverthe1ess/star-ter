@@ -79,10 +79,12 @@ export function getPopulationValue(
         : (hourData.female_total ?? 0);
   } else if (gender === 'all' && age !== 'all') {
     const ageKey = AGE_FILTER_TO_KEY[age];
-    value = ((hourData as Record<string, unknown>)[ageKey] as number) ?? 0;
+    value =
+      ((hourData as unknown as Record<string, unknown>)[ageKey] as number) ?? 0;
   } else {
     const ageKey = AGE_FILTER_TO_KEY[age];
-    value = ((hourData as Record<string, unknown>)[ageKey] as number) ?? 0;
+    value =
+      ((hourData as unknown as Record<string, unknown>)[ageKey] as number) ?? 0;
   }
 
   return typeof value === 'number' ? value : 0;
@@ -213,7 +215,10 @@ export const usePopulationLayer = ({
                   : (hourData.female_total ?? 0);
             } else {
               const ageKey = AGE_FILTER_TO_KEY[ageFilter];
-              val = ((hourData as any)[ageKey] as number) ?? 0;
+              val =
+                ((hourData as unknown as Record<string, unknown>)[
+                  ageKey
+                ] as number) ?? 0;
             }
           }
           values[i] = val;
@@ -464,35 +469,39 @@ export const usePopulationLayer = ({
     if (!map || !kakaoMaps?.event) return;
     const eventApi = kakaoMaps.event;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const listeners: any[] = [];
+    const listeners: { target: any; type: string; handler: any }[] = [];
 
     if (isVisible) {
       renderLayer();
 
       try {
-        listeners.push(
-          eventApi.addListener(map, 'idle', () => {
-            if (!isVisibleRef.current) return;
-            if (canvasRef.current)
-              canvasRef.current.style.transform = 'translate(0px, 0px)';
+        const idleHandler = () => {
+          if (!isVisibleRef.current) return;
+          if (canvasRef.current)
+            canvasRef.current.style.transform = 'translate(0px, 0px)';
 
-            if (debounceTimerRef.current)
-              clearTimeout(debounceTimerRef.current);
-            debounceTimerRef.current = setTimeout(() => {
-              if (isVisibleRef.current) fetchData(map);
-            }, 300);
-          }),
-        );
-        listeners.push(
-          eventApi.addListener(map, 'zoom_changed', () => {
-            featuresRef.current = [];
-            const canvas = canvasRef.current;
-            if (canvas) {
-              const ctx = canvas.getContext('2d');
-              ctx?.clearRect(0, 0, canvas.width, canvas.height);
-            }
-          }),
-        );
+          if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+          debounceTimerRef.current = setTimeout(() => {
+            if (isVisibleRef.current) fetchData(map);
+          }, 300);
+        };
+        eventApi.addListener(map, 'idle', idleHandler);
+        listeners.push({ target: map, type: 'idle', handler: idleHandler });
+
+        const zoomHandler = () => {
+          featuresRef.current = [];
+          const canvas = canvasRef.current;
+          if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx?.clearRect(0, 0, canvas.width, canvas.height);
+          }
+        };
+        eventApi.addListener(map, 'zoom_changed', zoomHandler);
+        listeners.push({
+          target: map,
+          type: 'zoom_changed',
+          handler: zoomHandler,
+        });
       } catch (e) {
         console.error('[usePopulationLayer] Failed to add map listeners', e);
       }
@@ -501,9 +510,9 @@ export const usePopulationLayer = ({
     return () => {
       if (!window.kakao?.maps?.event) return;
       const eventApi = window.kakao.maps.event;
-      listeners.forEach((l) => {
+      listeners.forEach(({ target, type, handler }) => {
         try {
-          if (l) eventApi.removeListener(l);
+          eventApi.removeListener(target, type, handler);
         } catch {
           /* ignore */
         }
