@@ -42,6 +42,7 @@ export default async function Page({ params }: PageProps) {
       basicInfo={data.basicInfo}
       analytics={data.analytics}
       realEstate={data.realEstate}
+      footTraffic={data.footTraffic}
     />
   );
 }

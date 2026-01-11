@@ -145,23 +145,7 @@ export function IndustryAnalysisBar({
   );
 }
 
-// 목(Mock) 위치 데이터 (나중에 실제 API로 대체)
-const MOCK_INDUSTRY_LOCATIONS: Record<IndustryId, Array<{ lat: number; lng: number; count: number }>> = {
-  cafe: [
-    { lat: 37.498, lng: 127.027, count: 15 },
-    { lat: 37.499, lng: 127.028, count: 8 },
-  ],
-  restaurant: [
-    { lat: 37.4985, lng: 127.0275, count: 20 },
-  ],
-  retail: [
-    { lat: 37.4982, lng: 127.0272, count: 10 },
-  ],
-  service: [
-    { lat: 37.4988, lng: 127.0278, count: 12 },
-  ],
-};
 
 // Export types and constants
-export { INDUSTRIES, MOCK_INDUSTRY_LOCATIONS };
+export { INDUSTRIES };
 export type { IndustryId };

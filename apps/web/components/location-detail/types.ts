@@ -64,11 +64,48 @@ export interface RealEstateItem {
 }
 
 /**
+ * 유동인구 분석 데이터 (report/summary API에서)
+ * API: GET /report/summary?regionCode={code}&industryCode=ALL
+ *
+ * 【백엔드 DTO와 동일한 구조】
+ * 효율적인 API 응답 처리를 위해 프론트엔드에서도 동일한 타입을 정의합니다.
+ */
+export interface FootTrafficAnalysis {
+  /** 일일 총 유동인구 */
+  dailyTotal: number;
+  /** 피크 시간대 (예: "17~21시") */
+  peakTimeSlot: string;
+  /** 피크 요일 (예: "화요일") */
+  peakDay: string;
+
+  /** 성별 비율 (%) */
+  genderRatio: {
+    male: number;
+    female: number;
+  };
+
+  /** 시간대별 방문 비중 */
+  timeSlotRatio: {
+    timeRange: string;
+    ratio: number;
+    count: number;
+  }[];
+
+  /** 연령대별 방문 비중 */
+  ageGroupRatio: {
+    ageGroup: string;
+    ratio: number;
+    count: number;
+  }[];
+}
+
+/**
  * 상세 페이지에서 사용하는 통합 데이터
  */
 export interface LocationDetailData {
   basicInfo: CommercialBasicInfo | null;
   analytics: MarketAnalytics | null;
   realEstate: RealEstateItem[];
+  footTraffic?: FootTrafficAnalysis | null;
   error?: string;
 }

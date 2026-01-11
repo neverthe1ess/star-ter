@@ -26,6 +26,7 @@ import type {
   CommercialBasicInfo,
   MarketAnalytics,
   RealEstateItem,
+  FootTrafficAnalysis,
 } from './location-detail/types';
 import { addToHistory } from '@/hooks/useLocationHistory';
 
@@ -33,12 +34,14 @@ interface LocationDetailPageProps {
   basicInfo: CommercialBasicInfo;
   analytics: MarketAnalytics | null;
   realEstate: RealEstateItem[];
+  footTraffic?: FootTrafficAnalysis | null;
 }
 
 export function LocationDetailPage({
   basicInfo,
   analytics,
   realEstate,
+  footTraffic,
 }: LocationDetailPageProps) {
   const [activeTab, setActiveTab] = useState<
     'matching' | 'traffic' | 'analysis' | 'realestate'
@@ -287,7 +290,7 @@ export function LocationDetailPage({
                       {activeTab === 'matching' && (
                         <MatchingContent locationName={basicInfo.name} />
                       )}
-                      {activeTab === 'traffic' && <TrafficContent analytics={analytics} />}
+                      {activeTab === 'traffic' && <TrafficContent footTraffic={footTraffic ?? null} regionCode={basicInfo.code} />}
                       {activeTab === 'analysis' && <AnalysisContent analytics={analytics} regionCode={basicInfo.code} onCategoryChange={setSelectedAnalysisCategory} />}
                       {activeTab === 'realestate' && (
                         <RealEstateContent 
