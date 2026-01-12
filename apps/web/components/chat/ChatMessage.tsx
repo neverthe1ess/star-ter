@@ -1,6 +1,6 @@
 "use client";
 
-import { Share, Edit3, Copy, MoreHorizontal } from "lucide-react";
+import { Share, Edit3, Copy, MoreHorizontal, Bot } from "lucide-react";
 
 /**
  * ChatMessage 컴포넌트 - 개별 메시지 렌더링
@@ -41,27 +41,15 @@ export function ChatMessage({ message }: ChatMessageProps) {
         {/* AI 메시지에 Results 헤더 추가 */}
         {!isUser && (
           <div className="flex items-center gap-3 mb-4">
-            <svg
-              className="w-6 h-6 text-slate-400"
-              viewBox="0 0 24 24"
-              fill="none"
-            >
-              <path
-                d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span className="text-lg font-medium text-slate-600">Results</span>
+            <Bot className="w-6 h-6 text-slate-400" />
+            <span className="text-lg font-medium text-slate-600">AI Assistant</span>
           </div>
         )}
 
         {/* 메시지 내용 */}
         <div
           className={`text-lg leading-relaxed whitespace-pre-wrap ${
-            isUser ? "text-white" : "text-slate-700"
+            isUser ? "text-white font-semibold" : "text-slate-700"
           }`}
         >
           {message.content}
