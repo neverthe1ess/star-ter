@@ -12,6 +12,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   const activeMenu = useMemo(() => {
     if (!pathname) return "home";
+    if (pathname.includes("/chat")) return "chat";
     if (pathname.includes("/locations/search")) return "templates";
     if (pathname.includes("/locations/detail")) return "meetings";
     return "home";
@@ -25,6 +26,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           if (id === "home") router.push("/locations");
           if (id === "templates") router.push("/locations/search");
           if (id === "meetings") router.push("/locations/detail");
+          if (id === "chat") router.push("/chat");
         }}
         isOpen={isSidebarOpen}
         onToggle={setIsSidebarOpen}
