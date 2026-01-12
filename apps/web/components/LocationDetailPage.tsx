@@ -306,7 +306,7 @@ export function LocationDetailPage({
                 ))}
               </div>
 
-              <Link href="/chat">
+              <Link href={`/chat?q=${encodeURIComponent(basicInfo.name + " 상권 분석해줘")}`}>
                 <Button
                   className="rounded-xl px-6 py-7 font-bold text-xl transition-all bg-blue-950 text-white hover:bg-blue-900 shadow-lg"
                 >

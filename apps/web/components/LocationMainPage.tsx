@@ -3,7 +3,7 @@
 import { ArrowRight } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   getRecommendations,
   ScoredLocation,
@@ -59,6 +59,13 @@ export function LocationListPage() {
     useState(true);
   const [chatInput, setChatInput] = useState('');
   const chatInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const router = useRouter();
+
+  const handleSearch = () => {
+    if (chatInput.trim()) {
+      router.push(`/chat?q=${encodeURIComponent(chatInput)}`);
+    }
+  };
 
   const isLoggedIn = Boolean(authUser);
   const loginHref = pathname
@@ -299,6 +306,7 @@ export function LocationListPage() {
             onKeyDown={(event) => {
               if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
+                handleSearch();
               }
             }}
           />
@@ -306,6 +314,7 @@ export function LocationListPage() {
             type="button"
             className="absolute right-4 bottom-2 flex h-10 w-10 items-center justify-center rounded-full bg-black text-white"
             aria-label="전송"
+            onClick={handleSearch}
           >
             <ArrowRight className="h-4 w-4" />
           </button>

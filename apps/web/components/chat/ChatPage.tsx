@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { TrendingUp, Flame, Users, CircleDollarSign } from "lucide-react";
 import { ChatHeader } from "./ChatHeader";
 import { SourceCard } from "./SourceCard";
 import { ChatMessage } from "./ChatMessage";
@@ -9,6 +10,7 @@ import { ChatMapSection, type ChatMapSectionRef } from "./ChatMapSection";
 // 타입은 공유, 함수는 Server Action 사용
 import { type AiAction } from "../../lib/api/ai"; 
 import { sendMessage } from "../../app/actions/chat";
+import { useSearchParams, useRouter } from "next/navigation";
 
 
 /**
@@ -122,12 +124,37 @@ export function ChatPage() {
 
 
 
+
+
   // ============================================
   // Event Handlers (이벤트 핸들러)
   // ============================================
 
+  // AI 액션 처리 핸들러
+  // useCallback으로 감싸서 handleSendMessage의 의존성으로 사용할 때 불필요한 변경 방지
+  const handleAiActions = useCallback((actions: AiAction[]) => {
+    actions.forEach(action => {
+      console.log("[ChatPage] Handling Action:", action);
+      
+      try {
+        // 1. 지도 패널 열기
+        if (action.type === 'ui.open_panel') {
+          setIsMapOpen(true);
+        }
+
+        // 2. 지도 이동 (중심점 이동) 등 지도 관련 액션
+        // ChatMapSection으로 위임
+        if (mapSectionRef.current) {
+           mapSectionRef.current.executeAction(action);
+        }
+      } catch (e) {
+        console.error("Failed to execute action:", action, e);
+      }
+    });
+  }, []);
+
   // 메시지 전송 처리
-  const handleSendMessage = async (text?: string) => {
+  const handleSendMessage = useCallback(async (text?: string) => {
     // text가 문자열이 아닌 경우 (이벤트 객체가 전달되는 경우 등) 무시
     const messageText = typeof text === "string" ? text : inputValue.trim();
     if (!messageText) return;
@@ -192,29 +219,9 @@ export function ChatPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [inputValue, messages, handleAiActions]);
 
-  // AI 액션 처리 핸들러
-  const handleAiActions = (actions: AiAction[]) => {
-    actions.forEach(action => {
-      console.log("[ChatPage] Handling Action:", action);
-      
-      try {
-        // 1. 지도 패널 열기
-        if (action.type === 'ui.open_panel') {
-          setIsMapOpen(true);
-        }
 
-        // 2. 지도 이동 (중심점 이동) 등 지도 관련 액션
-        // ChatMapSection으로 위임
-        if (mapSectionRef.current) {
-           mapSectionRef.current.executeAction(action);
-        }
-      } catch (e) {
-        console.error("Failed to execute action:", action, e);
-      }
-    });
-  };
 
   // 새 스레드 생성
   const handleNewThread = () => {
@@ -227,14 +234,31 @@ export function ChatPage() {
     localStorage.removeItem("chat_messages");
   };
 
+  // URL 쿼리 파라미터 처리 (자동 전송)
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const hasAutoSent = useRef(false);
+
+  useEffect(() => {
+    const query = searchParams.get("q");
+    if (query && !hasAutoSent.current) {
+      hasAutoSent.current = true;
+      // 약간의 지연을 두어 자연스럽게 보이도록 함
+      setTimeout(() => {
+        handleSendMessage(query);
+        // URL 파라미터 제거 (히스토리에 남기지 않음)
+        router.replace("/chat");
+      }, 500);
+    }
+  }, [searchParams, router, handleSendMessage]);
+
   // ============================================
   // Render (렌더링)
   // ============================================
   // JSX: JavaScript + XML 문법으로 UI 구조 표현
 
   return (
-    <div className="flex h-screen bg-[#f7f7f8] py-6 pr-6 gap-6">
-      {/* 지도 영역 (왼쪽) - 토글로 열고 닫을 수 있음 */}
+    <div className="flex h-screen bg-[#f7f7f8] py-4 pr-4 gap-4 overflow-hidden">
       {/* 지도 영역 (왼쪽) - 토글로 열고 닫을 수 있음 */}
       <ChatMapSection 
         ref={mapSectionRef}
@@ -259,10 +283,10 @@ export function ChatPage() {
             <div className="max-w-5xl mx-auto space-y-8">
               {messages.length === 0 ? (
                 // 빈 상태 (대화 시작 전)
-                <div className="flex flex-col items-center justify-center h-full py-20">
-                  <div className="w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-200 rounded-3xl flex items-center justify-center mb-8">
+                <div className="flex flex-col items-center justify-center h-full py-20 px-4">
+                  <div className="w-20 h-20 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl flex items-center justify-center mb-6 shadow-sm">
                     <svg
-                      className="w-12 h-12 text-slate-400"
+                      className="w-10 h-10 text-blue-500"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -275,12 +299,56 @@ export function ChatPage() {
                       />
                     </svg>
                   </div>
-                  <h2 className="text-3xl font-bold text-slate-800 mb-3">
+                  <h2 className="text-2xl font-bold text-slate-800 mb-2">
                     무엇을 도와드릴까요?
                   </h2>
-                  <p className="text-xl text-slate-500 text-center max-w-xl">
-                    상권 분석, 창업 정보, 매물 추천 등 다양한 질문을 해보세요.
+                  <p className="text-lg text-slate-500 text-center mb-10 max-w-lg">
+                    상권 분석부터 창업 상세 견적까지,<br className="hidden sm:block" />
+                    AI 전문가에게 무엇이든 물어보세요.
                   </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-4xl">
+                    <button
+                      onClick={() => handleSendMessage("강남구 역세권 치킨집 상권 분석해줘")}
+                      className="text-left p-7 rounded-3xl bg-white border border-slate-200 hover:border-slate-400 hover:shadow-xl transition-all group flex flex-col items-start"
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <TrendingUp className="w-8 h-8 text-slate-600" />
+                        <span className="text-xl font-bold text-slate-800 group-hover:text-slate-600">상권 분석</span>
+                      </div>
+                      <span className="block text-base text-slate-500">강남구 역세권 치킨집 상권 분석해줘</span>
+                    </button>
+                    <button
+                      onClick={() => handleSendMessage("서울시 뜨는 상권 추천해줘")}
+                      className="text-left p-7 rounded-3xl bg-white border border-slate-200 hover:border-slate-400 hover:shadow-xl transition-all group flex flex-col items-start"
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <Flame className="w-8 h-8 text-slate-600" />
+                        <span className="text-xl font-bold text-slate-800 group-hover:text-slate-600">뜨는 상권</span>
+                      </div>
+                      <span className="block text-base text-slate-500">서울시 뜨는 상권 추천해줘</span>
+                    </button>
+                    <button
+                      onClick={() => handleSendMessage("마포구 유동인구 많은 곳 알려줘")}
+                      className="text-left p-7 rounded-3xl bg-white border border-slate-200 hover:border-slate-400 hover:shadow-xl transition-all group flex flex-col items-start"
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <Users className="w-8 h-8 text-slate-600" />
+                        <span className="text-xl font-bold text-slate-800 group-hover:text-slate-600">유동인구</span>
+                      </div>
+                      <span className="block text-base text-slate-500">마포구 유동인구 많은 곳 알려줘</span>
+                    </button>
+                    <button
+                      onClick={() => handleSendMessage("성수동 카페 창업 비용 견적 내줘")}
+                      className="text-left p-7 rounded-3xl bg-white border border-slate-200 hover:border-slate-400 hover:shadow-xl transition-all group flex flex-col items-start"
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <CircleDollarSign className="w-8 h-8 text-slate-600" />
+                        <span className="text-xl font-bold text-slate-800 group-hover:text-slate-600">창업 비용</span>
+                      </div>
+                      <span className="block text-base text-slate-500">성수동 카페 창업 비용 견적 내줘</span>
+                    </button>
+                  </div>
                 </div>
               ) : (
                 // 메시지 목록 렌더링
