@@ -316,4 +316,69 @@ export class AnalysisRepository {
       take: 20,
     });
   }
+
+  async getSalesByIndustry(
+    quarter: string,
+    trdarCd: string,
+    industryCd?: string,
+  ): Promise<{ total_revenue: bigint; store_count: bigint }[]> {
+    if (industryCd) {
+      return this.prisma.$queryRaw<
+        { total_revenue: bigint; store_count: bigint }[]
+      >`
+        SELECT 
+          COALESCE(SUM(A.thsmon_selng_amt), 0)::bigint as total_revenue,
+          COALESCE(SUM(B.stor_co), 0)::bigint as store_count
+        FROM sales_commercial A
+        LEFT JOIN store_commercial B
+          ON A.trdar_cd = B.trdar_cd
+          AND A.stdr_yyqu_cd = B.stdr_yyqu_cd
+          AND A.svc_induty_cd = B.svc_induty_cd
+        WHERE A.stdr_yyqu_cd = ${quarter}
+          AND A.trdar_cd = ${trdarCd}
+          AND A.svc_induty_cd = ${industryCd}
+      `;
+    } else {
+      return this.prisma.$queryRaw<
+        { total_revenue: bigint; store_count: bigint }[]
+      >`
+        SELECT 
+          COALESCE(SUM(A.thsmon_selng_amt), 0)::bigint as total_revenue,
+          COALESCE(SUM(B.stor_co), 0)::bigint as store_count
+        FROM sales_commercial A
+        LEFT JOIN store_commercial B
+          ON A.trdar_cd = B.trdar_cd
+          AND A.stdr_yyqu_cd = B.stdr_yyqu_cd
+          AND A.svc_induty_cd = B.svc_induty_cd
+        WHERE A.stdr_yyqu_cd = ${quarter}
+          AND A.trdar_cd = ${trdarCd}
+      `;
+    }
+  }
+
+  async getRentData(
+    trdarCd: string,
+  ): Promise<{ avg_deposit: number; avg_premium: number } | null> {
+    const result = await this.prisma.$queryRaw<
+      { avg_deposit: number; avg_premium: number }[]
+    >`
+      SELECT
+        AVG(re.deposit)::float AS avg_deposit,
+        AVG(re.premium)::float AS avg_premium
+      FROM seoul_commercial_area_grid ca
+      JOIN real_estate_info re
+        ON ST_Contains(
+             ca.geom,
+             ST_SetSRID(
+               ST_MakePoint(re.centerlongitude, re.centerlatitude),
+               4326
+             )
+           )
+      WHERE ca.trdar_cd = ${trdarCd}
+        AND re.deposit IS NOT NULL
+      GROUP BY ca.trdar_cd
+    `;
+
+    return result[0] || null;
+  }
 }
