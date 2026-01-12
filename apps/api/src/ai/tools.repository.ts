@@ -583,4 +583,22 @@ export class ToolsRepository {
       },
     });
   }
+
+  // 16) 유동인구 시계열 조회 (Task 2.1)
+  async getFootTrafficTimeSeries(params: QueryParams) {
+    const { areaCd, limit = 8 } = params;
+    const rows = await this.prisma.$queryRaw<unknown[]>`
+      SELECT
+        stdr_yyqu_cd AS "기준 년분기 코드",
+        tot_flpop_co AS "총 유동인구",
+        ml_flpop_co AS "남자 유동인구",
+        fml_flpop_co AS "여자 유동인구"
+      FROM v_foot_traffic
+      WHERE area_cd = ${areaCd}
+        AND area_level = 'commercial'
+      ORDER BY stdr_yyqu_cd ASC
+      LIMIT ${limit}
+    `;
+    return rows;
+  }
 }

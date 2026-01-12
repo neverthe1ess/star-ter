@@ -36,6 +36,8 @@ export class AiToolsService {
         return this.toolsRepository.compareCommercialByIndustry(args);
       case 'recommend_real_estate':
         return this.toolsRepository.getRecommendRealEstate(args);
+      case 'get_foot_traffic_timeseries':
+        return this.toolsRepository.getFootTrafficTimeSeries(args);
       default:
         return undefined;
     }

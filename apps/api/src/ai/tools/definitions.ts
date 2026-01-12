@@ -241,4 +241,26 @@ export const TOOLS = [
     },
     strict: false,
   },
+  {
+    type: 'function',
+    name: 'get_foot_traffic_timeseries',
+    description:
+      '상권의 분기별 유동인구 추이(시계열 데이터)를 조회합니다. 차트를 그릴 때 사용합니다.',
+    parameters: {
+      type: 'object',
+      properties: {
+        areaCd: {
+          type: 'string',
+          description: '조회할 상권의 areaCd입니다.',
+        },
+        limit: {
+          type: 'number',
+          description: '조회할 최근 분기 개수 (기본값: 8)',
+        },
+      },
+      required: ['areaCd'],
+      additionalProperties: false,
+    },
+    strict: false,
+  },
 ];
