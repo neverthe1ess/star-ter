@@ -5,6 +5,7 @@ import { AiRepository } from './ai.repository';
 import { ToolsRepository } from './tools.repository';
 import { AiToolsService } from './ai-tools.service';
 import { AiResponseProcessor } from './ai-response.processor';
+import { OpenAiService } from './openAI/open-ai.service';
 
 @Module({
   controllers: [AiController],
@@ -14,6 +15,7 @@ import { AiResponseProcessor } from './ai-response.processor';
     ToolsRepository,
     AiToolsService,
     AiResponseProcessor,
+    OpenAiService,
   ],
   exports: [AiService, AiRepository],
 })

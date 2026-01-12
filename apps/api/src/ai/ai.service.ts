@@ -1,13 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  analyzeResults,
-  embedText,
-  getCategoryByMessage,
-  getLocationByMessage,
-  getTablesByMessage,
-  getText,
-  toolCallAi,
-} from './openAI/openAI';
+import { OpenAiService } from './openAI/open-ai.service';
 import { AiRepository } from './ai.repository';
 import { BusinessCategoryVectorDto } from './dto/column-vector';
 import { ResponseInputItem } from 'openai/resources/responses/responses.js';
@@ -20,6 +12,7 @@ export class AiService {
     private readonly aiRepository: AiRepository,
     private readonly aiToolsService: AiToolsService,
     private readonly aiResponseProcessor: AiResponseProcessor,
+    private readonly openAiService: OpenAiService,
   ) {}
 
   // 대화 히스토리 포함 메시지 처리 함수 (꼬리 질문 지원)
@@ -51,7 +44,11 @@ export class AiService {
     // 현재 사용자 메시지 추가
     input.push({ role: 'user', content: message });
 
-    const toolCallResponse = await toolCallAi(input, categories, areaList);
+    const toolCallResponse = await this.openAiService.toolCallAi(
+      input,
+      categories,
+      areaList,
+    );
     console.log(
       '[AiService] Tool call response:',
       JSON.stringify(toolCallResponse.output, null, 2),
@@ -79,9 +76,9 @@ export class AiService {
     }
 
     console.log('[AiService] Calling analyzeResults...');
-    const analyzeResult = await analyzeResults(input);
+    const analyzeResult = await this.openAiService.analyzeResults(input);
 
-    const responseText = getText(analyzeResult);
+    const responseText = this.openAiService.getText(analyzeResult);
     console.log('[AI Response]', responseText);
 
     // Use processor for parsing and patching
@@ -95,13 +92,15 @@ export class AiService {
   }
 
   async getAreaInfo(message: string) {
-    const areaText = getText(await getLocationByMessage(message));
+    const areaText = this.openAiService.getText(
+      await this.openAiService.getLocationByMessage(message),
+    );
     if (areaText === '""') return [];
     const messageAreaList = areaText.split(',').map((area) => area.trim());
 
     const results = await Promise.all(
       messageAreaList.map(async (area) => {
-        const areaVector = await embedText(area);
+        const areaVector = await this.openAiService.embedText(area);
         const [first] = await this.aiRepository.areaSearchByVector(
           areaVector.data[0].embedding,
           1,
@@ -130,8 +129,9 @@ export class AiService {
   }
 
   async getCategories(message: string) {
-    const categoryResponse = await getCategoryByMessage(message);
-    const categoryText = getText(categoryResponse);
+    const categoryResponse =
+      await this.openAiService.getCategoryByMessage(message);
+    const categoryText = this.openAiService.getText(categoryResponse);
     console.log(
       `[DEBUG] Extracted Categories for message "${message}":`,
       categoryText,
@@ -143,8 +143,8 @@ export class AiService {
 
     let categoryList: BusinessCategoryVectorDto[] = [];
     for (const category of categories) {
-      const categoryVector = await embedText(category);
-      // console.log(`[DEBUG] Embedding for ${category} generated.`);
+      const categoryVector = await this.openAiService.embedText(category);
+      console.log(`[DEBUG] Embedding for ${category} generated.`);
 
       const categoryResults = await this.aiRepository.categorySearchByVector(
         categoryVector.data[0].embedding,
@@ -158,14 +158,5 @@ export class AiService {
       categoryList = categoryList.concat(categoryResults);
     }
     return categoryList;
-  }
-  //TODO: Deprecated 정훈이한테 물어보고 지우기
-  async getTables(message: string) {
-    const tableList = await getTablesByMessage(message);
-    if (getText(tableList) === '""') return [];
-    const categories = getText(tableList)
-      .split(',')
-      .map((cat) => cat.trim());
-    return categories;
   }
 }
