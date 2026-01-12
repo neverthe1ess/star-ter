@@ -94,7 +94,7 @@ export function LocationSearchPage({}: { onBack?: () => void }) {
     };
   }, [searchQuery]);
 
-  const tabs = ['실시간 상권 차트', '지금 뜨는 카테고리'];
+  const tabs = ['실시간 상권 차트'];
   const subTabs = [
     '맞춤 추천',
     '평균 매출 순',

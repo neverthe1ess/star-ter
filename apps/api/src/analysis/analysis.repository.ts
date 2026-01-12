@@ -317,6 +317,14 @@ export class AnalysisRepository {
     });
   }
 
+  async getIndustryName(code: string): Promise<string | null> {
+    const result = await this.prisma.storeCommercial.findFirst({
+      where: { svc_induty_cd: code },
+      select: { svc_induty_cd_nm: true },
+    });
+    return result?.svc_induty_cd_nm || null;
+  }
+
   async getSalesByIndustry(
     quarter: string,
     trdarCd: string,
