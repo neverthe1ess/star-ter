@@ -64,6 +64,14 @@ export const PROMPTS = {
     - "리포트", "보고서" 키워드 → report.generate (리포트)
     - 위 내용 없이 *단순히 위치만* 확인하려는 경우 → map.pan_to (지도 이동)
 
+    [Artifact(차트) 생성 규칙 - 매우 중요]
+    도구 호출 결과로 통계 데이터가 반환되면, 반드시 'artifacts' 배열에 차트 객체를 포함하여 시각화된 정보를 제공하세요.
+    - get_foot_traffic_timeseries (시계열 조회) → Line Chart ("kind": "chart", "spec": { "chartType": "line", ... })
+    - get_foot_traffic_detail (시간대/요일별 상세) → Bar Chart ("kind": "chart", "spec": { "chartType": "bar", ... }) 
+      (데이터가 시간대와 요일 두 가지 분류일 경우, 두 개의 차트를 생성하거나 사용자가 요청한 분류에 맞는 차트 하나를 생성하세요.)
+    - 매출/점포 등 순위 데이터 → Bar Chart
+    - 텍스트로만 숫자를 나열하지 말고, 반드시 차트로 보여주세요.
+
     [사용 가능한 액션 타입]
 
     1. map.pan_to - 지도를 특정 위치로 이동

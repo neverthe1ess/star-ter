@@ -601,4 +601,37 @@ export class ToolsRepository {
     `;
     return rows;
   }
+
+  // 17) 유동인구 시간대/요일별 상세 조회 (Task 2.2)
+  async getFootTrafficDetail(params: QueryParams) {
+    const { areaCd } = params;
+    const rows = await this.prisma.$queryRaw<unknown[]>`
+      SELECT
+        stdr_yyqu_cd AS "기준 년분기 코드",
+        area_nm AS "지역 이름",
+        
+        -- 시간대별 유동인구
+        tmzon_00_06_flpop_co AS "00~06시 유동인구",
+        tmzon_06_11_flpop_co AS "06~11시 유동인구",
+        tmzon_11_14_flpop_co AS "11~14시 유동인구",
+        tmzon_14_17_flpop_co AS "14~17시 유동인구",
+        tmzon_17_21_flpop_co AS "17~21시 유동인구",
+        tmzon_21_24_flpop_co AS "21~24시 유동인구",
+
+        -- 요일별 유동인구
+        mon_flpop_co AS "월요일 유동인구",
+        tues_flpop_co AS "화요일 유동인구",
+        wed_flpop_co AS "수요일 유동인구",
+        thur_flpop_co AS "목요일 유동인구",
+        fri_flpop_co AS "금요일 유동인구",
+        sat_flpop_co AS "토요일 유동인구",
+        sun_flpop_co AS "일요일 유동인구"
+      FROM v_foot_traffic
+      WHERE area_cd = ${areaCd}
+        AND area_level = 'commercial'
+      ORDER BY stdr_yyqu_cd DESC
+      LIMIT 1
+    `;
+    return rows;
+  }
 }

@@ -38,6 +38,8 @@ export class AiToolsService {
         return this.toolsRepository.getRecommendRealEstate(args);
       case 'get_foot_traffic_timeseries':
         return this.toolsRepository.getFootTrafficTimeSeries(args);
+      case 'get_foot_traffic_detail':
+        return this.toolsRepository.getFootTrafficDetail(args);
       default:
         return undefined;
     }

@@ -263,4 +263,22 @@ export const TOOLS = [
     },
     strict: false,
   },
+  {
+    type: 'function',
+    name: 'get_foot_traffic_detail',
+    description:
+      '상권의 시간대별(0~24시), 요일별(월~일) 유동인구 상세 데이터를 조회합니다. 언제 사람이 가장 많은지 분석할 때 사용합니다.',
+    parameters: {
+      type: 'object',
+      properties: {
+        areaCd: {
+          type: 'string',
+          description: '조회할 상권의 areaCd입니다.',
+        },
+      },
+      required: ['areaCd'],
+      additionalProperties: false,
+    },
+    strict: true,
+  },
 ];
