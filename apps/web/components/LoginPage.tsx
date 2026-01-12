@@ -8,7 +8,7 @@ import { login } from "@/services/auth/auth.api";
 import { useUserStore } from "@/store/use-user-store";
 
 interface LoginPageProps {
-  onLogin: () => void;
+  onLogin: (result: { on_boarding_completed: boolean }) => void;
 }
 
 export function LoginPage({ onLogin }: LoginPageProps) {
@@ -24,8 +24,12 @@ export function LoginPage({ onLogin }: LoginPageProps) {
     setIsSubmitting(true);
     try {
       const response = await login({ email, password });
-      setAuthUser({ id: response.id, nickname: response.nickname });
-      onLogin();
+      setAuthUser({
+        id: response.id,
+        nickname: response.nickname,
+        profileImageKey: response.profile_image_key ?? null,
+      });
+      onLogin({ on_boarding_completed: response.on_boarding_completed });
     } catch (err) {
       const message = err instanceof Error ? err.message : "로그인에 실패했습니다.";
       setError(message);

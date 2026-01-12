@@ -6,15 +6,15 @@ import {
   Logger,
   UseGuards,
   Get,
-  Req,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { User } from './decorators/user.decorator';
 import type { Response, Request } from 'express';
 import type { AuthenticatedUser } from './types/authenticatedUser';
 import { LocalAuthGuard } from './guard/local-auth.guard';
+import { JwtAuthGuard } from './guard/jwt-auth.guard';
+import { UsersService } from 'src/user/user.service';
 
 interface GoogleUser {
   email: string;
@@ -26,7 +26,10 @@ interface GoogleUser {
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
 
   // 회원가입
   @Post('register')
@@ -42,23 +45,45 @@ export class AuthController {
   // 로그인
   @Post('login')
   @UseGuards(LocalAuthGuard)
-  login(@Res() res: Response, @User() user: AuthenticatedUser) {
+  async login(@Res() res: Response, @User() user: AuthenticatedUser) {
     this.logger.log(`Logging in user with id: ${user.id}`);
     const { access_token } = this.authService.getJwtToken(user);
+    const profileImageKey = await this.usersService.getLatestProfileImageKey(
+      user.id,
+    );
     res.cookie('access_token', access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax' as const,
       maxAge: 1000 * 60 * 60 * 8, // 8hours
     });
-    return res.status(200).json({ id: user.id, nickname: user.nickname });
+    return res.status(200).json({
+      id: user.id,
+      nickname: user.nickname,
+      on_boarding_completed: user.on_boarding_completed,
+      profile_image_key: profileImageKey,
+    });
   }
 
   @Post('logout')
   logout(@Res() res: Response) {
     this.logger.log(`Logging out user`);
     res.clearCookie('access_token');
-    return;
+    return res.sendStatus(200);
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  async me(@User() user: AuthenticatedUser) {
+    const profile = await this.usersService.getProfileForAuth(user.id);
+
+    return {
+      id: user.id,
+      nickname: profile.nickname ?? user.nickname,
+      on_boarding_completed:
+        profile.on_boarding_completed ?? user.on_boarding_completed,
+      profile_image_key: profile.profile_image_key,
+    };
   }
 
   // Google OAuth 시작

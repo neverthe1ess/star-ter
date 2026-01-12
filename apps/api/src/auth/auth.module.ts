@@ -9,11 +9,13 @@ import { LocalStrategy } from './guard/strategy/local.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { AuthRepository } from './auth.repository';
 import { jwtConstants } from './jwt.constants';
+import { UsersModule } from 'src/user/user.module';
 
 @Module({
   imports: [
     ConfigModule,
     PassportModule,
+    UsersModule,
     JwtModule.register({
       secret: jwtConstants.secret,
       signOptions: { expiresIn: '8h' }, // 토큰 유효시간 8시간

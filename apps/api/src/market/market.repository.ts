@@ -456,19 +456,6 @@ export class MarketRepository {
             AND ST_Intersects(s.geom, a.geom)
           LIMIT ${limit}
         `;
-        // DEBUG: Find 'Chicken' Code
-        try {
-          const chickenCodes = await this.prisma.$queryRaw`
-            SELECT DISTINCT business_category_small_code, business_category_small_name
-            FROM seoul_commercial_store_info
-            WHERE business_category_small_name LIKE '%치킨%'
-            LIMIT 5
-          `;
-          console.log('[DEBUG] Chicken Industry Codes:', chickenCodes);
-        } catch (e) {
-          console.error('[DEBUG] Chicken Search Failed:', e);
-        }
-
         console.log(`[DEBUG] Commercial Stores Found: ${result.length}`);
       } catch (e) {
         console.error('[DEBUG] Commercial Query Failed:', e);

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class UpdateOnboardingDto {
   @IsString()
@@ -16,4 +16,9 @@ export class UpdateOnboardingDto {
   @IsString()
   @IsNotEmpty()
   capital: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  industryCode?: string | null;
 }

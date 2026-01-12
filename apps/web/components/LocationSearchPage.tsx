@@ -30,10 +30,8 @@ const isClosureRateTab = (tab: string) => tab === "폐업률 높은 순";
 const isMZTab = (tab: string) => tab === "MZ 선호 순";
 
 export function LocationSearchPage({
-  onSelectLocation,
 }: {
   onBack?: () => void;
-  onSelectLocation?: (loc: LocationRankItem) => void;
 }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("실시간 상권 차트");
@@ -161,8 +159,7 @@ export function LocationSearchPage({
   }, [isIndustryOpen]);
 
   const handleLocationClick = (item: LocationRankItem | PopulationRankItem | ClosureRateRankItem) => {
-    onSelectLocation?.(item as LocationRankItem);
-    router.push(`/detail?code=${item.code}&name=${encodeURIComponent(item.name)}`);
+    router.push(`/locations/detail/${item.code}`);
   };
 
   const handleLoadMore = () => {
@@ -405,7 +402,7 @@ export function LocationSearchPage({
               <div className="w-45 text-center">전분기 대비</div>
               <div className="w-50 text-right pr-10">분기 총 매출</div>
               <div className="w-55 flex items-center justify-end gap-1">
-                소비자 성별 비율 (남/여)
+                성별 매출 비율 (남/여)
               </div>
             </>
           )}

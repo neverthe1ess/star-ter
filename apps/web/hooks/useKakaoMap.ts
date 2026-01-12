@@ -33,9 +33,56 @@ declare global {
             handler: () => void,
           ) => void;
         };
+        Polygon: new (options: {
+          path: KakaoLatLng[] | KakaoLatLng[][];
+          strokeWeight?: number;
+          strokeColor?: string;
+          strokeOpacity?: number;
+          strokeStyle?: string;
+          fillColor?: string;
+          fillOpacity?: number;
+          zIndex?: number;
+        }) => KakaoPolygon;
+        CustomOverlay: new (options: {
+          position: KakaoLatLng;
+          content: string | HTMLElement;
+          map?: KakaoMap | null;
+          zIndex?: number;
+          xAnchor?: number;
+          yAnchor?: number;
+        }) => KakaoCustomOverlay;
+        Circle: new (options: {
+          center: KakaoLatLng;
+          radius: number;
+          strokeWeight?: number;
+          strokeColor?: string;
+          strokeOpacity?: number;
+          fillColor?: string;
+          fillOpacity?: number;
+        }) => KakaoCircle;
       };
     };
   }
+}
+
+export interface KakaoPolygon {
+  setMap: (map: KakaoMap | null) => void;
+  setPath: (path: KakaoLatLng[] | KakaoLatLng[][]) => void;
+  getBounds: () => KakaoBounds;
+}
+
+export interface KakaoCustomOverlay {
+  setMap: (map: KakaoMap | null) => void;
+  getMap: () => KakaoMap | null;
+  setPosition: (position: KakaoLatLng) => void;
+  getPosition: () => KakaoLatLng;
+  setContent: (content: string | HTMLElement) => void;
+}
+
+export interface KakaoCircle {
+  setMap: (map: KakaoMap | null) => void;
+  getPosition: () => KakaoLatLng;
+  getRadius: () => number;
 }
 
 // ============================================================

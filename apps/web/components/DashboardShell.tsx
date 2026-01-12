@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { Sidebar } from "./Sidebar";
@@ -18,7 +18,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   return (
-    <div className="min-h-screen bg-[#f7f7f8] flex relative">
+    <div
+      className="min-h-screen bg-[#f7f7f8] flex relative"
+      style={
+        {
+          "--sidebar-offset": isSidebarOpen ? "350px" : "80px",
+        } as CSSProperties
+      }
+    >
       <Sidebar
         activeMenu={activeMenu}
         onMenuClick={(id) => {
@@ -31,7 +38,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       />
       <div
         className={`flex-1 h-screen overflow-y-auto transition-all duration-300 ease-in-out ${
-          isSidebarOpen ? "ml-[350px]" : "ml-0"
+          isSidebarOpen ? "ml-[350px]" : "ml-20"
         }`}
       >
         {children}

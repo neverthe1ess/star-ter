@@ -1,10 +1,41 @@
-import type { UpdateOnboardingParams } from './user.api.types';
+import type {
+  UpdateOnboardingParams,
+  GetPersonalizationResponse,
+  UpdateProfileParams,
+  UpdateProfileResponse,
+} from './user.api.types';
 
 const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
 type ErrorResponse = {
   message?: string;
 };
+
+export type OnboardingData = {
+  age: string | null;
+  region: string | null;
+  operatingTime: string | null;
+  capital: string | null;
+  industryCode: string | null;
+  completed: boolean;
+};
+
+export async function getOnboarding(): Promise<OnboardingData | null> {
+  try {
+    const response = await fetch(`${baseUrl}/users/onboarding`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return (await response.json()) as OnboardingData;
+  } catch {
+    return null;
+  }
+}
 
 export async function updateOnboarding(
   params: UpdateOnboardingParams,
@@ -26,4 +57,51 @@ export async function updateOnboarding(
       throw new Error('온보딩 저장에 실패했습니다.');
     }
   }
+}
+
+export async function getPersonalization(): Promise<GetPersonalizationResponse> {
+  const response = await fetch(`${baseUrl}/users/personalization`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    try {
+      const errorData = (await response.json()) as ErrorResponse;
+      throw new Error(errorData?.message || '개인화 정보 조회에 실패했습니다.');
+    } catch {
+      throw new Error('개인화 정보 조회에 실패했습니다.');
+    }
+  }
+
+  return response.json() as Promise<GetPersonalizationResponse>;
+}
+
+export async function updateProfile(
+  params: UpdateProfileParams,
+): Promise<UpdateProfileResponse> {
+  const formData = new FormData();
+  if (params.nickname) {
+    formData.append('nickname', params.nickname);
+  }
+  if (params.file) {
+    formData.append('file', params.file);
+  }
+
+  const response = await fetch(`${baseUrl}/users/profile`, {
+    method: 'PATCH',
+    credentials: 'include',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    try {
+      const errorData = (await response.json()) as ErrorResponse;
+      throw new Error(errorData?.message || '프로필 저장에 실패했습니다.');
+    } catch {
+      throw new Error('프로필 저장에 실패했습니다.');
+    }
+  }
+
+  return response.json() as Promise<UpdateProfileResponse>;
 }

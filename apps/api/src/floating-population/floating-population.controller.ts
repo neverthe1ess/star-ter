@@ -1,6 +1,9 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { FloatingPopulationService } from './floating-population.service';
-import { TimeSegmentedLayerResponse } from './dto/floating-population-response.dto';
+import {
+  TimeSegmentedLayerResponse,
+  HourlyLayerResponse,
+} from './dto/floating-population-response.dto';
 import {
   GetPopulationRankingQueryDto,
   PopulationRankingResponseDto,
@@ -20,6 +23,22 @@ export class FloatingPopulationController {
     @Query('maxLng') maxLng: string,
   ): Promise<TimeSegmentedLayerResponse> {
     return this.floatingPopulationService.getCombinedLayerByBounds(
+      parseFloat(minLat),
+      parseFloat(minLng),
+      parseFloat(maxLat),
+      parseFloat(maxLng),
+    );
+  }
+
+  // 1시간 단위 히트맵용 엔드포인트
+  @Get('layer/hourly')
+  async getHourlyLayer(
+    @Query('minLat') minLat: string,
+    @Query('minLng') minLng: string,
+    @Query('maxLat') maxLat: string,
+    @Query('maxLng') maxLng: string,
+  ): Promise<HourlyLayerResponse> {
+    return this.floatingPopulationService.getHourlyLayerByBounds(
       parseFloat(minLat),
       parseFloat(minLng),
       parseFloat(maxLat),

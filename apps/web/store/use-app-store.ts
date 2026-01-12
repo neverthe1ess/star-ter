@@ -2,17 +2,6 @@
 
 import { create } from "zustand";
 
-export type Industry = {
-  id: string;
-  name: string;
-  category: string;
-  icon: string;
-  avgRevenue: string;
-  growthRate: number;
-  difficulty: string;
-  requiredCapital: string;
-};
-
 export type Location = {
   id: string;
   name: string;
@@ -87,27 +76,22 @@ const normalizeProperty = (property: Partial<Property>): Property => ({
 });
 
 type AppState = {
-  selectedIndustry: Industry | null;
   selectedLocation: Location | null;
   selectedProperty: Property | null;
-  setSelectedIndustry: (industry: Industry | null) => void;
   setSelectedLocation: (location: Partial<Location> | null) => void;
   setSelectedProperty: (property: Partial<Property> | null) => void;
   reset: () => void;
 };
 
 export const useAppStore = create<AppState>((set) => ({
-  selectedIndustry: null,
   selectedLocation: null,
   selectedProperty: null,
-  setSelectedIndustry: (industry) => set({ selectedIndustry: industry }),
   setSelectedLocation: (location) =>
     set({ selectedLocation: location ? normalizeLocation(location) : null }),
   setSelectedProperty: (property) =>
     set({ selectedProperty: property ? normalizeProperty(property) : null }),
   reset: () =>
     set({
-      selectedIndustry: null,
       selectedLocation: null,
       selectedProperty: null,
     }),
