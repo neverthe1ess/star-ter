@@ -3,13 +3,14 @@
 import { ArrowRight } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   getRecommendations,
   ScoredLocation,
 } from '@/services/location/locationRecommend.service';
 import { getOnboarding } from '@/services/user/user.api';
 import { useUserStore } from '@/store/use-user-store';
+import { PentagonChart } from '@/components/charts/PentagonChart';
 
 type DisplayLocation = {
   id: string;
@@ -59,6 +60,13 @@ export function LocationListPage() {
     useState(true);
   const [chatInput, setChatInput] = useState('');
   const chatInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const router = useRouter();
+
+  const handleSearch = () => {
+    if (chatInput.trim()) {
+      router.push(`/chat?q=${encodeURIComponent(chatInput)}`);
+    }
+  };
 
   const isLoggedIn = Boolean(authUser);
   const loginHref = pathname
@@ -90,6 +98,7 @@ export function LocationListPage() {
           region: onboarding.region,
           operatingTime: onboarding.operatingTime,
           capital: onboarding.capital,
+          industryCode: onboarding.industryCode, // null 가능
         });
 
         if (response) {
@@ -131,6 +140,15 @@ export function LocationListPage() {
             value: Math.round(location.scores.region * 100),
           },
           { label: '운영 시간', value: Math.round(location.scores.time * 100) },
+          // 업종 점수가 있을 때만 표시
+          ...(location.scores.industry !== null
+            ? [
+                {
+                  label: '업종 적합',
+                  value: Math.round(location.scores.industry * 100),
+                },
+              ]
+            : []),
         ],
         href: `/locations/detail/${location.id}`,
       }));
@@ -177,7 +195,7 @@ export function LocationListPage() {
               ? Array.from({ length: 3 }).map((_, index) => (
                   <div
                     key={`loading-${index}`}
-                    className="w-[min(320px,90vw)] h-[280px] rounded-[28px] bg-white shadow-sm border border-slate-100 p-7 animate-pulse flex flex-col justify-between"
+                    className="w-[min(320px,90vw)] h-70 rounded-[28px] bg-white shadow-sm border border-slate-100 p-7 animate-pulse flex flex-col justify-between"
                   >
                     <div className="space-y-3">
                       <div className="h-5 w-16 rounded-full bg-slate-100" />
@@ -214,7 +232,7 @@ export function LocationListPage() {
                     <Link
                       key={location.id}
                       href={location.href}
-                      className="w-[min(320px,90vw)] h-[280px] rounded-[28px] bg-white shadow-sm border border-slate-100 p-7 transition-transform duration-200 hover:-translate-y-1 flex flex-col justify-between"
+                      className="w-[min(320px,90vw)] h-70 rounded-[28px] bg-white shadow-sm border border-slate-100 p-7 transition-transform duration-200 hover:-translate-y-1 flex flex-col justify-between"
                     >
                       <div className="space-y-1.5">
                         <div
@@ -249,19 +267,7 @@ export function LocationListPage() {
                           </div>
                         </div>
 
-                        <div className="space-y-1.5 text-xs font-semibold text-slate-400">
-                          {location.metrics.map((metric) => (
-                            <div
-                              key={metric.label}
-                              className="flex items-center justify-between gap-6"
-                            >
-                              <span>{metric.label}</span>
-                              <span className="text-slate-600 font-bold">
-                                {metric.value}%
-                              </span>
-                            </div>
-                          ))}
-                        </div>
+                        <PentagonChart metrics={location.metrics} size={130} />
                       </div>
                     </Link>
                   );
@@ -284,11 +290,12 @@ export function LocationListPage() {
             onChange={(event) => setChatInput(event.target.value)}
             placeholder="무엇이든 물어보세요"
             rows={1}
-            className="w-full min-h-[24px] resize-none bg-transparent text-base text-slate-700 placeholder:text-slate-400 focus:outline-none leading-6 pr-14"
+            className="w-full min-h-6 resize-none bg-transparent text-base text-slate-700 placeholder:text-slate-400 focus:outline-none leading-6 pr-14"
             aria-label="채팅 입력"
             onKeyDown={(event) => {
               if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
+                handleSearch();
               }
             }}
           />
@@ -296,6 +303,7 @@ export function LocationListPage() {
             type="button"
             className="absolute right-4 bottom-2 flex h-10 w-10 items-center justify-center rounded-full bg-black text-white"
             aria-label="전송"
+            onClick={handleSearch}
           >
             <ArrowRight className="h-4 w-4" />
           </button>

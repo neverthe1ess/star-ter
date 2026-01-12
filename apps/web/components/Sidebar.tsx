@@ -5,6 +5,7 @@ import {
   Home,
   FileText,
   Calendar,
+  MessageSquare,
   Plus,
   X,
   Settings,
@@ -33,6 +34,7 @@ const MENU_ITEMS = [
   { id: "home", icon: Home, label: "홈" },
   { id: "templates", icon: FileText, label: "상권 찾기" },
   { id: "meetings", icon: Calendar, label: "상세정보" },
+  { id: "chat", icon: MessageSquare, label: "AI 채팅" },
 ] as const;
 
 const COLLECTIONS = [

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { AnalysisRepository } from './analysis.repository';
 import { AnalysisMapper } from './analysis.mapper';
+import { UsersService } from '../user/user.service';
 import {
   AnalysisResponse,
   AnalysisError,
@@ -11,7 +12,10 @@ import {
 
 @Injectable()
 export class AnalysisService {
-  constructor(private readonly repository: AnalysisRepository) {}
+  constructor(
+    private readonly repository: AnalysisRepository,
+    private readonly usersService: UsersService,
+  ) {}
 
   async getAnalysis(
     regionCode: string,
@@ -341,5 +345,72 @@ export class AnalysisService {
     const cityCode = code.substring(0, 2);
     if (cityCode === '11') return '서울특별시';
     return '';
+  }
+
+  async getRevenueAndCost(trdarCd: string, userId?: string) {
+    const INTERIOR_COST_PER_PY = 2000000; // 평당 200만원
+    const AVG_STORE_SIZE = 15; // 15평
+
+    let preferredIndustry: string | undefined = undefined;
+    // Default: undefined (All industries)
+
+    if (userId) {
+      const userInfo = await this.usersService.getOnboarding(userId);
+      if (userInfo?.industryCode) {
+        preferredIndustry = userInfo.industryCode;
+      }
+    }
+
+    // 최근 분기 (20242) 기준 매출 조회
+    // 분기 매출이므로 / 3 하여 월 매출 추정
+    const salesData = await this.repository.getSalesByIndustry(
+      '20253',
+      trdarCd,
+      preferredIndustry, // Use user's preferred industry OR undefined for all
+    );
+
+    let estimatedRevenue = 0;
+    const appliedIndustry = preferredIndustry || 'all';
+
+    if (salesData.length > 0) {
+      const totalRevenue = Number(salesData[0].total_revenue);
+      const storeCount = Number(salesData[0].store_count);
+      if (storeCount > 0) {
+        estimatedRevenue = Math.floor(totalRevenue / storeCount / 3);
+      }
+    }
+
+    // 임대료 데이터 조회 (단위: 원)
+    const rentData = await this.repository.getRentData(trdarCd);
+
+    // 보증금 (없으면 0)
+    const deposit = rentData?.avg_deposit
+      ? Math.floor(rentData.avg_deposit)
+      : 50000000;
+
+    // 월세 (없으면 0) - 창업 비용에는 미포함되지만 참고용
+    // const monthlyRent = rentData?.avg_premium
+    //   ? Math.floor(rentData.avg_premium)
+    //   : 1500000;
+
+    // 권리금 (없으면 0)
+    const premium = 0; // 데이터에 권리금 항목이 없거나 null이면 0 처리
+
+    // 인테리어 비용
+    const interiorCost = INTERIOR_COST_PER_PY * AVG_STORE_SIZE;
+
+    // 총 창업 비용
+    const totalStartupCost = deposit + premium + interiorCost;
+
+    return {
+      estimatedRevenue,
+      startupCost: {
+        total: totalStartupCost,
+        deposit,
+        premium,
+        interior: interiorCost,
+      },
+      appliedIndustry,
+    };
   }
 }
