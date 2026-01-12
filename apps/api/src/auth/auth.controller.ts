@@ -6,7 +6,9 @@ import {
   Logger,
   UseGuards,
   Get,
+  Req,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { User } from './decorators/user.decorator';
@@ -110,6 +112,7 @@ export class AuthController {
     const { access_token } = this.authService.getJwtToken({
       id: user.id,
       nickname: user.nickname,
+      on_boarding_completed: user.on_boarding_completed ?? false,
     });
 
     // 쿠키에 토큰 저장
