@@ -263,7 +263,6 @@ export function ChatPage() {
       <ChatMapSection 
         ref={mapSectionRef}
         isOpen={isMapOpen}
-        onClose={() => setIsMapOpen(false)}
       />
 
       {/* 메인 채팅 영역 (사이드바 스타일과 일치) */}

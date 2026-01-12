@@ -17,7 +17,6 @@ export interface ChatMapSectionRef {
 
 interface ChatMapSectionProps {
   isOpen: boolean;
-  onClose: () => void;
 }
 
 // ----------------------------------------------------------------------
@@ -27,7 +26,7 @@ const MAX_WIDTH = 800;
 // ----------------------------------------------------------------------
 
 export const ChatMapSection = forwardRef<ChatMapSectionRef, ChatMapSectionProps>(
-  ({ isOpen, onClose }, ref) => {
+  ({ isOpen}, ref) => {
     // 지도 DOM 참조
     const mapRef = useRef<HTMLDivElement>(null);
     

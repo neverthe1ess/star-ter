@@ -15,7 +15,7 @@ export class SearchService {
   async getAreaByMessage(message: string) {
     const [categories, areaList, tables] = await Promise.all([
       this.aiService.getCategories(message),
-      this.aiService.buildAreaList(message),
+      this.aiService.getAreainfo(message),
       this.aiService.getTables(message),
     ]);
 
