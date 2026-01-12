@@ -6,7 +6,6 @@ import {
   Users,
   BarChart3,
   Building2,
-  MessageSquare,
   GripVertical,
   Newspaper,
 } from 'lucide-react';
@@ -18,7 +17,6 @@ import { MapSection } from './location-detail/MapSection';
 import { RealEstateDetailPanel } from './location-detail/RealEstateDetailPanel';
 import NewsSection from '@/components/NewsSection';
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { Button } from './ui/button';
 import { Resizable } from 're-resizable';
 import Link from 'next/link';
 import type {
@@ -47,7 +45,7 @@ export function LocationDetailPage({
     'matching' | 'traffic' | 'analysis' | 'realestate' | 'news'
   >('matching');
   const [mapWidth, setMapWidth] = useState<number | string>('30%');
-  
+
   /**
    * 【Lifting State Up 패턴】
    * 선택된 매물 상태를 부모(LocationDetailPage)에서 관리합니다.
@@ -197,7 +195,7 @@ export function LocationDetailPage({
   ];
 
   useEffect(() => {
-    if(basicInfo?.code) {
+    if (basicInfo?.code) {
       addToHistory(basicInfo.code);
     }
   }, [basicInfo?.code]);
@@ -291,7 +289,7 @@ export function LocationDetailPage({
           </Resizable>
 
           <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-6 flex-shrink-0">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-6 shrink-0">
               <div className="flex gap-1 bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
                 {tabs.map((tab) => (
                   <button
@@ -307,15 +305,6 @@ export function LocationDetailPage({
                   </button>
                 ))}
               </div>
-
-              <Link href={`/chat?q=${encodeURIComponent(basicInfo.name + " 상권 분석해줘")}`}>
-                <Button
-                  className="rounded-xl px-6 py-7 font-bold text-xl transition-all bg-blue-950 text-white hover:bg-blue-900 shadow-lg"
-                >
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  AI 분석 상담하기
-                </Button>
-              </Link>
             </div>
 
             <div className="flex-1 min-h-0">

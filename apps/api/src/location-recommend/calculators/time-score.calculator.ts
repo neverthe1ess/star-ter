@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 
 // 시간대별 매출 데이터 인터페이스 (로컬)
-interface TimeSalesData {
-  thsmon_selng_amt: bigint | null;
-  tmzon_00_06_selng_amt: bigint | null;
-  tmzon_06_11_selng_amt: bigint | null;
-  tmzon_11_14_selng_amt: bigint | null;
-  tmzon_14_17_selng_amt: bigint | null;
-  tmzon_17_21_selng_amt: bigint | null;
-  tmzon_21_24_selng_amt: bigint | null;
+export interface TimeSalesData {
+  thsmon_selng_amt: bigint | number | null;
+  tmzon_00_06_selng_amt: bigint | number | null;
+  tmzon_06_11_selng_amt: bigint | number | null;
+  tmzon_11_14_selng_amt: bigint | number | null;
+  tmzon_14_17_selng_amt: bigint | number | null;
+  tmzon_17_21_selng_amt: bigint | number | null;
+  tmzon_21_24_selng_amt: bigint | number | null;
 }
 
 type TimeColumn = keyof TimeSalesData;
