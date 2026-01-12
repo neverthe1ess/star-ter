@@ -26,7 +26,6 @@ export class RentScoreCalculator {
     capital: string,
     avgDeposit: number | null,
     avgRent: number | null,
-    avgPremim: number | null,
   ): number {
     const capitalAmount = CAPITAL_MAP[capital] || 50000000;
 
@@ -36,10 +35,10 @@ export class RentScoreCalculator {
     }
 
     // 천원 → 원 단위 변환
+    // 1년 비용 기준: 보증금 + (월세 × 12개월)
     const deposit = (avgDeposit || 0) * 1000;
-    const rent = (avgRent || 0) * 6 * 1000;
-    const premium = (avgPremim || 0) * 1000;
-    const totalCost = deposit + rent + premium;
+    const rent = (avgRent || 0) * 12 * 1000;
+    const totalCost = deposit + rent;
 
     // 데이터 이상 방어
     if (totalCost <= 0) {

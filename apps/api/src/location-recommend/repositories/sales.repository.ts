@@ -54,4 +54,42 @@ export class SalesRepository {
 
     return result;
   }
+
+  /**
+   * 상권별 특정 업종 매출 조회
+   * @param quarter 분기 코드
+   * @param industryCode 업종 코드 (예: CS100010)
+   * @returns Map<상권코드, 업종매출>
+   */
+  async getIndustrySalesByQuarter(
+    quarter: string,
+    industryCode: string,
+  ): Promise<{ salesMap: Map<string, number>; avgIndustrySales: number }> {
+    const result = await this.prisma.$queryRaw<
+      { trdar_cd: string; industry_sales: bigint }[]
+    >`
+      SELECT
+        trdar_cd,
+        COALESCE(SUM(thsmon_selng_amt), 0) AS industry_sales
+      FROM sales_commercial
+      WHERE stdr_yyqu_cd = ${quarter}
+        AND svc_induty_cd = ${industryCode}
+      GROUP BY trdar_cd
+    `;
+
+    // Map 생성 및 평균 계산
+    const salesMap = new Map<string, number>();
+    let totalIndustrySales = 0;
+
+    result.forEach((row) => {
+      const sales = Number(row.industry_sales);
+      salesMap.set(row.trdar_cd, sales);
+      totalIndustrySales += sales;
+    });
+
+    const avgIndustrySales =
+      result.length > 0 ? totalIndustrySales / result.length : 0;
+
+    return { salesMap, avgIndustrySales };
+  }
 }

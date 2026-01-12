@@ -8,13 +8,17 @@ import { AgeScoreCalculator } from './calculators/age-score.calculator';
 import { TimeScoreCalculator } from './calculators/time-score.calculator';
 import { RentScoreCalculator } from './calculators/rent-score.calculator';
 import { RegionScoreCalculator } from './calculators/region-score.calculator';
+import { IndustryScoreCalculator } from './calculators/industry-score.calculator';
 import {
   RentRepository,
   CommercialRentData,
 } from './repositories/rent.repository';
 import { PopulationRepository } from './repositories/region.repository';
 import { SalesRepository } from './repositories/sales.repository';
-import { WEIGHTS } from './constants/weights';
+import {
+  WEIGHTS_WITH_INDUSTRY,
+  WEIGHTS_WITHOUT_INDUSTRY,
+} from './constants/weights';
 
 @Injectable()
 export class LocationRecommendService {
@@ -22,6 +26,7 @@ export class LocationRecommendService {
   private timeCalculator = new TimeScoreCalculator();
   private rentCalculator = new RentScoreCalculator();
   private regionCalculator = new RegionScoreCalculator();
+  private industryCalculator = new IndustryScoreCalculator();
 
   constructor(
     private readonly salesRepository: SalesRepository,
@@ -32,15 +37,28 @@ export class LocationRecommendService {
   async getRecommendations(
     dto: RecommendRequestDto,
   ): Promise<RecommendResponseDto> {
+    const hasIndustry = Boolean(dto.industryCode);
+
     // 1. 병렬로 전체 데이터 조회 (성능 최적화)
-    const [salesData, rentDataList, regionDataList] = await Promise.all([
-      // 상권별 매출 데이터 (SQL GROUP BY로 집계)
-      this.salesRepository.getAggregatedSalesByQuarter('20253'),
-      // 상권별 임대료 데이터 (PostGIS 공간 조인)
-      this.rentRepository.getAllCommercialRents(),
-      // 상권별 인구/시설 데이터 (SQL GROUP BY로 집계)
-      this.populationRepository.getRegionDataByQuarter('20253'),
-    ]);
+    const [salesData, rentDataList, regionDataList, industrySalesResult] =
+      await Promise.all([
+        // 상권별 매출 데이터 (SQL GROUP BY로 집계)
+        this.salesRepository.getAggregatedSalesByQuarter('20253'),
+        // 상권별 임대료 데이터 (PostGIS 공간 조인)
+        this.rentRepository.getAllCommercialRents(),
+        // 상권별 인구/시설 데이터 (SQL GROUP BY로 집계)
+        this.populationRepository.getRegionDataByQuarter('20253'),
+        // 상권별 특정 업종 매출 데이터 (업종 선택시에만)
+        hasIndustry
+          ? this.salesRepository.getIndustrySalesByQuarter(
+              '20253',
+              dto.industryCode!,
+            )
+          : Promise.resolve({
+              salesMap: new Map<string, number>(),
+              avgIndustrySales: 0,
+            }),
+      ]);
 
     // 임대료 Map 생성
     const rentDataMap = new Map<string, CommercialRentData>();
@@ -51,6 +69,10 @@ export class LocationRecommendService {
     // 인구/시설 Map 생성
     const regionDataMap = new Map(regionDataList.map((r) => [r.trdar_cd, r]));
 
+    // 업종 매출 Map 및 평균
+    const { salesMap: industrySalesMap, avgIndustrySales } =
+      industrySalesResult;
+
     // 최대 유동인구 계산 (정규화용)
     let maxFootTraffic = 1;
     regionDataList.forEach((data) => {
@@ -58,6 +80,11 @@ export class LocationRecommendService {
         maxFootTraffic = data.tot_flpop_co;
       }
     });
+
+    // 가중치 선택 (업종 유무에 따라)
+    const weights = hasIndustry
+      ? WEIGHTS_WITH_INDUSTRY
+      : WEIGHTS_WITHOUT_INDUSTRY;
 
     // 2. 각 상권에 대해 점수 계산
     const scoredLocations: ScoredLocation[] = salesData.map((sales) => {
@@ -103,15 +130,31 @@ export class LocationRecommendService {
         dto.capital,
         rentData?.avg_deposit ?? null,
         rentData?.avg_rent ?? null,
-        rentData?.avg_premium ?? null,
       );
 
-      // Total Score (가중 합산 - 4개 요소)
-      const totalScore =
-        ageScore * WEIGHTS.age +
-        regionScore * WEIGHTS.region +
-        timeScore * WEIGHTS.time +
-        rentScore * WEIGHTS.rent;
+      // Industry Score (업종 선택시에만 계산)
+      let industryScore = 0;
+      if (hasIndustry) {
+        const totalSales = Number(sales.thsmon_selng_amt || 0);
+        const industrySales = industrySalesMap.get(sales.trdar_cd) || 0;
+        industryScore = this.industryCalculator.calculate(
+          totalSales,
+          industrySales,
+          avgIndustrySales,
+        );
+      }
+
+      // Total Score (가중 합산)
+      let totalScore =
+        ageScore * weights.age +
+        regionScore * weights.region +
+        timeScore * weights.time +
+        rentScore * weights.rent;
+
+      // 업종 점수 추가 (업종 선택시에만)
+      if (hasIndustry && 'industry' in weights) {
+        totalScore += industryScore * weights.industry;
+      }
 
       return {
         id: sales.trdar_cd,
@@ -122,6 +165,7 @@ export class LocationRecommendService {
           region: Math.round(regionScore * 100) / 100,
           time: Math.round(timeScore * 100) / 100,
           rent: Math.round(rentScore * 100) / 100,
+          industry: hasIndustry ? Math.round(industryScore * 100) / 100 : null,
         },
       };
     });
