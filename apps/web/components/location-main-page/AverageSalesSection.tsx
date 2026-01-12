@@ -42,8 +42,8 @@ export function AverageSalesSection() {
         </Link>
       </div>
 
-      <div className="overflow-x-auto pb-4">
-        <div className="flex gap-4" style={{ scrollbarWidth: 'none' }}>
+      <div className="overflow-x-auto pb-4 no-scrollbar">
+        <div className="flex gap-4">
           {isLoading
             ? Array.from({ length: 5 }).map((_, i) => (
                 <div
