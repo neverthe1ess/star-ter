@@ -7,9 +7,10 @@ import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
 import { ChatMapSection, type ChatMapSectionRef } from "./ChatMapSection";
 import { ChatWelcome } from "./ChatWelcome";
-import { type AiAction } from "../../lib/api/ai";
+
 import { useSearchParams, useRouter } from "next/navigation";
 import { useChat } from "./hooks/useChat";
+import { useActionDispatcher } from "./hooks/useActionDispatcher";
 
 /**
  * ChatPage 컴포넌트 - AI 챗봇의 메인 페이지
@@ -39,34 +40,17 @@ export function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // AI 액션 처리 핸들러
-  const handleAiActions = useCallback((actions: AiAction[]) => {
-    actions.forEach((action) => {
-      console.log("[ChatPage] Handling Action:", action);
-
-      try {
-        // 1. 지도 패널 열기
-        if (action.type === "ui.open_panel") {
-          setIsMapOpen(true);
-        }
-
-        // 2. 지도 이동 등 지도 관련 액션
-        if (mapSectionRef.current) {
-          mapSectionRef.current.executeAction(action);
-        }
-      } catch (e) {
-        console.error("Failed to execute action:", action, e);
-      }
-    });
-  }, []);
+  // Action Dispatcher Hook 사용
+  const { dispatch } = useActionDispatcher(mapSectionRef, setIsMapOpen);
 
   // 메시지 전송 래퍼 (액션 처리 콜백 전달)
   const handleSendMessageWrapper = useCallback(
     (text?: string) => {
       const messageText = typeof text === "string" ? text : inputValue.trim();
-      sendMessage(messageText, handleAiActions);
+      // useChat의 sendMessage에 dispatch 함수를 전달
+      sendMessage(messageText, dispatch);
     },
-    [inputValue, sendMessage, handleAiActions]
+    [inputValue, sendMessage, dispatch]
   );
 
   // TODO: 메인에서 검색제거 시 반드시 제거 
