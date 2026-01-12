@@ -19,6 +19,11 @@ import {
   WEIGHTS_WITH_INDUSTRY,
   WEIGHTS_WITHOUT_INDUSTRY,
 } from './constants/weights';
+import { SalesData } from './calculators/age-score.calculator';
+import { TimeSalesData } from './calculators/time-score.calculator';
+import { RegionData } from './repositories/region.repository';
+
+export type ScoringSalesInput = SalesData & TimeSalesData;
 
 @Injectable()
 export class LocationRecommendService {
@@ -46,6 +51,8 @@ export class LocationRecommendService {
       regionDataList,
       industrySalesResult,
       industryDensityResult,
+      globalMaxFootTraffic,
+      globalIndustryBenchmarks,
     ] = await Promise.all([
       // 상권별 매출 데이터 (SQL GROUP BY로 집계)
       this.salesRepository.getAggregatedSalesByQuarter('20253'),
@@ -76,6 +83,16 @@ export class LocationRecommendService {
             >(),
             avgDensity: 0,
           }),
+      this.populationRepository.getGlobalMaxFootTraffic('20253'),
+      hasIndustry
+        ? this.salesRepository.getGlobalIndustryBenchmarks(
+            '20253',
+            dto.industryCode!,
+          )
+        : Promise.resolve({
+            avgIndustrySales: 0,
+            avgDensity: 0,
+          }),
     ]);
 
     // 임대료 Map 생성
@@ -87,21 +104,14 @@ export class LocationRecommendService {
     // 인구/시설 Map 생성
     const regionDataMap = new Map(regionDataList.map((r) => [r.trdar_cd, r]));
 
-    // 업종 매출 Map 및 평균
-    const { salesMap: industrySalesMap, avgIndustrySales } =
-      industrySalesResult;
+    // 업종 매출
+    const { salesMap: industrySalesMap } = industrySalesResult;
 
-    // 업종 밀도 Map 및 평균
-    const { densityMap: industryDensityMap, avgDensity } =
-      industryDensityResult;
+    // 업종 밀도
+    const { densityMap: industryDensityMap } = industryDensityResult;
 
-    // 최대 유동인구 계산 (정규화용)
-    let maxFootTraffic = 1;
-    regionDataList.forEach((data) => {
-      if (data.tot_flpop_co > maxFootTraffic) {
-        maxFootTraffic = data.tot_flpop_co;
-      }
-    });
+    const maxFootTraffic = globalMaxFootTraffic;
+    const { avgIndustrySales, avgDensity } = globalIndustryBenchmarks;
 
     // 가중치 선택 (업종 유무에 따라)
     const weights = hasIndustry
@@ -203,5 +213,88 @@ export class LocationRecommendService {
     return {
       locations: scoredLocations.slice(0, 20),
     };
+  }
+
+  // 단일 상권에 대한 매칭 점수 계산 (AnalysisService 재활용)
+  calculateRecommendationScore(
+    salesData: ScoringSalesInput,
+    regionData: RegionData | undefined,
+    rentData: Partial<CommercialRentData> | null | undefined,
+    benchmarks: {
+      maxFootTraffic: number;
+      avgIndustrySales: number;
+      avgDensity: number;
+    },
+    preferences: RecommendRequestDto,
+    industryData?: {
+      sales: number;
+      density: number;
+    },
+  ): number {
+    const hasIndustry = Boolean(preferences.industryCode);
+    const weights = hasIndustry
+      ? WEIGHTS_WITH_INDUSTRY
+      : WEIGHTS_WITHOUT_INDUSTRY;
+
+    const ageScore = this.ageCalculator.calculate(
+      {
+        thsmon_selng_amt: salesData.thsmon_selng_amt,
+        agrde_10_selng_amt: salesData.agrde_10_selng_amt,
+        agrde_20_selng_amt: salesData.agrde_20_selng_amt,
+        agrde_30_selng_amt: salesData.agrde_30_selng_amt,
+        agrde_40_selng_amt: salesData.agrde_40_selng_amt,
+        agrde_50_selng_amt: salesData.agrde_50_selng_amt,
+        agrde_60_above_selng_amt: salesData.agrde_60_above_selng_amt,
+      },
+      preferences.age,
+    );
+
+    const timeScore = this.timeCalculator.calculate(
+      {
+        thsmon_selng_amt: salesData.thsmon_selng_amt,
+        tmzon_00_06_selng_amt: salesData.tmzon_00_06_selng_amt,
+        tmzon_06_11_selng_amt: salesData.tmzon_06_11_selng_amt,
+        tmzon_11_14_selng_amt: salesData.tmzon_11_14_selng_amt,
+        tmzon_14_17_selng_amt: salesData.tmzon_14_17_selng_amt,
+        tmzon_17_21_selng_amt: salesData.tmzon_17_21_selng_amt,
+        tmzon_21_24_selng_amt: salesData.tmzon_21_24_selng_amt,
+      },
+      preferences.operatingTime,
+    );
+
+    const regionScore = this.regionCalculator.calculate(
+      preferences.region,
+      regionData,
+      benchmarks.maxFootTraffic,
+    );
+
+    const rentScore = this.rentCalculator.calculate(
+      preferences.capital,
+      rentData?.avg_deposit ?? null,
+      rentData?.avg_rent ?? null,
+    );
+
+    let industryScore = 0;
+    if (hasIndustry && industryData) {
+      industryScore = this.industryCalculator.calculate(
+        Number(salesData.thsmon_selng_amt || 0),
+        industryData.sales,
+        benchmarks.avgIndustrySales,
+        industryData.density,
+        benchmarks.avgDensity,
+      );
+    }
+
+    let totalScore =
+      ageScore * weights.age +
+      regionScore * weights.region +
+      timeScore * weights.time +
+      rentScore * weights.rent;
+
+    if (hasIndustry && 'industry' in weights) {
+      totalScore += industryScore * weights.industry;
+    }
+
+    return Math.round(totalScore * 10) / 10;
   }
 }

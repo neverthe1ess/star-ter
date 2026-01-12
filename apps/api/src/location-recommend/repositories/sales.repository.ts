@@ -156,4 +156,36 @@ export class SalesRepository {
 
     return { densityMap, avgDensity };
   }
+  // 서울시 전체 업종별 평균 매출 및 밀도 조회 (절대평가 점수 산출)
+  async getGlobalIndustryBenchmarks(
+    quarter: string,
+    industryCode: string,
+  ): Promise<{ avgIndustrySales: number; avgDensity: number }> {
+    const avgSalesResult = await this.prisma.$queryRaw<{ avg_sales: number }[]>`
+      SELECT AVG(sub.sum_sales)::float as avg_sales
+      FROM (
+        SELECT SUM(thsmon_selng_amt) as sum_sales
+        FROM "sales_commercial"
+        WHERE stdr_yyqu_cd = ${quarter} AND svc_induty_cd = ${industryCode}
+        GROUP BY trdar_cd
+      ) sub
+    `;
+    const avgIndustrySales = avgSalesResult[0]?.avg_sales || 0;
+    const avgDensityResult = await this.prisma.$queryRaw<
+      { avg_density: number }[]
+    >`
+      SELECT AVG(sub.density)::float as avg_density
+      FROM (
+        SELECT 
+          (SUM(s.stor_co)::float / GREATEST(COALESCE(AVG(a.relm_ar), 1), 1)) as density
+        FROM "store_commercial" s
+        LEFT JOIN "seoul_commercial_area_grid" a ON s.trdar_cd = a.trdar_cd
+        WHERE s.stdr_yyqu_cd = ${quarter} AND s.svc_induty_cd = ${industryCode}
+        GROUP BY s.trdar_cd
+      ) sub
+    `;
+    const avgDensity = avgDensityResult[0]?.avg_density || 0;
+
+    return { avgIndustrySales, avgDensity };
+  }
 }

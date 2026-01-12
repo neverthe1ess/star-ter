@@ -24,5 +24,6 @@ import { SalesRepository } from './repositories/sales.repository';
     PopulationRepository,
     SalesRepository,
   ],
+  exports: [LocationRecommendService],
 })
 export class LocationRecommendModule {}
