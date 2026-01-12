@@ -10,6 +10,7 @@ import {
 } from '@/services/location/locationRecommend.service';
 import { getOnboarding } from '@/services/user/user.api';
 import { useUserStore } from '@/store/use-user-store';
+import { PentagonChart } from '@/components/charts/PentagonChart';
 
 type DisplayLocation = {
   id: string;
@@ -266,19 +267,7 @@ export function LocationListPage() {
                           </div>
                         </div>
 
-                        <div className="space-y-1.5 text-xs font-semibold text-slate-400">
-                          {location.metrics.map((metric) => (
-                            <div
-                              key={metric.label}
-                              className="flex items-center justify-between gap-6"
-                            >
-                              <span>{metric.label}</span>
-                              <span className="text-slate-600 font-bold">
-                                {metric.value}%
-                              </span>
-                            </div>
-                          ))}
-                        </div>
+                        <PentagonChart metrics={location.metrics} size={130} />
                       </div>
                     </Link>
                   );
