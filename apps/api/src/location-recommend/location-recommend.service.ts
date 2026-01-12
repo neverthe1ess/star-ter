@@ -40,25 +40,43 @@ export class LocationRecommendService {
     const hasIndustry = Boolean(dto.industryCode);
 
     // 1. 병렬로 전체 데이터 조회 (성능 최적화)
-    const [salesData, rentDataList, regionDataList, industrySalesResult] =
-      await Promise.all([
-        // 상권별 매출 데이터 (SQL GROUP BY로 집계)
-        this.salesRepository.getAggregatedSalesByQuarter('20253'),
-        // 상권별 임대료 데이터 (PostGIS 공간 조인)
-        this.rentRepository.getAllCommercialRents(),
-        // 상권별 인구/시설 데이터 (SQL GROUP BY로 집계)
-        this.populationRepository.getRegionDataByQuarter('20253'),
-        // 상권별 특정 업종 매출 데이터 (업종 선택시에만)
-        hasIndustry
-          ? this.salesRepository.getIndustrySalesByQuarter(
-              '20253',
-              dto.industryCode!,
-            )
-          : Promise.resolve({
-              salesMap: new Map<string, number>(),
-              avgIndustrySales: 0,
-            }),
-      ]);
+    const [
+      salesData,
+      rentDataList,
+      regionDataList,
+      industrySalesResult,
+      industryDensityResult,
+    ] = await Promise.all([
+      // 상권별 매출 데이터 (SQL GROUP BY로 집계)
+      this.salesRepository.getAggregatedSalesByQuarter('20253'),
+      // 상권별 임대료 데이터 (PostGIS 공간 조인)
+      this.rentRepository.getAllCommercialRents(),
+      // 상권별 인구/시설 데이터 (SQL GROUP BY로 집계)
+      this.populationRepository.getRegionDataByQuarter('20253'),
+      // 상권별 특정 업종 매출 데이터 (업종 선택시에만)
+      hasIndustry
+        ? this.salesRepository.getIndustrySalesByQuarter(
+            '20253',
+            dto.industryCode!,
+          )
+        : Promise.resolve({
+            salesMap: new Map<string, number>(),
+            avgIndustrySales: 0,
+          }),
+      // 상권별 특정 업종 밀도 데이터 (업종 선택시에만)
+      hasIndustry
+        ? this.salesRepository.getIndustryDensityByQuarter(
+            '20253',
+            dto.industryCode!,
+          )
+        : Promise.resolve({
+            densityMap: new Map<
+              string,
+              { storeCount: number; areaSize: number; density: number }
+            >(),
+            avgDensity: 0,
+          }),
+    ]);
 
     // 임대료 Map 생성
     const rentDataMap = new Map<string, CommercialRentData>();
@@ -72,6 +90,10 @@ export class LocationRecommendService {
     // 업종 매출 Map 및 평균
     const { salesMap: industrySalesMap, avgIndustrySales } =
       industrySalesResult;
+
+    // 업종 밀도 Map 및 평균
+    const { densityMap: industryDensityMap, avgDensity } =
+      industryDensityResult;
 
     // 최대 유동인구 계산 (정규화용)
     let maxFootTraffic = 1;
@@ -132,15 +154,20 @@ export class LocationRecommendService {
         rentData?.avg_rent ?? null,
       );
 
-      // Industry Score (업종 선택시에만 계산)
+      // Industry Score (업종 선택시에만 계산 - 밀도 포함)
       let industryScore = 0;
       if (hasIndustry) {
         const totalSales = Number(sales.thsmon_selng_amt || 0);
         const industrySales = industrySalesMap.get(sales.trdar_cd) || 0;
+        const densityData = industryDensityMap.get(sales.trdar_cd);
+        const density = densityData?.density || 0;
+
         industryScore = this.industryCalculator.calculate(
           totalSales,
           industrySales,
           avgIndustrySales,
+          density,
+          avgDensity,
         );
       }
 

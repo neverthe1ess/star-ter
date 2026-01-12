@@ -1,34 +1,25 @@
 import { Injectable } from '@nestjs/common';
 
-/**
- * 업종 점수 계산기
- *
- * 공식:
- * 1. industryShare = industrySales / totalSales (해당 상권에서 업종 점유율)
- * 2. industryDemand = industrySales / avgIndustrySales (상권 업종 평균 매출 / 서울 전체 상권의 업종 평균 매출)
- * 3. competitionScore = 1 - industryShare (경쟁 낮을수록 높음)
- * 4. demandScore = min(1, industryDemand) (수요 상한 1)
- * 5. industryScore = competitionScore * 0.6 + demandScore * 0.4
- *
- * 결과:
- * - 블루오션 (경쟁↓, 수요↑): 최상
- * - 레드오션 (경쟁↑, 수요↑): 중간
- * - 황무지 (경쟁↓, 수요↓): 중상
- * - 최악 (경쟁↑, 수요↓): 하
- */
 @Injectable()
 export class IndustryScoreCalculator {
+  // 밀도 임계값 (상세페이지와 동일)
+  private readonly DENSITY_THRESHOLDS = { HIGH: 0.0005, MEDIUM: 0.0002 };
+
   /**
    * 업종 점수 계산 (0~1)
    *
    * @param totalSales 상권 전체 매출
    * @param industrySales 상권 내 해당 업종 매출
    * @param avgIndustrySales 전체 상권 평균 해당 업종 매출
+   * @param density 해당 상권의 업종 점포 밀도 (점포수/면적)
+   * @param avgDensity 전체 상권 평균 업종 점포 밀도
    */
   calculate(
     totalSales: number,
     industrySales: number,
     avgIndustrySales: number,
+    density: number = 0,
+    avgDensity: number = 0,
   ): number {
     // 데이터 없으면 중립 점수
     if (totalSales === 0 || avgIndustrySales === 0) {
@@ -40,16 +31,32 @@ export class IndustryScoreCalculator {
       return 0.5;
     }
 
-    // 1. 기본 값 계산
-    const industryShare = industrySales / totalSales; // 0 ~ 1
-    const industryDemand = industrySales / avgIndustrySales; // 0 ~ n
+    // 1. 매출 기반 경쟁도 (0~1, 높을수록 좋음)
+    const industryShare = industrySales / totalSales;
+    const salesCompetitionScore = 1 - industryShare;
 
-    // 2. 점수화
-    const competitionScore = 1 - industryShare; // 경쟁 낮을수록 높음
-    const demandScore = Math.min(1, industryDemand); // 수요 상한 1
+    // 2. 밀도 기반 경쟁도 (0~1, 밀도 낮을수록 좋음)
+    let densityScore = 0.5; // 기본값 (밀도 데이터 없으면 중립)
+    if (avgDensity > 0 && density >= 0) {
+      // 평균 대비 밀도가 낮을수록 좋음
+      const densityRatio = density / avgDensity;
+      densityScore = Math.max(0, 1 - Math.min(1, densityRatio));
 
-    // 3. 최종 업종 점수 (경쟁 60%, 수요 40%)
-    const industryScore = competitionScore * 0.6 + demandScore * 0.4;
+      // 절대적 기준 보정 (상세페이지 기준 반영)
+      if (density >= this.DENSITY_THRESHOLDS.HIGH) {
+        densityScore = Math.min(densityScore, 0.2); // 위험 수준이면 최대 0.2
+      } else if (density >= this.DENSITY_THRESHOLDS.MEDIUM) {
+        densityScore = Math.min(densityScore, 0.5); // 경계 수준이면 최대 0.5
+      }
+    }
+
+    // 3. 수요 점수 (0~1, 높을수록 좋음)
+    const industryDemand = industrySales / avgIndustrySales;
+    const demandScore = Math.min(1, industryDemand);
+
+    // 4. 최종 업종 점수 (매출경쟁 30% + 밀도경쟁 30% + 수요 40%)
+    const industryScore =
+      salesCompetitionScore * 0.3 + densityScore * 0.3 + demandScore * 0.4;
 
     return industryScore;
   }
