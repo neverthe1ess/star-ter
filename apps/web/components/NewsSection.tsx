@@ -62,7 +62,36 @@ export default function NewsSection({
     fetchNews();
   }, [region, page]);
 
-  if (loading) return <div className="p-8 text-center">Loading news...</div>;
+  if (loading) {
+    return (
+      <div className="w-full max-w-7xl mx-auto px-4">
+        <div className="flex items-center justify-between mb-4">
+          <div className="h-7 w-32 bg-slate-200 animate-pulse rounded" />
+        </div>
+        <div className="flex flex-col justify-between mb-8">
+          {[...Array(5)].map((_, index) => (
+            <div key={index} className="block pb-4">
+              <div className="flex gap-4">
+                <div className="flex-1 min-w-0 flex flex-col">
+                  {/* Title Skeleton */}
+                  <div className="h-5 w-3/4 bg-slate-200 animate-pulse rounded mb-2" />
+                  {/* Description Skeleton */}
+                  <div className="h-4 w-full bg-slate-200 animate-pulse rounded mb-1" />
+                  <div className="h-4 w-2/3 bg-slate-200 animate-pulse rounded mb-3" />
+                  {/* Date Skeleton */}
+                  <div className="mt-auto h-3 w-20 bg-slate-200 animate-pulse rounded" />
+                </div>
+
+                {showImages && (
+                  <div className="shrink-0 w-24 h-24 rounded-xl bg-slate-200 animate-pulse border border-slate-200" />
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
   if (error)
     return <div className="p-8 text-center text-red-500">Error: {error}</div>;
 

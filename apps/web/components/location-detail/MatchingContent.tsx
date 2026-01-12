@@ -16,6 +16,7 @@ interface RevenueData {
   competitorCount: number;
   avgMonthlyRent: number;
   appliedIndustry: string;
+  appliedIndustryName: string;
   matchingScore: number;
 }
 
@@ -169,11 +170,11 @@ export function MatchingContent({
 
                     <div className="space-y-3 text-center lg:text-left">
                       <h3
-                        className={`text-xl font-bold leading-tight ${content.color}`}
+                        className={`text-2xl font-bold leading-tight ${content.color}`}
                       >
                         {content.title}
                       </h3>
-                      <p className="text-slate-500 text-base leading-relaxed break-keep">
+                      <p className="text-slate-500 text-lg leading-relaxed break-keep">
                         {content.desc}
                       </p>
                     </div>
@@ -193,25 +194,31 @@ export function MatchingContent({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="p-8 bg-slate-50/50 border border-slate-100 rounded-3xl">
-          <p className="text-slate-400 text-sm font-bold mb-3 uppercase tracking-wider">
+          <p className="text-slate-400 text-md font-bold mb-3 uppercase tracking-wider">
             예상 월 매출액
           </p>
-          <div className="flex items-baseline gap-2 mb-2">
+          <div className="flex items-baseline gap-2 my-4">
             {loading ? (
               <div className="h-9 w-32 bg-slate-200 animate-pulse rounded" />
             ) : (
               <span className="text-3xl font-black text-blue-950">
-                {data ? formatMoney(data.estimatedRevenue) : '-'}
+                {data
+                  ? data.estimatedRevenue === 0
+                    ? '점포 없음'
+                    : `약 ${formatMoney(data.estimatedRevenue)}`
+                  : '-'}
               </span>
             )}
           </div>
-          <p className="text-slate-400 text-sm font-bold flex items-center gap-1">
-            <span>주변 매장들의 매출액의 평균치</span>
+          <p className="text-slate-900 text-md font-bold flex items-center gap-1">
+            <span>
+              상권 내 {data?.appliedIndustryName || '전체 업종'} 매출 평균
+            </span>
           </p>
         </div>
 
         <div className="p-8 bg-slate-50/50 border border-slate-100 rounded-3xl">
-          <p className="text-slate-400 text-sm font-bold mb-3 uppercase tracking-wider">
+          <p className="text-slate-400 text-md font-bold my-4 uppercase tracking-wider">
             초기 예상 창업 비용
           </p>
           <div className="flex items-baseline gap-2 mb-2">
@@ -219,11 +226,11 @@ export function MatchingContent({
               <div className="h-9 w-32 bg-slate-200 animate-pulse rounded" />
             ) : (
               <span className="text-3xl font-black text-blue-950">
-                {data ? formatMoney(data.startupCost.total) : '-'}
+                약 {data ? formatMoney(data.startupCost.total) : '-'}
               </span>
             )}
           </div>
-          <p className="text-slate-400 text-sm font-medium">
+          <p className="text-slate-900 text-md font-bold">
             보증금, 권리금, 인테리어 일체 포함
           </p>
         </div>
@@ -235,16 +242,18 @@ export function MatchingContent({
           {[
             {
               label: '경쟁 업체 수',
-              value: data?.competitorCount ? `${data.competitorCount}개` : '-',
+              value: data?.competitorCount
+                ? `약 ${data.competitorCount}개`
+                : '-',
               sub: '선호 업종 기준',
               color: 'text-rose-500',
             },
             {
               label: '평균 임대료',
               value: data?.avgMonthlyRent
-                ? formatMoney(data.avgMonthlyRent)
+                ? `약 ${formatMoney(data.avgMonthlyRent)}`
                 : '-',
-              sub: '월평균 (상권 내부의 부동산)',
+              sub: '상권 내 임대료 평균',
               color: 'text-blue-500',
             },
           ].map((metric) => (

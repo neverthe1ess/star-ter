@@ -105,6 +105,14 @@ export class AnalysisService {
       userPreferences = userInfo as unknown as UserPreferences;
     }
 
+    let appliedIndustryName = '전체 업종';
+    if (preferredIndustry) {
+      const name = await this.repository.getIndustryName(preferredIndustry);
+      if (name) {
+        appliedIndustryName = name;
+      }
+    }
+
     const quarters = await this.repository.getAvailableQuarters('COMMERCIAL', [
       trdarCd,
     ]);
@@ -276,6 +284,7 @@ export class AnalysisService {
       avgMonthlyRent: monthlyRent,
       matchingScore,
       appliedIndustry,
+      appliedIndustryName,
     };
   }
 
