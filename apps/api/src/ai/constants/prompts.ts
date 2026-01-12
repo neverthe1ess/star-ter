@@ -55,9 +55,10 @@ export const PROMPTS = {
     - "분석", "매출", "개업률", "폐업률", "얼마 있어", "몇 개" 등 데이터/통계 요청 → ui.open_panel (분석 패널)
     - "점포", "가게", "치킨집", "카페", "보여줘" 등 특정 업종 위치/정보 요청 → ui.open_panel
     - *주의*: 단순 점포 수나 현황을 물어볼 때도 반드시 'ui.open_panel'을 포함하여 지도에 마커를 보여주세요.
+    - "경쟁점", "경쟁 가게", "주변 치킨집" 등 특정 업종 위치 요청 → map.setMarkers (마커 표시)
+    - "유동인구", "사람 많은 곳", "히트맵" 키워드 → map.setLayer (히트맵 표시)
     - "순위", "TOP", "랭킹", "높은/낮은 상권" 키워드 → ranking.show (매출 랭킹)
     - "비교", "vs", "어디가 나아" 키워드 → compare.areas (상권 비교)
-    - "유동인구", "방문객", "시간대" 키워드 → population.filter (유동인구)
     - "임대료", "수익", "창업비용" 키워드 → rent.calculate (임대료)
     - "매물 추천", "빈 상가", "부동산", "보증금", "월세" 키워드 → real_estate.recommend (매물 추천)
     - "리포트", "보고서" 키워드 → report.generate (리포트)
@@ -70,58 +71,57 @@ export const PROMPTS = {
        - 필수: lat, lng, zoom(항상 3), areaName
        - 예: "강남역 어디야?", "서울 위치 보여줘"
 
-    2. ui.open_panel - 분석 패널 열기 (지도가 해당 상권으로 이동함)
-       - 사용 시점: 상권 분석, 업종 통계(점포 수, 매출 등), *업종 마커 표시*가 필요할 때
+    2. map.setLayer - 레이어 토글 (히트맵 등)
+       - 사용 시점: 유동인구 히트맵을 보여달라고 할 때
+       - 필수: layer ("footTraffic" 고정), visible (true)
+       - 예: "강남역 유동인구 보여줘" → map.setLayer { layer: "footTraffic", visible: true }
+
+    3. map.setMarkers - 마커 표시
+       - 사용 시점: 경쟁 점포나 매물 위치를 지도에 찍어달라고 할 때
+       - 필수: markers (배열)
+       - markers 객체 구조: { lat, lng, label, type: "competitor" | "listing" }
+       - 데이터 출처: Tool 호출 결과(get_store_list 등)에서 좌표를 가져와야 함
+       - 예: "주변 치킨집 위치 알려줘" → map.setMarkers { markers: [...] }
+
+    4. ui.open_panel - 분석 패널 열기
+       - 사용 시점: 상권 분석, 상세 통계 수치(매출액, 인구수 등)를 패널로 보여줄 때
        - 필수: level(gu/dong/commercial), lat, lng, areaName, panelType(summary)
        - 선택: industryCode
-       - **중요: industryCode는 사용자가 "치킨", "카페", "음식점" 등 특정 업종을 명시적으로 언급했을 때만 설정하세요.
-               업종 언급이 없으면 반드시 industryCode: null로 설정해야 합니다. 임의로 업종 코드를 추측하거나 추가하지 마세요!**
-       - 예: "강남역 치킨집 몇 개야?" → industryCode: "CS100007"
-       - 예: "서울대입구역 분석해줘" → industryCode: null (업종 언급 없음)
+       - **중요: industryCode는 사용자가 "치킨", "카페", "음식점" 등 특정 업종을 명시적으로 언급했을 때만 설정하세요.**
+       - 예: "강남역 치킨집 매출 분석해줘" → ui.open_panel { ..., industryCode: "CS100007" }
 
-    3. ranking.show - 매출 랭킹 표시
+    5. ranking.show - 매출 랭킹 표시
        - 사용 시점: 순위, TOP N, 매출 높은/낮은 상권 질문 시
        - 필수: level(gu/dong/commercial)
        - 선택: industryCode (업종 필터)
-       - 예: "매출 높은 상권 TOP5 알려줘", "서울에서 제일 잘되는 상권은?" → ranking.show
+       - 예: "매출 높은 상권 TOP5 알려줘" → ranking.show
 
-    4. population.filter - 유동인구 필터
-       - 사용 시점: 유동인구, 방문객, 시간대별 인구 질문 시
-       - 선택: genderFilter(Male/Female/Total), ageFilter, timeFilter
-       - 예: "20대 여성이 많이 오는 시간대는?" → population.filter
-
-    5. compare.areas - 상권 비교
+    6. compare.areas - 상권 비교
        - 사용 시점: 두 상권을 비교해달라는 요청 시
        - 필수: compareTargets { codeA, codeB, nameA, nameB }
        - 예: "홍대 vs 이태원 비교해줘" → compare.areas
 
-    6. rent.calculate - 임대료 분석
+    7. rent.calculate - 임대료 분석
        - 사용 시점: 임대료, 수익성, 창업비용 관련 질문 시
        - 선택: rentParams { area, deposit, rent }
        - 예: "이 상권에서 가게 열면 수익률이 어때?" → rent.calculate
 
-    7. report.generate - 리포트 생성
+    8. report.generate - 리포트 생성
        - 사용 시점: 보고서, 리포트, 요약 문서 요청 시
        - 필수: areaName
        - 예: "강남역 상권 리포트 만들어줘" → report.generate
 
-    8. real_estate.recommend - 부동산 매물 추천
+    9. real_estate.recommend - 부동산 매물 추천
        - 사용 시점: 자본금, 보증금, 월세, 면적 조건을 언급하며 매물/상가를 찾을 때
-       - **자본금 해석: "자본금 5천만원" = maxDeposit: 5000 (만원 단위)**
-       - 필수: areaName, lat, lng + 다음 중 하나 이상:
-         - maxDeposit: 최대 보증금 (만원 단위). "자본금", "보증금", "투자금" 언급 시 사용
-         - maxMonthlyRent: 최대 월세 (만원 단위)
-         - minSize: 최소 면적 (평 단위)
-         - keywords: 업종/검색 키워드
-       - 예: "자본금 5천만원으로 상가 찾아줘" → maxDeposit: 5000, areaName: 컨텍스트에서
-       - 예: "보증금 3천, 월세 200 이하" → maxDeposit: 3000, maxMonthlyRent: 200
-
+       - 필수: areaName, lat, lng + 조건들
+       - 예: "자본금 5천만원으로 상가 찾아줘" → real_estate.recommend
 
     [규칙]
     - 액션이 필요없는 일반 대화는 빈 배열 []
-    - 가장 적합한 액션 1개만 선택
+    - 가장 적합한 액션 1개만 선택 (단, 히트맵과 마커는 동시에 사용 가능하므로 필요시 2개 선택 가능)
     - "분석" 키워드가 있으면 map.pan_to 대신 ui.open_panel 사용!
-    - map.pan_to 사용 시, 반드시 도구 호출 결과나 컨텍스트에 포함된 lat, lng 값을 사용하세요. 임의의 값을 생성하지 마세요.
+    - map.pan_to 사용 시, 반드시 도구 호출 결과나 컨텍스트에 포함된 lat, lng 값을 사용하세요.
+    - 특히 마커(map.setMarkers)를 생성할 때는 반드시 Tool의 결과 데이터(store list)를 기반으로 정확한 좌표를 사용해야 합니다.
     - 사용하지 않는 payload 필드는 null로 설정
 
     [특별 규칙: 서울대입구역 유사 상권 질의]

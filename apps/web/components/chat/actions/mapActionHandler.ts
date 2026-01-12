@@ -10,6 +10,7 @@ export class MapActionHandler implements ActionHandler {
     console.log('[MapActionHandler] Handling:', action);
 
     if (context.mapSection) {
+      context.openMapPanel();
       context.mapSection.executeAction(action);
     }
   }
