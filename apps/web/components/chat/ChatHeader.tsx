@@ -62,12 +62,6 @@ export function ChatHeader({ threadTitle, onNewThread, isMapOpen, onMapToggle }:
           </button>
         )}
 
-        {/* 검색 버튼 */}
-        <button className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-base text-slate-600 hover:bg-slate-100 transition-colors hidden md:flex">
-          <Search className="w-5 h-5" />
-          <span>Search thread</span>
-        </button>
-
         {/* 새 스레드 버튼 */}
         <button
           onClick={onNewThread}
