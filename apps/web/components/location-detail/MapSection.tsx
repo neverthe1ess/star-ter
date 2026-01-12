@@ -1,15 +1,20 @@
-"use client";
+'use client';
 
-import { useRef, useEffect, useMemo, useState } from "react";
-import { useKakaoMap, type KakaoPolygon, type KakaoCustomOverlay, type KakaoCircle } from "../../hooks/useKakaoMap";
-import { PolygonData, RealEstateItem } from "./types";
-import { PriceFilterBar } from "./PriceFilterBar";
-import { IndustryAnalysisBar, type IndustryId } from "./IndustryAnalysisBar";
-import { TrafficFilterBar } from "./TrafficFilterBar";
-import { useStoreLocations } from "./hooks";
-import { MAJOR_CATEGORIES } from "./constants/category";
-import { usePopulationLayer } from "./hooks/usePopulationLayer";
-import { GenderFilter, AgeFilter } from "./types";
+import { useRef, useEffect, useMemo, useState } from 'react';
+import {
+  useKakaoMap,
+  type KakaoPolygon,
+  type KakaoCustomOverlay,
+  type KakaoCircle,
+} from '../../hooks/useKakaoMap';
+import { PolygonData, RealEstateItem } from './types';
+import { PriceFilterBar } from './PriceFilterBar';
+import { IndustryAnalysisBar, type IndustryId } from './IndustryAnalysisBar';
+import { TrafficFilterBar } from './TrafficFilterBar';
+import { useStoreLocations } from './hooks';
+import { MAJOR_CATEGORIES } from './constants/category';
+import { usePopulationLayer } from './hooks/usePopulationLayer';
+import { GenderFilter, AgeFilter } from './types';
 
 /**
  * 【MapSection 컴포넌트】
@@ -22,12 +27,12 @@ import { GenderFilter, AgeFilter } from "./types";
 
 /**
  * 【MapSectionProps 인터페이스】
- * 
+ *
  * 컴포넌트가 받을 수 있는 props(속성)들을 타입으로 정의합니다.
  * TypeScript의 인터페이스를 사용하면 잘못된 props 전달을 컴파일 타임에 감지할 수 있습니다.
  */
 interface MapSectionProps {
-  mode?: "matching" | "traffic" | "analysis" | "realestate";
+  mode?: 'matching' | 'traffic' | 'analysis' | 'realestate' | 'news';
   polygonData: PolygonData | null;
   centerX?: number;
   centerY?: number;
@@ -45,7 +50,10 @@ interface MapSectionProps {
   };
   onDepositChange?: (range: [number, number]) => void;
   onRentChange?: (range: [number, number]) => void;
-  onBoundsChange?: (bounds: { sw: { lat: number; lng: number }; ne: { lat: number; lng: number } }) => void;
+  onBoundsChange?: (bounds: {
+    sw: { lat: number; lng: number };
+    ne: { lat: number; lng: number };
+  }) => void;
   filteredCount?: number;
   totalCount?: number;
   // 【업종 분석 카테고리 선택 Props】
@@ -63,8 +71,8 @@ interface MapSectionProps {
   onTrafficFilterChange?: (gender: GenderFilter, age: AgeFilter) => void;
 }
 
-export function MapSection({ 
-  mode = "matching", 
+export function MapSection({
+  mode = 'matching',
   polygonData,
   centerX,
   centerY,
@@ -87,53 +95,65 @@ export function MapSection({
   const mapRef = useRef<HTMLDivElement>(null);
   const polygonRef = useRef<KakaoPolygon | null>(null);
   const markersRef = useRef<KakaoCustomOverlay[]>([]);
-  const industryMarkersRef = useRef<KakaoCustomOverlay[]>([]);  // 업종 분석 마커용
-  const isDraggingRef = useRef(false);  // 드래그 상태 추적
-  
+  const industryMarkersRef = useRef<KakaoCustomOverlay[]>([]); // 업종 분석 마커용
+  const isDraggingRef = useRef(false); // 드래그 상태 추적
+
   // 【업종 분석 상태】
-  const [selectedIndustry, setSelectedIndustry] = useState<IndustryId | null>(null);
-  
+  const [selectedIndustry, setSelectedIndustry] = useState<IndustryId | null>(
+    null,
+  );
+
   // 【커스텀 훅 사용】 점포 위치 데이터 fetch
   const { stores } = useStoreLocations(
     regionCode,
     selectedAnalysisCategory,
-    mode === 'analysis' // analysis 모드일 때만 활성화
+    mode === 'analysis', // analysis 모드일 때만 활성화
   );
-  
+
   // 【과열 지역 수 계산】 stores에서 밀집도 기반으로 hotspot 계산
   const hotspotCount = useMemo(() => {
     if (stores.length === 0) return 0;
-    
+
     const GRID_SIZE = 50;
-    const getDistanceMeters = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+    const getDistanceMeters = (
+      lat1: number,
+      lng1: number,
+      lat2: number,
+      lng2: number,
+    ): number => {
       const R = 6371000;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLng = (lng2 - lng1) * Math.PI / 180;
-      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLng/2) * Math.sin(dLng/2);
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLng = ((lng2 - lng1) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) *
+          Math.cos((lat2 * Math.PI) / 180) *
+          Math.sin(dLng / 2) *
+          Math.sin(dLng / 2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     };
 
     // 밀집도 계산
-    const storesWithDensity = stores.map(store => {
-      const nearbyCount = stores.filter(other => 
-        other !== store && 
-        getDistanceMeters(store.lat, store.lng, other.lat, other.lng) <= GRID_SIZE * 2
+    const storesWithDensity = stores.map((store) => {
+      const nearbyCount = stores.filter(
+        (other) =>
+          other !== store &&
+          getDistanceMeters(store.lat, store.lng, other.lat, other.lng) <=
+            GRID_SIZE * 2,
       ).length;
       return nearbyCount;
     });
-    
+
     const maxNearby = Math.max(...storesWithDensity, 1);
     // 밀집도 >= 0.6인 곳 = hotspot
-    return storesWithDensity.filter(count => count / maxNearby >= 0.6).length;
+    return storesWithDensity.filter((count) => count / maxNearby >= 0.6).length;
   }, [stores]);
-  
+
   const { map, loaded } = useKakaoMap(mapRef);
 
   // 【유동인구 히트맵 훅】 traffic 모드일 때만 활성화
   const currentHour = trafficFilter?.currentTimeIndex ?? 12;
-  
+
   usePopulationLayer({
     map: map,
     hour: currentHour,
@@ -152,7 +172,9 @@ export function MapSection({
       isDraggingRef.current = true;
     });
     window.kakao.maps.event.addListener(map, 'dragend', () => {
-      setTimeout(() => { isDraggingRef.current = false; }, 100);
+      setTimeout(() => {
+        isDraggingRef.current = false;
+      }, 100);
     });
 
     // 지도 이동/줌 완료 시 bounds 콜백 호출
@@ -163,7 +185,7 @@ export function MapSection({
         const ne = bounds.getNorthEast();
         onBoundsChange({
           sw: { lat: sw.getLat(), lng: sw.getLng() },
-          ne: { lat: ne.getLat(), lng: ne.getLng() }
+          ne: { lat: ne.getLat(), lng: ne.getLng() },
         });
       }
     });
@@ -186,16 +208,16 @@ export function MapSection({
     }
 
     const kakaoPath = exteriorRing.map(
-      (coord) => new window.kakao.maps.LatLng(coord[1], coord[0])
+      (coord) => new window.kakao.maps.LatLng(coord[1], coord[0]),
     );
 
     const kakaoPolygon = new window.kakao.maps.Polygon({
       path: kakaoPath,
       strokeWeight: 3,
-      strokeColor: "#3B82F6",
+      strokeColor: '#3B82F6',
       strokeOpacity: 1,
-      strokeStyle: "solid",
-      fillColor: "#ffffff",
+      strokeStyle: 'solid',
+      fillColor: '#ffffff',
       fillOpacity: 0.3,
     });
 
@@ -212,7 +234,7 @@ export function MapSection({
 
   /**
    * 【경쟁 구역 오버레이】
-   * 
+   *
    * 점 마커 대신 밀집도 기반 원형 오버레이로 경쟁 강도 시각화
    * - 가까운 곳에 점포 많음 → 🔴 빨간색 (위험)
    * - 적당함 → 🟡 노란색
@@ -222,34 +244,47 @@ export function MapSection({
     if (!map || !loaded) return;
 
     // 기존 오버레이 제거
-    industryMarkersRef.current.forEach(marker => marker.setMap(null));
+    industryMarkersRef.current.forEach((marker) => marker.setMap(null));
     industryMarkersRef.current = [];
 
     // analysis 모드가 아니면 종료
     if (mode !== 'analysis' || stores.length === 0) return;
 
     // 밀집도 계산 함수
-    const getDistanceMeters = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+    const getDistanceMeters = (
+      lat1: number,
+      lng1: number,
+      lat2: number,
+      lng2: number,
+    ): number => {
       const R = 6371000;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLng = (lng2 - lng1) * Math.PI / 180;
-      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLng/2) * Math.sin(dLng/2);
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLng = ((lng2 - lng1) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) *
+          Math.cos((lat2 * Math.PI) / 180) *
+          Math.sin(dLng / 2) *
+          Math.sin(dLng / 2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     };
 
     // 각 점포의 주변 밀집도 계산
     const GRID_SIZE = 50; // 50m 반경
-    const storesWithDensity = stores.map(store => {
-      const nearbyCount = stores.filter(other => 
-        other !== store && 
-        getDistanceMeters(store.lat, store.lng, other.lat, other.lng) <= GRID_SIZE * 2
+    const storesWithDensity = stores.map((store) => {
+      const nearbyCount = stores.filter(
+        (other) =>
+          other !== store &&
+          getDistanceMeters(store.lat, store.lng, other.lat, other.lng) <=
+            GRID_SIZE * 2,
       ).length;
       return { store, nearbyCount };
     });
 
-    const maxNearby = Math.max(...storesWithDensity.map(s => s.nearbyCount), 1);
+    const maxNearby = Math.max(
+      ...storesWithDensity.map((s) => s.nearbyCount),
+      1,
+    );
 
     // 클러스터링: 이미 처리된 근처 점포는 스킵
     const processed = new Set<number>();
@@ -262,11 +297,13 @@ export function MapSection({
         if (processed.has(index)) return;
 
         // 이미 그려진 원과 가까우면 스킵
-        const isNearExisting = circles.some(circle => {
+        const isNearExisting = circles.some((circle) => {
           const pos = circle.getPosition();
           const dist = getDistanceMeters(
-            item.store.lat, item.store.lng,
-            pos.getLat(), pos.getLng()
+            item.store.lat,
+            item.store.lng,
+            pos.getLat(),
+            pos.getLng(),
           );
           return dist < GRID_SIZE;
         });
@@ -278,12 +315,12 @@ export function MapSection({
 
         // 밀집도 (0~1)
         const density = Math.min(item.nearbyCount / maxNearby, 1);
-        
+
         // 색상: 초록 → 노랑 → 빨강
         let fillColor: string;
         let strokeColor: string;
         const isHotspot = density >= 0.6; // 경쟁 과열 여부
-        
+
         if (density < 0.3) {
           fillColor = '#22C55E'; // green
           strokeColor = '#16A34A';
@@ -296,8 +333,8 @@ export function MapSection({
         }
 
         // 반경: 30m ~ 60m
-        const radius = 30 + (30 * density);
-        
+        const radius = 30 + 30 * density;
+
         // Kakao Circle 생성
         const circle = new window.kakao.maps.Circle({
           center: new window.kakao.maps.LatLng(item.store.lat, item.store.lng),
@@ -306,19 +343,25 @@ export function MapSection({
           strokeColor: strokeColor,
           strokeOpacity: 0.8,
           fillColor: fillColor,
-          fillOpacity: 0.3 + (density * 0.3), // 0.3 ~ 0.6
+          fillOpacity: 0.3 + density * 0.3, // 0.3 ~ 0.6
         });
 
         circle.setMap(map);
         circles.push(circle);
-        
+
         // 🔥 경쟁 과열 지역에 경고 마커 추가
         // 이미 표시된 경고 마커와 100m 이내면 중복 표시 안 함
         if (isHotspot) {
-          const isNearExistingWarning = warningPositions.some(pos => 
-            getDistanceMeters(item.store.lat, item.store.lng, pos.lat, pos.lng) < 100
+          const isNearExistingWarning = warningPositions.some(
+            (pos) =>
+              getDistanceMeters(
+                item.store.lat,
+                item.store.lng,
+                pos.lat,
+                pos.lng,
+              ) < 100,
           );
-          
+
           if (!isNearExistingWarning) {
             const warningContent = `
               <div style="
@@ -350,21 +393,24 @@ export function MapSection({
                 "></div>
               </div>
             `;
-            
+
             const warningOverlay = new window.kakao.maps.CustomOverlay({
-              position: new window.kakao.maps.LatLng(item.store.lat, item.store.lng),
+              position: new window.kakao.maps.LatLng(
+                item.store.lat,
+                item.store.lng,
+              ),
               content: warningContent,
               yAnchor: 1,
               xAnchor: 0.5,
               zIndex: 10,
             });
-            
+
             warningOverlay.setMap(map);
             circles.push(warningOverlay as unknown as KakaoCircle);
             warningPositions.push({ lat: item.store.lat, lng: item.store.lng });
           }
         }
-        
+
         processed.add(index);
       });
 
@@ -372,7 +418,7 @@ export function MapSection({
     industryMarkersRef.current = circles as unknown as KakaoCustomOverlay[];
 
     return () => {
-      circles.forEach(circle => circle.setMap(null));
+      circles.forEach((circle) => circle.setMap(null));
     };
   }, [map, loaded, mode, stores]);
 
@@ -385,8 +431,8 @@ export function MapSection({
   useEffect(() => {
     if (!map || !loaded) return;
 
-    // 기존 마커 제거 
-    markersRef.current.forEach(marker => marker.setMap(null));
+    // 기존 마커 제거
+    markersRef.current.forEach((marker) => marker.setMap(null));
     markersRef.current = [];
 
     // 'realestate' 모드가 아니면 종료
@@ -396,18 +442,18 @@ export function MapSection({
     const globalFunctionNames: string[] = [];
 
     // 새로운 마커 생성
-    realEstateItems.forEach(item => {
+    realEstateItems.forEach((item) => {
       if (!item.centerlatitude || !item.centerlongitude) return;
 
       const position = new window.kakao.maps.LatLng(
-        item.centerlatitude, 
-        item.centerlongitude
+        item.centerlatitude,
+        item.centerlongitude,
       );
 
       // 가격 포맷팅 (만원 단위)
       const depositMan = item.deposit ? Math.round(item.deposit / 10) : 0;
       const rentMan = item.monthlyrent ? Math.round(item.monthlyrent / 10) : 0;
-      
+
       // 【선택 상태에 따른 스타일 분기】
       // 선택된 마커: 파란 배경 + 흰 글씨 (반전)
       // 기본 마커: 흰 배경 + 파란 글씨
@@ -416,13 +462,13 @@ export function MapSection({
       const textColor = isSelected ? '#FFFFFF' : '#2563EB';
       const borderWidth = isSelected ? '2px' : '1px';
       const scale = isSelected ? 'scale(1.1)' : 'scale(1)';
-      
+
       // 【전역 함수 등록】
       // CustomOverlay의 onclick에서 호출할 수 있도록 window에 함수 등록
       const funcName = `__markerClick_${item.id.replace(/[^a-zA-Z0-9]/g, '_')}`;
       globalFunctionNames.push(funcName);
       (window as unknown as Record<string, () => void>)[funcName] = () => {
-        if (isDraggingRef.current) return;  // 드래그 중이면 클릭 무시
+        if (isDraggingRef.current) return; // 드래그 중이면 클릭 무시
         onMarkerClick?.(item);
       };
 
@@ -452,7 +498,7 @@ export function MapSection({
         position: position,
         content: content,
         yAnchor: 1.2,
-        zIndex: isSelected ? 100 : 1  // 선택된 마커가 위에 표시되도록
+        zIndex: isSelected ? 100 : 1, // 선택된 마커가 위에 표시되도록
       });
 
       overlay.setMap(map);
@@ -462,7 +508,7 @@ export function MapSection({
     // 【Cleanup 함수】
     // 컴포넌트 언마운트 또는 의존성 변경 시 전역 함수 정리
     return () => {
-      markersRef.current.forEach(marker => marker.setMap(null));
+      markersRef.current.forEach((marker) => marker.setMap(null));
       markersRef.current = [];
     };
   }, [map, loaded, mode, realEstateItems, selectedItemId, onMarkerClick]);
@@ -484,20 +530,23 @@ export function MapSection({
       />
 
       {/* 가격 필터 슬라이더 (realestate 모드일 때만 표시) */}
-      {mode === 'realestate' && priceFilter && onDepositChange && onRentChange && (
-        <PriceFilterBar
-          minDeposit={priceFilter.minDeposit}
-          maxDeposit={priceFilter.maxDeposit}
-          minRent={priceFilter.minRent}
-          maxRent={priceFilter.maxRent}
-          depositRange={priceFilter.depositRange}
-          rentRange={priceFilter.rentRange}
-          onDepositChange={onDepositChange}
-          onRentChange={onRentChange}
-          totalCount={totalCount}
-          filteredCount={filteredCount}
-        />
-      )}
+      {mode === 'realestate' &&
+        priceFilter &&
+        onDepositChange &&
+        onRentChange && (
+          <PriceFilterBar
+            minDeposit={priceFilter.minDeposit}
+            maxDeposit={priceFilter.maxDeposit}
+            minRent={priceFilter.minRent}
+            maxRent={priceFilter.maxRent}
+            depositRange={priceFilter.depositRange}
+            rentRange={priceFilter.rentRange}
+            onDepositChange={onDepositChange}
+            onRentChange={onRentChange}
+            totalCount={totalCount}
+            filteredCount={filteredCount}
+          />
+        )}
 
       {/* 업종 분석 바 (analysis 모드일 때만 표시) */}
       {mode === 'analysis' && (
@@ -506,7 +555,10 @@ export function MapSection({
           onSelectIndustry={setSelectedIndustry}
           storeCount={stores.length}
           hotspotCount={hotspotCount}
-          selectedCategoryName={MAJOR_CATEGORIES.find(c => c.code === selectedAnalysisCategory)?.name || '전체'}
+          selectedCategoryName={
+            MAJOR_CATEGORIES.find((c) => c.code === selectedAnalysisCategory)
+              ?.name || '전체'
+          }
         />
       )}
 

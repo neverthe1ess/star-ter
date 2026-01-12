@@ -395,7 +395,7 @@ export function LocationSearchPage({
               <div className="w-45 text-center">전분기 대비</div>
               <div className="w-50 text-right pr-10">분기 총 매출</div>
               <div className="w-55 flex items-center justify-end gap-1">
-                소비자 성별 비율 (남/여)
+                성별 매출 비율 (남/여)
               </div>
             </>
           )}
