@@ -8,6 +8,7 @@ import {
   Building2,
   MessageSquare,
   GripVertical,
+  Newspaper,
 } from 'lucide-react';
 import { MatchingContent } from './location-detail/MatchingContent';
 import { TrafficContent } from './location-detail/TrafficContent';
@@ -15,6 +16,7 @@ import { AnalysisContent } from './location-detail/AnalysisContent';
 import { RealEstateContent } from './location-detail/RealEstateContent';
 import { MapSection } from './location-detail/MapSection';
 import { RealEstateDetailPanel } from './location-detail/RealEstateDetailPanel';
+import NewsSection from '@/components/NewsSection';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Button } from './ui/button';
 import { Resizable } from 're-resizable';
@@ -42,7 +44,7 @@ export function LocationDetailPage({
   footTraffic,
 }: LocationDetailPageProps) {
   const [activeTab, setActiveTab] = useState<
-    'matching' | 'traffic' | 'analysis' | 'realestate'
+    'matching' | 'traffic' | 'analysis' | 'realestate' | 'news'
   >('matching');
   const [mapWidth, setMapWidth] = useState<number | string>('30%');
   
@@ -53,15 +55,17 @@ export function LocationDetailPage({
    * 동일한 상태를 공유할 수 있습니다.
    */
   const [selectedItem, setSelectedItem] = useState<RealEstateItem | null>(null);
-  
+
   // 【업종 분석 카테고리 선택 상태】 지도에 점포 마커 표시용
-  const [selectedAnalysisCategory, setSelectedAnalysisCategory] = useState<string>('ALL');
-  
+  const [selectedAnalysisCategory, setSelectedAnalysisCategory] =
+    useState<string>('ALL');
+
   // 【최소/최대 가격 계산】 useMemo로 최적화
   const priceRange = useMemo(() => {
-    if (realEstate.length === 0) return { minDeposit: 0, maxDeposit: 10000, minRent: 0, maxRent: 1000 };
-    const deposits = realEstate.map(i => i.deposit ?? 0);
-    const rents = realEstate.map(i => i.monthlyrent ?? 0);
+    if (realEstate.length === 0)
+      return { minDeposit: 0, maxDeposit: 10000, minRent: 0, maxRent: 1000 };
+    const deposits = realEstate.map((i) => i.deposit ?? 0);
+    const rents = realEstate.map((i) => i.monthlyrent ?? 0);
     return {
       minDeposit: Math.min(...deposits),
       maxDeposit: Math.max(...deposits),
@@ -69,7 +73,7 @@ export function LocationDetailPage({
       maxRent: Math.max(...rents),
     };
   }, [realEstate]);
-  
+
   // 【지도 범위 상태】
   const [mapBounds, setMapBounds] = useState<{
     sw: { lat: number; lng: number };
@@ -77,22 +81,24 @@ export function LocationDetailPage({
   } | null>(null);
 
   // 【가격 필터 상태】 초기값을 priceRange에서 가져옴
-  const [depositRange, setDepositRange] = useState<[number, number]>(
-    () => [priceRange.minDeposit, priceRange.maxDeposit]
-  );
-  const [rentRange, setRentRange] = useState<[number, number]>(
-    () => [priceRange.minRent, priceRange.maxRent]
-  );
-  
+  const [depositRange, setDepositRange] = useState<[number, number]>(() => [
+    priceRange.minDeposit,
+    priceRange.maxDeposit,
+  ]);
+  const [rentRange, setRentRange] = useState<[number, number]>(() => [
+    priceRange.minRent,
+    priceRange.maxRent,
+  ]);
+
   // 【필터링된 매물 목록】
   const filteredItems = useMemo(() => {
-    return realEstate.filter(item => {
+    return realEstate.filter((item) => {
       // 가격 필터
       const deposit = item.deposit ?? 0;
       const rent = item.monthlyrent ?? 0;
       if (deposit < depositRange[0] || deposit > depositRange[1]) return false;
       if (rent < rentRange[0] || rent > rentRange[1]) return false;
-      
+
       // 지도 범위 필터
       if (mapBounds && item.centerlatitude && item.centerlongitude) {
         const lat = item.centerlatitude;
@@ -100,19 +106,25 @@ export function LocationDetailPage({
         if (lat < mapBounds.sw.lat || lat > mapBounds.ne.lat) return false;
         if (lng < mapBounds.sw.lng || lng > mapBounds.ne.lng) return false;
       }
-      
+
       return true;
     });
   }, [realEstate, depositRange, rentRange, mapBounds]);
-  
+
   // 【콜백 핸들러】 useCallback으로 리렌더 최적화
   const handleMarkerClick = useCallback((item: RealEstateItem) => {
     setSelectedItem(item);
   }, []);
-  
-  const handleBoundsChange = useCallback((bounds: { sw: { lat: number; lng: number }; ne: { lat: number; lng: number } }) => {
-    setMapBounds(bounds);
-  }, []);
+
+  const handleBoundsChange = useCallback(
+    (bounds: {
+      sw: { lat: number; lng: number };
+      ne: { lat: number; lng: number };
+    }) => {
+      setMapBounds(bounds);
+    },
+    [],
+  );
 
   // 【유동인구 히트맵 상태】 시간대별 자동 재생 및 필터
   const [trafficState, setTrafficState] = useState({
@@ -125,29 +137,40 @@ export function LocationDetailPage({
   // 【시간대 자동 전환 타이머】 1초마다 다음 시간대로 이동 (0~23시 순환)
   useEffect(() => {
     if (!trafficState.isPlaying || activeTab !== 'traffic') return;
-    
+
     const timer = setInterval(() => {
-      setTrafficState(prev => ({
+      setTrafficState((prev) => ({
         ...prev,
         currentTimeIndex: (prev.currentTimeIndex + 1) % 24, // 24시간 순환
       }));
     }, 250);
-    
+
     return () => clearInterval(timer);
   }, [trafficState.isPlaying, activeTab]);
 
   // 【트래픽 핸들러】
   const handleTrafficPlayToggle = useCallback(() => {
-    setTrafficState(prev => ({ ...prev, isPlaying: !prev.isPlaying }));
+    setTrafficState((prev) => ({ ...prev, isPlaying: !prev.isPlaying }));
   }, []);
 
   const handleTrafficTimeChange = useCallback((hour: number) => {
-    setTrafficState(prev => ({ ...prev, currentTimeIndex: hour, isPlaying: false }));
+    setTrafficState((prev) => ({
+      ...prev,
+      currentTimeIndex: hour,
+      isPlaying: false,
+    }));
   }, []);
 
-  const handleTrafficFilterChange = useCallback((gender: GenderFilter, age: AgeFilter) => {
-    setTrafficState(prev => ({ ...prev, genderFilter: gender, ageFilter: age }));
-  }, []);
+  const handleTrafficFilterChange = useCallback(
+    (gender: GenderFilter, age: AgeFilter) => {
+      setTrafficState((prev) => ({
+        ...prev,
+        genderFilter: gender,
+        ageFilter: age,
+      }));
+    },
+    [],
+  );
 
   const tabs = [
     {
@@ -165,6 +188,11 @@ export function LocationDetailPage({
       id: 'realestate' as const,
       label: '부동산',
       icon: Building2,
+    },
+    {
+      id: 'news' as const,
+      label: '뉴스',
+      icon: Newspaper,
     },
   ];
 
@@ -184,7 +212,7 @@ export function LocationDetailPage({
             <div className="flex items-center gap-4">
               <Link
                 href="/locations"
-                className="flex items-center justify-center w-12 h-12 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0"
+                className="flex items-center justify-center w-12 h-12 rounded-full hover:bg-gray-100 transition-colors shrink-0"
               >
                 <ArrowLeft className="w-6 h-6 text-gray-900" />
               </Link>
@@ -230,7 +258,7 @@ export function LocationDetailPage({
                 </div>
               ),
             }}
-            className="flex-shrink-0"
+            className="shrink-0"
           >
             {/* MapSection: 서버에서 계산된 중심점 좌표와 폴리곤 데이터 전달 */}
             <MapSection
@@ -303,6 +331,16 @@ export function LocationDetailPage({
                         onItemClick={handleMarkerClick}
                       />
                     )}
+                   {activeTab === 'news' && (
+                        <div className="w-full">
+                          <NewsSection
+                            region={basicInfo.code}
+                            locationName={basicInfo.dongName}
+                            showImages={true}
+                            showPagination={true}
+                          />
+                        </div>
+                      )}
                   </div>
                 </div>
               </div>
@@ -325,7 +363,3 @@ export function LocationDetailPage({
     </div>
   );
 }
-
-
-
-

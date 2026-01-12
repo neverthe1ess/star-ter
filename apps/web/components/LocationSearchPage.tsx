@@ -72,14 +72,7 @@ export function LocationSearchPage({
   }, [searchQuery]);
 
   const tabs = ["실시간 상권 차트", "지금 뜨는 카테고리"];
-  const subTabs = [
-    "전체",
-    "평균 매출 순",
-    "매출 성장 순",
-    "유동인구 순",
-    "폐업률 높은 순",
-    "MZ 선호 순",
-  ];
+  const subTabs = ["평균 매출 순", "매출 성장 순", "유동인구 순", "폐업률 높은 순", "MZ 선호 순"];
 
   // 현재 선택된 업종명 찾기
   const selectedIndustryName = useMemo(() => {
@@ -230,7 +223,7 @@ export function LocationSearchPage({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="flex bg-gray-100 p-1 rounded-xl gap-1">
-                {subTabs.slice(1, 7).map((tab) => (
+              {subTabs.map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setSubTab(tab)}
@@ -372,38 +365,36 @@ export function LocationSearchPage({
         </div>
 
         {/* 테이블 헤더 - 탭에 따라 다르게 표시 */}
-        <div className="px-10 py-3 flex items-center text-[13px] font-bold text-slate-400 shrink-0">
+        <div className="px-10 py-3 flex items-center text-[13px] font-bold text-slate-400 shrink-0 border-b border-gray-50 bg-slate-50/30">
           {isPopulationTab(subTab) ? (
             <>
-              <div className="w-100">순위 / 상권명</div>
-              <div className="flex-1 text-right pr-20">유동인구 (명)</div>
-              <div className="w-45 text-center">등락률</div>
-              <div className="w-50 text-right pr-10">상권 상태</div>
+              <div className="flex-1 text-left">순위 / 상권명</div>
+              <div className="w-[180px] text-center">유동인구 (명)</div>
+              <div className="w-[90px] text-center">등락률</div>
+              <div className="w-[150px] text-center">상권 상태</div>
             </>
           ) : isMZTab(subTab) ? (
             <>
-              <div className="w-100">순위 / 상권명</div>
-              <div className="flex-1 text-right pr-20">MZ 인구 (명)</div>
-              <div className="w-45 text-center">MZ 비중</div>
-              <div className="w-50 text-right pr-10">상권 상태</div>
+              <div className="flex-1 text-left">순위 / 상권명</div>
+              <div className="w-[190px] text-center">MZ 인구 (명)</div>
+              <div className="w-[90px] text-center">MZ 비중</div>
+              <div className="w-[150px] text-center">상권 상태</div>
             </>
           ) : isClosureRateTab(subTab) ? (
             <>
-              <div className="w-100">순위 / 상권명</div>
-              <div className="w-32 text-center">폐업률</div>
-              <div className="w-40 text-center">폐업 점포</div>
-              <div className="flex-1 text-center">점포 수 변화 (전분기 → 현분기)</div>
-              <div className="w-40 text-right pr-10">상권 상태</div>
+              <div className="flex-1 text-left">순위 / 상권명</div>
+              <div className="w-[70px] text-center">폐업률</div>
+              <div className="w-[190px] text-center">폐업 점포</div>
+              <div className="w-[200px] text-center">점포 수 변화 (전분기 → 현분기)</div>
+              <div className="w-[150px] text-center">상권 상태</div>
             </>
           ) : (
             <>
-              <div className="w-100">순위 · 상권명 / 점포 수</div>
-              <div className="flex-1 text-right pr-20">평균 매출(분기)</div>
-              <div className="w-45 text-center">전분기 대비</div>
-              <div className="w-50 text-right pr-10">분기 총 매출</div>
-              <div className="w-55 flex items-center justify-end gap-1">
-                소비자 성별 비율 (남/여)
-              </div>
+              <div className="flex-1 text-left">순위 · 상권명 / 점포 수</div>
+              <div className="w-[120px] text-center">평균 매출(분기)</div>
+              <div className="w-[190px] text-center">전분기 대비</div>
+              <div className="w-[130px] text-center">분기 총 매출</div>
+              <div className="w-[190px] text-center">성별 매출 비율 (남/여)</div>
             </>
           )}
         </div>
@@ -429,7 +420,7 @@ export function LocationSearchPage({
                 onClick={() => handleLocationClick(item)}
                 className="w-full px-4 py-4 flex items-center hover:bg-slate-50/80 rounded-2xl transition-all group"
               >
-                <div className="w-100 flex items-center gap-4">
+                <div className="flex-1 flex items-center gap-4">
                   <span className="w-6 text-lg font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
                     {item.rank}
                   </span>
@@ -440,11 +431,11 @@ export function LocationSearchPage({
                   </div>
                 </div>
 
-                <div className="flex-1 text-right pr-20 text-[15px] font-bold text-slate-900">{item.population}</div>
+                <div className="w-[160px] text-center text-[15px] font-bold text-slate-900">{item.population}</div>
 
-                <div className="w-45 flex justify-center">
+                <div className="w-[120px] flex justify-center">
                   <div
-                    className={`px-2 py-1 rounded-lg text-xs font-black min-w-20 ${
+                    className={`px-2 py-1 rounded-lg text-xs font-black min-w-[80px] ${
                       item.growthRate > 0 ? "bg-red-50 text-red-500" : "bg-blue-50 text-blue-500"
                     }`}
                   >
@@ -452,7 +443,7 @@ export function LocationSearchPage({
                   </div>
                 </div>
 
-                <div className="w-50 text-right pr-10">
+                <div className="w-[120px] flex justify-center">
                   <span className={`px-3 py-1 rounded-lg text-xs font-bold ${
                     item.statusType === 'hot' ? 'bg-red-50 text-red-600' :
                     item.statusType === 'stable' ? 'bg-green-50 text-green-600' :
@@ -472,7 +463,7 @@ export function LocationSearchPage({
                 onClick={() => handleLocationClick(item)}
                 className="w-full px-4 py-4 flex items-center hover:bg-slate-50/80 rounded-2xl transition-all group"
               >
-                <div className="w-100 flex items-center gap-4">
+                <div className="flex-1 flex items-center gap-4">
                   <span className="w-6 text-lg font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
                     {item.rank}
                   </span>
@@ -483,17 +474,17 @@ export function LocationSearchPage({
                   </div>
                 </div>
 
-                <div className="flex-1 text-right pr-20 text-[15px] font-bold text-slate-900">{item.population}</div>
+                <div className="w-[160px] text-center text-[15px] font-bold text-slate-900">{item.population}</div>
 
-                <div className="w-45 flex justify-center">
+                <div className="w-[120px] flex justify-center">
                   <div
-                    className="px-2 py-1 rounded-lg text-xs font-black min-w-20 bg-violet-50 text-violet-600"
+                    className="px-2 py-1 rounded-lg text-xs font-black min-w-[80px] bg-violet-50 text-violet-600"
                   >
                     {item.growthRate.toFixed(1)}%
                   </div>
                 </div>
 
-                <div className="w-50 text-right pr-10">
+                <div className="w-[120px] flex justify-center">
                   <span className={`px-3 py-1 rounded-lg text-xs font-bold ${
                     item.statusType === 'hot' ? 'bg-red-50 text-red-600' :
                     item.statusType === 'stable' ? 'bg-green-50 text-green-600' :
@@ -513,7 +504,7 @@ export function LocationSearchPage({
                 onClick={() => handleLocationClick(item)}
                 className="w-full px-4 py-4 flex items-center hover:bg-slate-50/80 rounded-2xl transition-all group"
               >
-                <div className="w-100 flex items-center gap-4">
+                <div className="flex-1 flex items-center gap-4">
                   <span className="w-6 text-lg font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
                     {item.rank}
                   </span>
@@ -524,21 +515,21 @@ export function LocationSearchPage({
                   </div>
                 </div>
 
-                <div className="w-32 text-center text-[15px] font-bold text-slate-900">
+                <div className="w-[120px] text-center text-[15px] font-bold text-slate-900">
                   {item.closureRate}%
                 </div>
 
-                <div className="w-40 text-center text-[15px] font-medium text-slate-600">
+                <div className="w-[140px] text-center text-[15px] font-medium text-slate-600">
                   <span className="text-red-500 font-bold">{item.closedStoreCount}</span>개 폐업
                 </div>
 
-                <div className="flex-1 flex justify-center items-center gap-2 text-sm text-slate-500">
+                <div className="w-[240px] flex justify-center items-center gap-2 text-sm text-slate-500">
                   <span>{item.previousStoreCount}개</span>
                   <span className="text-slate-300">→</span>
                   <span className="font-bold text-slate-900">{item.currentStoreCount}개</span>
                 </div>
 
-                <div className="w-40 text-right pr-10">
+                <div className="w-[120px] flex justify-center">
                   <span className={`px-3 py-1 rounded-lg text-xs font-bold ${
                     item.statusType === 'hot' ? 'bg-red-50 text-red-600' :
                     item.statusType === 'stable' ? 'bg-green-50 text-green-600' :
@@ -558,12 +549,11 @@ export function LocationSearchPage({
                 onClick={() => handleLocationClick(item)}
                 className="w-full px-4 py-4 flex items-center hover:bg-slate-50/80 rounded-2xl transition-all group"
               >
-                <div className="w-100 flex items-center gap-4">
+                <div className="flex-1 flex items-center gap-4">
                   <span className="w-6 text-lg font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
                     {item.rank}
                   </span>
-                  <div className="relative">
-                  </div>
+
                   <div className="text-left">
                     <div className="text-[15px] font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                       {item.name}
@@ -572,11 +562,11 @@ export function LocationSearchPage({
                   </div>
                 </div>
 
-                <div className="flex-1 text-right pr-20 text-[15px] font-bold text-slate-900">{item.avgRevenue}</div>
+                <div className="w-[160px] text-center text-[15px] font-bold text-slate-900">{item.avgRevenue}</div>
 
-                <div className="w-45 flex justify-center">
+                <div className="w-[160px] flex justify-center">
                   <div
-                    className={`px-2 py-1 rounded-lg text-xs font-black min-w-20 ${
+                    className={`px-2 py-1 rounded-lg text-xs font-black min-w-[80px] ${
                       item.growthRate > 0 ? "bg-red-50 text-red-500" : "bg-blue-50 text-blue-500"
                     }`}
                   >
@@ -585,12 +575,12 @@ export function LocationSearchPage({
                   </div>
                 </div>
 
-                <div className="w-50 text-right pr-10 text-[15px] font-bold text-slate-900">
+                <div className="w-[160px] text-center text-[15px] font-bold text-slate-900">
                   {item.totalRevenue}
                 </div>
 
-                <div className="w-50 flex flex-col items-end gap-1">
-                  <div className="flex w-full h-1.5 rounded-full overflow-hidden bg-gray-100">
+                <div className="w-[160px] flex flex-col items-center gap-1">
+                  <div className="flex w-32 h-1.5 rounded-full overflow-hidden bg-gray-100">
                     <div
                       className="h-full bg-blue-500 transition-all duration-1000"
                       style={{ width: `${item.ratio.male}%` }}
@@ -600,7 +590,7 @@ export function LocationSearchPage({
                       style={{ width: `${item.ratio.female}%` }}
                     />
                   </div>
-                  <div className="flex justify-between w-full text-[11px] font-black text-slate-400">
+                  <div className="flex justify-between w-32 text-[11px] font-black text-slate-400">
                     <span className="text-blue-500">{item.ratio.male}</span>
                     <span className="text-red-500">{item.ratio.female}</span>
                   </div>
