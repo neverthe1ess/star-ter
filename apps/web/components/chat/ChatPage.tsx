@@ -5,7 +5,10 @@ import { ChatHeader } from "./ChatHeader";
 import { SourceCard } from "./SourceCard";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
-import { useKakaoMap } from "../../hooks/useKakaoMap";
+import { ChatMapSection, type ChatMapSectionRef } from "./ChatMapSection";
+// 타입은 공유, 함수는 Server Action 사용
+import { type AiAction } from "../../lib/api/ai"; 
+import { sendMessage } from "../../app/actions/chat";
 
 
 /**
@@ -72,21 +75,10 @@ export function ChatPage() {
 
   const [isMapOpen, setIsMapOpen] = useState(false);
 
-  // 지도 DOM 참조 (useRef)
-  // useRef: DOM 요소에 직접 접근할 때 사용
-  // 지도 라이브러리는 DOM 요소에 직접 렌더링하기 때문에 ref 필요
-  const chatMapRef = useRef<HTMLDivElement>(null);
 
-  // 카카오맵 훅 사용
-  // useKakaoMap: 카카오맵 SDK를 로드하고 지도 인스턴스를 생성하는 커스텀 훅
-  // { map, loaded, error } 반환:
-  //   - map: 지도 인스턴스 (위치 이동, 마커 추가 등에 사용)
-  //   - loaded: SDK 로드 완료 여부
-  //   - error: 에러 메시지
-  const { loaded: mapLoaded, error: mapError } = useKakaoMap(chatMapRef, {
-    center: { lat: 37.566826, lng: 126.9786567 }, // 서울시청 기본 중심
-    level: 4, // 줌 레벨 (낮을수록 확대)
-  });
+
+  // 지도 섹션 참조 (액션 실행용)
+  const mapSectionRef = useRef<ChatMapSectionRef>(null);
 
 
   // 스크롤 컨테이너 참조 (useRef)
@@ -128,6 +120,8 @@ export function ChatPage() {
     }
   }, [messages]);
 
+
+
   // ============================================
   // Event Handlers (이벤트 핸들러)
   // ============================================
@@ -158,39 +152,68 @@ export function ChatPage() {
       }));
     }
 
-    // TODO: 백엔드 API 연동 시 아래 더미 응답을 실제 API 호출로 대체
-    // 지금은 UI 테스트를 위한 더미 응답
-    await simulateAIResponse(messageText);
+    // 백엔드 API 호출
+    try {
+      // 히스토리 변환 (현재 메시지 제외, 직전까지의 messages 사용)
+      const history = messages.map(msg => ({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content
+      }));
+
+      // Server Action 호출 (비동기)
+      const response = await sendMessage(messageText, history);
+      
+      // AI 응답 메시지 추가
+      const aiMessage: Message = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: response.reply,
+        timestamp: new Date(),
+        // sources: ... (백엔드에서 source를 주면 여기 매핑)
+      };
+
+      setMessages((prev) => [...prev, aiMessage]);
+
+      // 액션 처리 (지도 이동 등)
+      if (response.actions && response.actions.length > 0) {
+        handleAiActions(response.actions);
+      }
+
+    } catch (error) {
+      console.error("Failed to get AI response:", error);
+      // 에러 메시지 표시
+      const errorMessage: Message = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: "죄송합니다. 오류가 발생하여 응답을 가져오지 못했습니다. 잠시 후 다시 시도해주세요.",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // AI 응답 시뮬레이션 (백엔드 연동 전 테스트용)
-  const simulateAIResponse = async (userMessage: string) => {
-    // 실제 API 호출처럼 약간의 지연 추가
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+  // AI 액션 처리 핸들러
+  const handleAiActions = (actions: AiAction[]) => {
+    actions.forEach(action => {
+      console.log("[ChatPage] Handling Action:", action);
+      
+      try {
+        // 1. 지도 패널 열기
+        if (action.type === 'ui.open_panel') {
+          setIsMapOpen(true);
+        }
 
-    const aiMessage: Message = {
-      id: crypto.randomUUID(),
-      role: "assistant",
-      content: `이것은 "${userMessage}"에 대한 AI 응답입니다.\n\n아직 백엔드가 연결되지 않아 더미 응답을 보여드립니다. 실제 구현 시 여기에 AI의 분석 결과, 추천 정보 등이 표시됩니다.\n\n**주요 기능:**\n- 상권 분석 질문 응답\n- 추천 장소 안내\n- 관련 데이터 시각화`,
-      timestamp: new Date(),
-      sources: [
-        {
-          id: "1",
-          title: "Sample Source 1",
-          url: "https://example.com",
-          number: 1,
-        },
-        {
-          id: "2",
-          title: "Sample Source 2",
-          url: "https://example2.com",
-          number: 2,
-        },
-      ],
-    };
-
-    setMessages((prev) => [...prev, aiMessage]);
-    setIsLoading(false);
+        // 2. 지도 이동 (중심점 이동) 등 지도 관련 액션
+        // ChatMapSection으로 위임
+        if (mapSectionRef.current) {
+           mapSectionRef.current.executeAction(action);
+        }
+      } catch (e) {
+        console.error("Failed to execute action:", action, e);
+      }
+    });
   };
 
   // 새 스레드 생성
@@ -210,58 +233,14 @@ export function ChatPage() {
   // JSX: JavaScript + XML 문법으로 UI 구조 표현
 
   return (
-    <div className="flex h-screen bg-[#f7f7f8] py-4 pr-4 gap-4">
+    <div className="flex h-screen bg-[#f7f7f8] py-6 pr-6 gap-6">
       {/* 지도 영역 (왼쪽) - 토글로 열고 닫을 수 있음 */}
-      {/* 
-        지도 영역 (왼쪽) - CSS로 표시/숨김 제어
-        
-        왜 조건부 렌더링({isMapOpen && ...}) 대신 CSS를 사용하는가?
-        - useKakaoMap 훅은 컴포넌트 최상위에서 호출됨
-        - 훅이 ref.current를 사용해 지도를 생성하려면 DOM이 존재해야 함
-        - 조건부 렌더링을 사용하면 isMapOpen=false일 때 DOM이 없어서 훅 실패
-        - CSS로 숨기면 DOM은 존재하고, 화면에만 안 보임
-      */}
-      <div 
-        className={`relative bg-white rounded-2xl shadow-lg overflow-hidden
-                    transition-all duration-300 ${
-                      isMapOpen 
-                        ? "w-[400px] h-full" 
-                        : "w-0 h-full opacity-0 pointer-events-none"
-                    }`}
-      >
-        {/* 닫기 버튼 - 지도 위에 플로팅 */}
-        <button
-          onClick={() => setIsMapOpen(false)}
-          className="absolute top-3 right-3 z-10 p-2 bg-white/80 backdrop-blur-sm 
-                     hover:bg-white rounded-lg shadow-md transition-colors"
-          title="지도 닫기"
-        >
-          <svg className="w-5 h-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-        
-        {/* 카카오맵 렌더링 영역 */}
-        <div ref={chatMapRef} className="h-full w-full">
-          {/* 로딩 상태 표시 */}
-          {!mapLoaded && !mapError && (
-            <div className="h-full flex items-center justify-center bg-slate-100">
-              <div className="text-center text-slate-400">
-                <div className="w-8 h-8 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin mx-auto mb-2" />
-                <p className="text-sm">지도 로딩 중...</p>
-              </div>
-            </div>
-          )}
-          {/* 에러 상태 표시 */}
-          {mapError && (
-            <div className="h-full flex items-center justify-center bg-red-50">
-              <div className="text-center text-red-500">
-                <p className="text-sm">{mapError}</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      {/* 지도 영역 (왼쪽) - 토글로 열고 닫을 수 있음 */}
+      <ChatMapSection 
+        ref={mapSectionRef}
+        isOpen={isMapOpen}
+        onClose={() => setIsMapOpen(false)}
+      />
 
       {/* 메인 채팅 영역 (사이드바 스타일과 일치) */}
       <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -276,14 +255,14 @@ export function ChatPage() {
         {/* 메인 콘텐츠 영역 */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* 메시지 목록 */}
-          <div className="flex-1 overflow-y-auto px-6 py-4">
-            <div className="max-w-3xl mx-auto space-y-6">
+          <div className="flex-1 overflow-y-auto px-8 py-6">
+            <div className="max-w-5xl mx-auto space-y-8">
               {messages.length === 0 ? (
                 // 빈 상태 (대화 시작 전)
                 <div className="flex flex-col items-center justify-center h-full py-20">
-                  <div className="w-16 h-16 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center mb-6">
+                  <div className="w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-200 rounded-3xl flex items-center justify-center mb-8">
                     <svg
-                      className="w-8 h-8 text-slate-400"
+                      className="w-12 h-12 text-slate-400"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -296,10 +275,10 @@ export function ChatPage() {
                       />
                     </svg>
                   </div>
-                  <h2 className="text-xl font-semibold text-slate-800 mb-2">
+                  <h2 className="text-3xl font-bold text-slate-800 mb-3">
                     무엇을 도와드릴까요?
                   </h2>
-                  <p className="text-slate-500 text-center max-w-md">
+                  <p className="text-xl text-slate-500 text-center max-w-xl">
                     상권 분석, 창업 정보, 매물 추천 등 다양한 질문을 해보세요.
                   </p>
                 </div>
@@ -309,10 +288,10 @@ export function ChatPage() {
                   <div key={message.id}>
                     {/* AI 메시지에 출처 카드 표시 */}
                     {message.role === "assistant" && message.sources && (
-                      <div className="mb-4">
-                        <div className="flex items-center gap-2 mb-3">
+                      <div className="mb-6">
+                        <div className="flex items-center gap-2 mb-4">
                           <svg
-                            className="w-4 h-4 text-slate-400"
+                            className="w-6 h-6 text-slate-400"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -324,11 +303,11 @@ export function ChatPage() {
                               d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
                             />
                           </svg>
-                          <span className="text-sm font-medium text-slate-600">
+                          <span className="text-base font-medium text-slate-600">
                             Sources
                           </span>
                         </div>
-                        <div className="flex gap-3 flex-wrap">
+                        <div className="flex gap-4 flex-wrap">
                           {message.sources.map((source) => (
                             <SourceCard key={source.id} source={source} />
                           ))}
@@ -342,19 +321,19 @@ export function ChatPage() {
 
               {/* 로딩 인디케이터 */}
               {isLoading && (
-                <div className="flex items-center gap-3 text-slate-500">
-                  <div className="flex gap-1">
-                    <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" />
+                <div className="flex items-center gap-4 text-slate-500 pl-2">
+                  <div className="flex gap-1.5">
+                    <span className="w-3 h-3 bg-slate-400 rounded-full animate-bounce" />
                     <span
-                      className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
+                      className="w-3 h-3 bg-slate-400 rounded-full animate-bounce"
                       style={{ animationDelay: "0.1s" }}
                     />
                     <span
-                      className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
+                      className="w-3 h-3 bg-slate-400 rounded-full animate-bounce"
                       style={{ animationDelay: "0.2s" }}
                     />
                   </div>
-                  <span className="text-sm">AI가 응답을 생성하고 있습니다...</span>
+                  <span className="text-lg">AI가 응답을 생성하고 있습니다...</span>
                 </div>
               )}
 
@@ -364,8 +343,8 @@ export function ChatPage() {
           </div>
 
           {/* 입력창 영역 - 경계 없이 간격만 */}
-          <div className="px-6 pb-6 pt-4">
-            <div className="max-w-3xl mx-auto">
+          <div className="px-8 pb-8 pt-6">
+            <div className="max-w-5xl mx-auto">
               <ChatInput
                 value={inputValue}
                 onChange={setInputValue}

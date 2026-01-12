@@ -8,10 +8,7 @@ import {
   Building2,
   MessageSquare,
   GripVertical,
-  Sparkles,
-  X,
 } from 'lucide-react';
-import { ChatContent } from './location-detail/ChatContent';
 import { MatchingContent } from './location-detail/MatchingContent';
 import { TrafficContent } from './location-detail/TrafficContent';
 import { AnalysisContent } from './location-detail/AnalysisContent';
@@ -48,7 +45,6 @@ export function LocationDetailPage({
     'matching' | 'traffic' | 'analysis' | 'realestate'
   >('matching');
   const [mapWidth, setMapWidth] = useState<number | string>('30%');
-  const [isChatMode, setIsChatMode] = useState(false);
   
   /**
    * 【Lifting State Up 패턴】
@@ -266,80 +262,48 @@ export function LocationDetailPage({
 
           <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-6 flex-shrink-0">
-              {isChatMode ? (
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-950 flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900">
-                      AI 입지 분석 상담사
-                    </h3>
-                    <p className="text-xs text-slate-500">
-                      데이터 기반 실시간 상권 상담 진행 중
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex gap-1 bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
-                  {tabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                      className={`px-6 py-2.5 rounded-xl text-lg font-bold transition-all ${
-                        activeTab === tab.id
-                          ? 'bg-blue-950 text-white shadow-md'
-                          : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <div className="flex gap-1 bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                    className={`px-6 py-2.5 rounded-xl text-lg font-bold transition-all ${
+                      activeTab === tab.id
+                        ? 'bg-blue-950 text-white shadow-md'
+                        : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
 
-              <Button
-                onClick={() => setIsChatMode(!isChatMode)}
-                className={`rounded-xl px-6 py-7 font-bold text-xl transition-all ${
-                  isChatMode
-                    ? 'bg-white text-slate-900 border border-slate-200 hover:bg-slate-50'
-                    : 'bg-blue-950 text-white hover:bg-blue-900 shadow-lg'
-                }`}
-              >
-                {isChatMode ? (
-                  <>
-                    <X className="w-4 h-4 mr-2" />
-                    상담 종료
-                  </>
-                ) : (
-                  <>
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    AI 분석 상담하기
-                  </>
-                )}
-              </Button>
+              <Link href="/chat">
+                <Button
+                  className="rounded-xl px-6 py-7 font-bold text-xl transition-all bg-blue-950 text-white hover:bg-blue-900 shadow-lg"
+                >
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  AI 분석 상담하기
+                </Button>
+              </Link>
             </div>
 
             <div className="flex-1 min-h-0">
               <div className="h-full bg-white rounded-[32px] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
-                  {isChatMode ? (
-                    <ChatContent locationName={basicInfo.name} />
-                  ) : (
-                    <div className="p-10">
-                      {activeTab === 'matching' && (
-                        <MatchingContent locationName={basicInfo.name} />
-                      )}
-                      {activeTab === 'traffic' && <TrafficContent footTraffic={footTraffic ?? null} regionCode={basicInfo.code} />}
-                      {activeTab === 'analysis' && <AnalysisContent analytics={analytics} regionCode={basicInfo.code} onCategoryChange={setSelectedAnalysisCategory} />}
-                      {activeTab === 'realestate' && (
-                        <RealEstateContent 
-                          items={filteredItems} 
-                          onItemClick={handleMarkerClick}
-                        />
-                      )}
-                    </div>
-                  )}
+                  <div className="p-10">
+                    {activeTab === 'matching' && (
+                      <MatchingContent locationName={basicInfo.name} />
+                    )}
+                    {activeTab === 'traffic' && <TrafficContent footTraffic={footTraffic ?? null} regionCode={basicInfo.code} />}
+                    {activeTab === 'analysis' && <AnalysisContent analytics={analytics} regionCode={basicInfo.code} onCategoryChange={setSelectedAnalysisCategory} />}
+                    {activeTab === 'realestate' && (
+                      <RealEstateContent 
+                        items={filteredItems} 
+                        onItemClick={handleMarkerClick}
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

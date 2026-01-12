@@ -32,17 +32,17 @@ export function ChatMessage({ message }: ChatMessageProps) {
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-2xl ${
+        className={`max-w-4xl ${
           isUser
-            ? "bg-violet-100 text-slate-800 rounded-2xl rounded-br-md px-4 py-3"
-            : "bg-white rounded-2xl shadow-sm border border-slate-100 px-5 py-4"
+            ? "bg-blue-900 text-slate-800 rounded-2xl rounded-br-md px-8 py-6"
+            : "bg-white rounded-2xl shadow-sm border border-slate-100 px-8 py-6"
         }`}
       >
         {/* AI 메시지에 Results 헤더 추가 */}
         {!isUser && (
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-3 mb-4">
             <svg
-              className="w-4 h-4 text-slate-400"
+              className="w-6 h-6 text-slate-400"
               viewBox="0 0 24 24"
               fill="none"
             >
@@ -54,14 +54,14 @@ export function ChatMessage({ message }: ChatMessageProps) {
                 strokeLinejoin="round"
               />
             </svg>
-            <span className="text-sm font-medium text-slate-600">Results</span>
+            <span className="text-lg font-medium text-slate-600">Results</span>
           </div>
         )}
 
         {/* 메시지 내용 */}
         <div
-          className={`text-sm leading-relaxed whitespace-pre-wrap ${
-            isUser ? "" : "text-slate-700"
+          className={`text-lg leading-relaxed whitespace-pre-wrap ${
+            isUser ? "text-white" : "text-slate-700"
           }`}
         >
           {message.content}
@@ -69,26 +69,22 @@ export function ChatMessage({ message }: ChatMessageProps) {
 
         {/* AI 메시지에 액션 버튼 추가 */}
         {!isUser && (
-          <div className="flex items-center gap-1 mt-4 pt-3 border-t border-slate-100">
-            <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-500 hover:bg-slate-50 rounded-lg transition-colors">
-              <Share className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-2 mt-6 pt-4 border-t border-slate-100">
+            <button className="flex items-center gap-2 px-4 py-2 text-sm text-slate-500 hover:bg-slate-50 rounded-lg transition-colors">
+              <Share className="w-4 h-4" />
               Share
             </button>
-            <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-500 hover:bg-slate-50 rounded-lg transition-colors">
-              <Share className="w-3.5 h-3.5" />
-              Share
-            </button>
-            <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-500 hover:bg-slate-50 rounded-lg transition-colors">
-              <Edit3 className="w-3.5 h-3.5" />
+            <button className="flex items-center gap-2 px-4 py-2 text-sm text-slate-500 hover:bg-slate-50 rounded-lg transition-colors">
+              <Edit3 className="w-4 h-4" />
               Rewrite
             </button>
             <div className="flex-1" />
-            <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-500 hover:bg-slate-50 rounded-lg transition-colors">
-              <Copy className="w-3.5 h-3.5" />
+            <button className="flex items-center gap-2 px-4 py-2 text-sm text-slate-500 hover:bg-slate-50 rounded-lg transition-colors">
+              <Copy className="w-4 h-4" />
               Copy
             </button>
-            <button className="p-1.5 text-slate-400 hover:bg-slate-50 rounded-lg transition-colors">
-              <MoreHorizontal className="w-4 h-4" />
+            <button className="p-2 text-slate-400 hover:bg-slate-50 rounded-lg transition-colors">
+              <MoreHorizontal className="w-5 h-5" />
             </button>
           </div>
         )}

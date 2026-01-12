@@ -40,14 +40,14 @@ export function ChatInput({
 
   return (
     <div className="relative">
-      <div className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 focus-within:border-slate-300 focus-within:ring-2 focus-within:ring-slate-100 transition-all">
+      <div className="flex items-end gap-4 rounded-3xl border border-slate-200 px-6 py-5 focus-within:border-slate-300 focus-within:ring-2 focus-within:ring-slate-100 transition-all">
         {/* 파일 첨부 버튼 */}
         <button
           type="button"
-          className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg border border-slate-300 transition-colors shrink-0"
+          className="p-3 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl border border-slate-300 transition-colors shrink-0"
           aria-label="Attach file"
         >
-          <Paperclip className="w-5 h-5" />
+          <Paperclip className="w-6 h-6" />
         </button>
 
         {/* 텍스트 입력 영역 */}
@@ -56,7 +56,7 @@ export function ChatInput({
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Ask follow up question"
-          className="flex-1 bg-transparent text-sm text-slate-700 placeholder-slate-400 resize-none focus:outline-none min-h-[24px] max-h-32"
+          className="flex-1 bg-transparent text-lg text-slate-700 placeholder-slate-400 resize-none focus:outline-none max-h-52 py-3"
           rows={1}
           disabled={isLoading}
         />
@@ -66,10 +66,10 @@ export function ChatInput({
           type="button"
           onClick={onSend}
           disabled={isLoading || !value.trim()}
-          className="p-2 bg-gray-500 text-white rounded-lg hover:bg-violet-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+          className="p-3 bg-gray-500 text-white rounded-xl hover:bg-violet-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
           aria-label="Send message"
         >
-          <Send className="w-4 h-4" />
+          <Send className="w-6 h-6" />
         </button>
       </div>
     </div>
