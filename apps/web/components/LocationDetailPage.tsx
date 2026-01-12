@@ -308,8 +308,10 @@ export function LocationDetailPage({
                 ))}
               </div>
 
-              <Link href="/chat">
-                <Button className="rounded-xl px-6 py-7 font-bold text-xl transition-all bg-blue-950 text-white hover:bg-blue-900 shadow-lg">
+              <Link href={`/chat?q=${encodeURIComponent(basicInfo.name + " 상권 분석해줘")}`}>
+                <Button
+                  className="rounded-xl px-6 py-7 font-bold text-xl transition-all bg-blue-950 text-white hover:bg-blue-900 shadow-lg"
+                >
                   <MessageSquare className="w-4 h-4 mr-2" />
                   AI 분석 상담하기
                 </Button>
