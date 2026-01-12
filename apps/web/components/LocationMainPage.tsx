@@ -90,6 +90,7 @@ export function LocationListPage() {
           region: onboarding.region,
           operatingTime: onboarding.operatingTime,
           capital: onboarding.capital,
+          industryCode: onboarding.industryCode, // null 가능
         });
 
         if (response) {
@@ -131,6 +132,15 @@ export function LocationListPage() {
             value: Math.round(location.scores.region * 100),
           },
           { label: '운영 시간', value: Math.round(location.scores.time * 100) },
+          // 업종 점수가 있을 때만 표시
+          ...(location.scores.industry !== null
+            ? [
+                {
+                  label: '업종 적합',
+                  value: Math.round(location.scores.industry * 100),
+                },
+              ]
+            : []),
         ],
         href: `/locations/detail/${location.id}`,
       }));
@@ -177,7 +187,7 @@ export function LocationListPage() {
               ? Array.from({ length: 3 }).map((_, index) => (
                   <div
                     key={`loading-${index}`}
-                    className="w-[min(320px,90vw)] h-[280px] rounded-[28px] bg-white shadow-sm border border-slate-100 p-7 animate-pulse flex flex-col justify-between"
+                    className="w-[min(320px,90vw)] h-70 rounded-[28px] bg-white shadow-sm border border-slate-100 p-7 animate-pulse flex flex-col justify-between"
                   >
                     <div className="space-y-3">
                       <div className="h-5 w-16 rounded-full bg-slate-100" />
@@ -214,7 +224,7 @@ export function LocationListPage() {
                     <Link
                       key={location.id}
                       href={location.href}
-                      className="w-[min(320px,90vw)] h-[280px] rounded-[28px] bg-white shadow-sm border border-slate-100 p-7 transition-transform duration-200 hover:-translate-y-1 flex flex-col justify-between"
+                      className="w-[min(320px,90vw)] h-70 rounded-[28px] bg-white shadow-sm border border-slate-100 p-7 transition-transform duration-200 hover:-translate-y-1 flex flex-col justify-between"
                     >
                       <div className="space-y-1.5">
                         <div
@@ -284,7 +294,7 @@ export function LocationListPage() {
             onChange={(event) => setChatInput(event.target.value)}
             placeholder="무엇이든 물어보세요"
             rows={1}
-            className="w-full min-h-[24px] resize-none bg-transparent text-base text-slate-700 placeholder:text-slate-400 focus:outline-none leading-6 pr-14"
+            className="w-full min-h-6 resize-none bg-transparent text-base text-slate-700 placeholder:text-slate-400 focus:outline-none leading-6 pr-14"
             aria-label="채팅 입력"
             onKeyDown={(event) => {
               if (event.key === 'Enter' && !event.shiftKey) {
