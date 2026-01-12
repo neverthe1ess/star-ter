@@ -222,7 +222,9 @@ export function LocationDetailPage({
             </div>
           </div>
           <div className="flex items-center gap-4 ml-16">
-            <p className="text-2xl text-gray-500">서울시 {basicInfo.guName} {basicInfo.dongName}</p>
+            <p className="text-2xl text-gray-500">
+              서울시 {basicInfo.guName} {basicInfo.dongName}
+            </p>
           </div>
         </div>
 
@@ -321,26 +323,40 @@ export function LocationDetailPage({
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                   <div className="p-10">
                     {activeTab === 'matching' && (
-                      <MatchingContent locationName={basicInfo.name} />
+                      <MatchingContent
+                        locationName={basicInfo.name}
+                        trdarCd={basicInfo.code}
+                      />
                     )}
-                    {activeTab === 'traffic' && <TrafficContent footTraffic={footTraffic ?? null} regionCode={basicInfo.code} />}
-                    {activeTab === 'analysis' && <AnalysisContent analytics={analytics} regionCode={basicInfo.code} onCategoryChange={setSelectedAnalysisCategory} />}
+                    {activeTab === 'traffic' && (
+                      <TrafficContent
+                        footTraffic={footTraffic ?? null}
+                        regionCode={basicInfo.code}
+                      />
+                    )}
+                    {activeTab === 'analysis' && (
+                      <AnalysisContent
+                        analytics={analytics}
+                        regionCode={basicInfo.code}
+                        onCategoryChange={setSelectedAnalysisCategory}
+                      />
+                    )}
                     {activeTab === 'realestate' && (
-                      <RealEstateContent 
-                        items={filteredItems} 
+                      <RealEstateContent
+                        items={filteredItems}
                         onItemClick={handleMarkerClick}
                       />
                     )}
-                   {activeTab === 'news' && (
-                        <div className="w-full">
-                          <NewsSection
-                            region={basicInfo.code}
-                            locationName={basicInfo.dongName}
-                            showImages={true}
-                            showPagination={true}
-                          />
-                        </div>
-                      )}
+                    {activeTab === 'news' && (
+                      <div className="w-full">
+                        <NewsSection
+                          region={basicInfo.code}
+                          locationName={basicInfo.dongName}
+                          showImages={true}
+                          showPagination={true}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

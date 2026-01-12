@@ -1,11 +1,73 @@
+import { useEffect, useState } from 'react';
+
 interface MatchingContentProps {
   locationName: string;
+  trdarCd: string;
 }
 
-// locationName은 현재 UI에서 직접 사용하지 않지만, 추후 확장용으로 받아둠
-export function MatchingContent({ locationName }: MatchingContentProps) {
+interface RevenueData {
+  estimatedRevenue: number;
+  startupCost: {
+    total: number;
+    deposit: number;
+    premium: number;
+    interior: number;
+  };
+  appliedIndustry: string;
+}
+
+export function MatchingContent({
+  locationName,
+  trdarCd,
+}: MatchingContentProps) {
+  const [data, setData] = useState<RevenueData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const API_URL =
+          process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+
+        const token = localStorage.getItem('accessToken');
+        const headers: HeadersInit = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const res = await fetch(
+          `${API_URL}/analysis/revenue-cost?trdar_cd=${trdarCd}`,
+          { headers },
+        );
+
+        if (res.ok) {
+          const result = await res.json();
+          setData(result);
+        }
+      } catch (error) {
+        console.error('Failed to fetch analysis data', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (trdarCd) {
+      fetchData();
+    }
+  }, [trdarCd]);
+
   // locationName을 사용하지 않아도 lint 경고 방지
   void locationName;
+
+  const formatMoney = (amount: number) => {
+    if (amount >= 100000000) {
+      const uk = Math.floor(amount / 100000000);
+      const man = Math.floor((amount % 100000000) / 10000);
+      return `${uk}억 ${man > 0 ? man.toLocaleString() + '만' : ''}원`;
+    }
+    return `${Math.floor(amount / 10000).toLocaleString()}만원`;
+  };
+
   return (
     <div className="space-y-10">
       <div className="space-y-6">
@@ -15,7 +77,7 @@ export function MatchingContent({ locationName }: MatchingContentProps) {
 
         <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100">
           <div className="flex flex-col lg:flex-row items-center gap-10">
-            <div className="relative flex-shrink-0">
+            <div className="relative shrink-0">
               <svg className="w-32 h-32 transform -rotate-90">
                 <circle
                   cx="64"
@@ -64,10 +126,16 @@ export function MatchingContent({ locationName }: MatchingContentProps) {
             예상 월 매출액
           </p>
           <div className="flex items-baseline gap-2 mb-2">
-            <span className="text-3xl font-black text-blue-950">4,250만원</span>
+            {loading ? (
+              <div className="h-9 w-32 bg-slate-200 animate-pulse rounded" />
+            ) : (
+              <span className="text-3xl font-black text-blue-950">
+                {data ? formatMoney(data.estimatedRevenue) : '-'}
+              </span>
+            )}
           </div>
-          <p className="text-green-600 text-sm font-bold flex items-center gap-1">
-            <span>▲</span> 주변 평균 대비 15% 높음
+          <p className="text-slate-400 text-sm font-bold flex items-center gap-1">
+            <span>주변 매장들의 매출액의 평균치</span>
           </p>
         </div>
 
@@ -76,61 +144,48 @@ export function MatchingContent({ locationName }: MatchingContentProps) {
             초기 예상 창업 비용
           </p>
           <div className="flex items-baseline gap-2 mb-2">
-            <span className="text-3xl font-black text-blue-950">
-              1억 1,200만원
-            </span>
+            {loading ? (
+              <div className="h-9 w-32 bg-slate-200 animate-pulse rounded" />
+            ) : (
+              <span className="text-3xl font-black text-blue-950">
+                {data ? formatMoney(data.startupCost.total) : '-'}
+              </span>
+            )}
           </div>
-          <p className="text-slate-500 text-sm font-medium">
+          <p className="text-slate-400 text-sm font-medium">
             보증금, 권리금, 인테리어 일체 포함
           </p>
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4">
         <h3 className="text-xl font-bold text-slate-900">핵심 상권 지표</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
-            { label: "평균 유동인구", value: "15,840명", sub: "일평균" },
+            { label: '평균 유동인구', value: '15,840명', sub: '일평균' },
             {
-              label: "경쟁 업체 수",
-              value: "12개",
-              sub: "적정 수준",
-              color: "text-green-600",
+              label: '경쟁 업체 수',
+              value: '12개',
+              sub: '적정 수준',
+              color: 'text-green-600',
             },
-            { label: "평균 임대료", value: "280만원", sub: "월평균" },
+            { label: '평균 임대료', value: '280만원', sub: '월평균' },
           ].map((metric) => (
             <div
               key={metric.label}
-              className="p-6 bg-white border border-slate-100 rounded-2xl shadow-sm"
+              className="bg-slate-50 p-6 rounded-2xl border border-slate-100"
             >
-              <p className="text-xs font-bold text-slate-400 mb-2">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                 {metric.label}
               </p>
-              <p className="text-xl font-black text-slate-900">
+              <p className="text-lg font-black text-slate-900 mt-2">
                 {metric.value}
               </p>
               <p
-                className={`text-[11px] font-bold mt-1 ${metric.color || "text-slate-400"}`}
+                className={`text-[11px] font-bold mt-1 ${metric.color || 'text-slate-400'}`}
               >
                 {metric.sub}
               </p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <h3 className="text-xl font-bold text-slate-900">상권 성장 모멘텀</h3>
-        <div className="h-48 bg-slate-50 rounded-[32px] border border-slate-100 relative overflow-hidden p-8 flex items-end gap-3">
-          {[40, 60, 45, 80, 70, 95, 85].map((val, i) => (
-            <div
-              key={i}
-              className="flex-1 bg-blue-950/5 rounded-t-xl relative group h-full"
-            >
-              <div
-                className="absolute bottom-0 left-0 right-0 bg-blue-950 rounded-t-xl transition-all duration-1000 group-hover:bg-blue-600"
-                style={{ height: `${val}%` }}
-              />
             </div>
           ))}
         </div>
