@@ -1,8 +1,8 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 @source "./**/*.{ts,tsx}";
 @source "../components/**/*.{ts,tsx}";
 
-@import "tw-animate-css";
+@import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -179,4 +179,13 @@
     font-weight: var(--font-weight-normal);
     line-height: 1.5;
   }
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
