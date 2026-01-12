@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from "react";
+import Link from "next/link";
 
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -50,8 +51,8 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-[0_0_15px_rgba(0,0,0,0.1)] w-full max-w-5xl flex overflow-hidden min-h-[540px] max-h-[540px]">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_#CCF6FB_0%,_#E0F2FE_40%,_#FFFFFF_100%)]">
+      <div className="bg-white rounded-lg shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] w-full max-w-5xl flex overflow-hidden min-h-[540px] max-h-[540px]">
         {/* Left Column: Login Form */}
         <div className="w-1/2 p-16 flex flex-col justify-center border-r border-gray-100">
           <div className="flex justify-center mb-12">
@@ -93,8 +94,12 @@ export function LoginPage({ onLogin }: LoginPageProps) {
             
             {error && <p className="text-sm text-red-600 text-center">{error}</p>}
 
-            <div className="text-center mt-1">
-              <a href="#" className="text-sm text-[#1e2b5e] hover:underline font-medium">
+            <div className="text-center mt-4 flex justify-center items-center gap-2 text-sm text-[#1e2b5e] font-medium">
+              <Link href="/regist" className="hover:underline">
+                회원가입
+              </Link>
+              <span className="text-gray-400">/</span>
+              <a href="#" className="hover:underline">
                 비밀번호를 잊으셨습니까?
               </a>
             </div>
