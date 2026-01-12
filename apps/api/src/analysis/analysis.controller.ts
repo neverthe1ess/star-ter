@@ -6,7 +6,7 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { OptionalJwtAuthGuard } from '../auth/guard/optional-jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 import { AnalysisService } from './analysis.service';
 
 @Controller('analysis')
@@ -23,7 +23,7 @@ export class AnalysisController {
     return this.analysisService.searchIndustries(query);
   }
 
-  @UseGuards(OptionalJwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Get('revenue-cost')
   async getRevenueAndCost(
     @Request() req: { user?: { id: string } },

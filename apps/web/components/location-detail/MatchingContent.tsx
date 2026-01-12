@@ -13,7 +13,10 @@ interface RevenueData {
     premium: number;
     interior: number;
   };
+  competitorCount: number;
+  avgMonthlyRent: number;
   appliedIndustry: string;
+  matchingScore: number;
 }
 
 export function MatchingContent({
@@ -29,15 +32,14 @@ export function MatchingContent({
         const API_URL =
           process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
-        const token = localStorage.getItem('accessToken');
-        const headers: HeadersInit = {};
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-        }
-
         const res = await fetch(
           `${API_URL}/analysis/revenue-cost?trdar_cd=${trdarCd}`,
-          { headers },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+          },
         );
 
         if (res.ok) {
@@ -76,47 +78,116 @@ export function MatchingContent({
         </h2>
 
         <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100">
-          <div className="flex flex-col lg:flex-row items-center gap-10">
-            <div className="relative shrink-0">
-              <svg className="w-32 h-32 transform -rotate-90">
-                <circle
-                  cx="64"
-                  cy="64"
-                  r="58"
-                  stroke="currentColor"
-                  strokeWidth="10"
-                  fill="transparent"
-                  className="text-slate-200"
-                />
-                <circle
-                  cx="64"
-                  cy="64"
-                  r="58"
-                  stroke="currentColor"
-                  strokeWidth="10"
-                  fill="transparent"
-                  strokeDasharray={364}
-                  strokeDashoffset={364 * (1 - 0.98)}
-                  className="text-blue-950"
-                  strokeLinecap="round"
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-3xl font-black text-blue-950">98%</span>
-              </div>
-            </div>
+          {data && data.matchingScore > 0 ? (
+            <div className="flex flex-col lg:flex-row items-center gap-10">
+              {(() => {
+                const getScoreContent = (score: number) => {
+                  switch (true) {
+                    case score >= 91:
+                      return {
+                        title: '"여기가 바로 명당입니다!"',
+                        desc: '데이터가 증명하는 최적의 입지입니다. 사장님을 위해 준비된 기회를 놓치지 마세요.',
+                        color: 'text-violet-600',
+                      };
+                    case score >= 80:
+                      return {
+                        title: '"성공 예감이 드는 곳입니다!"',
+                        desc: '매우 훌륭한 매칭 점수입니다. 안정적인 수익 창출이 기대되는 매력적인 상권입니다.',
+                        color: 'text-indigo-600',
+                      };
+                    case score >= 70:
+                      return {
+                        title: '"긍정적인 신호가 가득해요"',
+                        desc: '상권 데이터가 사장님에게 호의적입니다. 좋은 기회가 될 수 있으니 적극적으로 검토해보세요.',
+                        color: 'text-blue-600',
+                      };
+                    case score >= 51:
+                      return {
+                        title: '"안정적인 평균 수준입니다"',
+                        desc: '무난한 선택지입니다. 차별화된 마케팅과 서비스로 승부한다면 충분히 좋은 성과를 낼 수 있습니다.',
+                        color: 'text-emerald-600',
+                      };
+                    case score >= 31:
+                      return {
+                        title: '"가능성이 보이는 상권입니다"',
+                        desc: '나쁘지 않은 조건이지만, 확실한 성공을 위해서는 이 상권만의 공략 포인트가 필요합니다.',
+                        color: 'text-amber-500',
+                      };
+                    case score >= 21:
+                      return {
+                        title: '"신중한 재검토가 필요합니다"',
+                        desc: '성공적인 창업을 위해서는 더 많은 준비가 필요해 보입니다. 리스크를 줄이기 위한 방안을 모색해보세요.',
+                        color: 'text-orange-500',
+                      };
+                    default:
+                      return {
+                        title: '"새로운 전략이 필요해요"',
+                        desc: '현재 데이터로는 높은 경쟁력을 기대하기 어렵습니다. 다른 지역이나 업종도 함께 고려해보시는 것을 추천합니다.',
+                        color: 'text-rose-500',
+                      };
+                  }
+                };
 
-            <div className="space-y-3 text-center lg:text-left">
-              <h3 className="text-xl font-bold text-blue-950 leading-tight">
-                &quot;이곳은 사장님에게 최고의 선택지입니다&quot;
-              </h3>
-              <p className="text-slate-500 text-base leading-relaxed break-keep">
-                자본금 7천만원 규모와 MZ세대 타겟팅을 고려했을 때, 인근 경쟁
-                업종 대비 희소성이 높고 주중/주말 유동인구 밸런스가 매우
-                뛰어납니다.
+                const content = getScoreContent(data.matchingScore);
+
+                return (
+                  <>
+                    <div className="relative shrink-0">
+                      <svg className="w-32 h-32 transform -rotate-90">
+                        <circle
+                          cx="64"
+                          cy="64"
+                          r="58"
+                          stroke="currentColor"
+                          strokeWidth="10"
+                          fill="transparent"
+                          className="text-slate-200"
+                        />
+                        <circle
+                          cx="64"
+                          cy="64"
+                          r="58"
+                          stroke="currentColor"
+                          strokeWidth="10"
+                          fill="transparent"
+                          strokeDasharray={364}
+                          strokeDashoffset={
+                            364 * (1 - data.matchingScore / 100)
+                          }
+                          className={content.color}
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span
+                          className={`text-3xl font-black ${content.color}`}
+                        >
+                          {data.matchingScore}%
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 text-center lg:text-left">
+                      <h3
+                        className={`text-xl font-bold leading-tight ${content.color}`}
+                      >
+                        {content.title}
+                      </h3>
+                      <p className="text-slate-500 text-base leading-relaxed break-keep">
+                        {content.desc}
+                      </p>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-10 text-center gap-4">
+              <p className="text-slate-400 font-bold">
+                매칭 점수를 분석하고 있습니다...
               </p>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -160,29 +231,35 @@ export function MatchingContent({
 
       <div className="space-y-4">
         <h3 className="text-xl font-bold text-slate-900">핵심 상권 지표</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[
-            { label: '평균 유동인구', value: '15,840명', sub: '일평균' },
             {
               label: '경쟁 업체 수',
-              value: '12개',
-              sub: '적정 수준',
-              color: 'text-green-600',
+              value: data?.competitorCount ? `${data.competitorCount}개` : '-',
+              sub: '선호 업종 기준',
+              color: 'text-rose-500',
             },
-            { label: '평균 임대료', value: '280만원', sub: '월평균' },
+            {
+              label: '평균 임대료',
+              value: data?.avgMonthlyRent
+                ? formatMoney(data.avgMonthlyRent)
+                : '-',
+              sub: '월평균 (상권 내부의 부동산)',
+              color: 'text-blue-500',
+            },
           ].map((metric) => (
             <div
               key={metric.label}
               className="bg-slate-50 p-6 rounded-2xl border border-slate-100"
             >
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              <p className="text-md font-bold text-slate-400 uppercase tracking-wider">
                 {metric.label}
               </p>
-              <p className="text-lg font-black text-slate-900 mt-2">
+              <p className="text-2xl font-black text-slate-900 mt-2">
                 {metric.value}
               </p>
               <p
-                className={`text-[11px] font-bold mt-1 ${metric.color || 'text-slate-400'}`}
+                className={`text-md font-bold mt-1 ${metric.color || 'text-slate-400'}`}
               >
                 {metric.sub}
               </p>

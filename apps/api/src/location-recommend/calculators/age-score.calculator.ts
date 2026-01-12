@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 
 export interface SalesData {
-  thsmon_selng_amt: bigint | null;
-  agrde_10_selng_amt: bigint | null;
-  agrde_20_selng_amt: bigint | null;
-  agrde_30_selng_amt: bigint | null;
-  agrde_40_selng_amt: bigint | null;
-  agrde_50_selng_amt: bigint | null;
-  agrde_60_above_selng_amt: bigint | null;
+  thsmon_selng_amt: bigint | number | null;
+  agrde_10_selng_amt: bigint | number | null;
+  agrde_20_selng_amt: bigint | number | null;
+  agrde_30_selng_amt: bigint | number | null;
+  agrde_40_selng_amt: bigint | number | null;
+  agrde_50_selng_amt: bigint | number | null;
+  agrde_60_above_selng_amt: bigint | number | null;
 }
 
 const AGE_COLUMN_MAP: Record<string, keyof SalesData> = {
