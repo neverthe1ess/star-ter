@@ -309,7 +309,7 @@ export function LocationDetailPage({
 
             <div className="flex-1 min-h-0">
               <div className="h-full bg-white rounded-[32px] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-                <div className="flex-1 overflow-y-auto custom-scrollbar">
+                <div className="flex-1 overflow-y-auto no-scrollbar">
                   <div className="p-10">
                     {activeTab === 'matching' && (
                       <MatchingContent
