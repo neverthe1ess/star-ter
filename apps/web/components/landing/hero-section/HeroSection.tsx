@@ -5,14 +5,14 @@ import dummyMap from './img/dummy_map.png';
 
 export function HeroSection() {
   return (
-    <section className="bg-gray-50 pt-32 pb-16">
+    <section className="bg-gray-50 py-16">
       <div className="max-w-[1200px] mx-auto px-4">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           <div className="max-w-xl">
             <h1 className="text-5xl font-extrabold text-gray-900 mb-6 leading-[1.15]">
-              명당을 찾아주는
+              상권을 묻고, 데이터로 답한다
               <br />
-              상권 분석 서비스 <span className="text-blue-900">Starter</span>
+              <span className="text-blue-900">지리응답</span>
             </h1>
             <p className="text-xl text-gray-600 mb-10 leading-relaxed">
               빅데이터와 AI가 분석하는 가장 정밀한 상권 리포트.
