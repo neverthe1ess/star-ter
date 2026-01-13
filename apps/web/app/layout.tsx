@@ -1,7 +1,17 @@
 import type { Metadata } from "next";
-
+import localFont from "next/font/local";
 import "./globals.css";
 import { AuthBootstrap } from "@/components/AuthBootstrap";
+
+const mapleStory = localFont({
+  src: "../public/fonts/Maplestory OTF Bold.otf",
+  variable: "--font-maplestory",
+});
+
+const mapleStoryLight = localFont({
+  src: "../public/fonts/Maplestory OTF Light.otf",
+  variable: "--font-maplestory-light",
+});
 
 export const metadata: Metadata = {
   title: "Starter",
@@ -15,7 +25,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
-      <body className="antialiased">
+      <body className={`${mapleStory.variable} ${mapleStoryLight.variable} font-[family-name:var(--font-maplestory-light)] antialiased`}>
         <AuthBootstrap />
         {children}
       </body>
