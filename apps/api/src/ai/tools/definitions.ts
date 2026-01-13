@@ -321,4 +321,42 @@ export const TOOLS = [
     },
     strict: true,
   },
+  {
+    type: 'function',
+    name: 'estimate_revenue_and_cost',
+    description:
+      '사용자가 "얼마 벌어?", "수익", "순수익", "창업하면" 등의 질문을 할 때 반드시 이 도구를 사용해야 합니다! 상권/업종의 예상 매출과 비용(임대료)을 분석하여 추정 순수익을 계산합니다.',
+    parameters: {
+      type: 'object',
+      properties: {
+        areaCd: {
+          type: 'string',
+          description: '조회할 상권의 areaCd입니다.',
+        },
+        categoryCode: {
+          type: 'string',
+          description: '조회할 업종 코드(svc_induty_cd)입니다.',
+        },
+        deposit: {
+          type: 'number',
+          description: '매물의 보증금 (단위: 만원). 선택 사항입니다.',
+        },
+        monthlyRent: {
+          type: 'number',
+          description: '매물의 월세 (단위: 만원). 선택 사항입니다.',
+        },
+        size: {
+          type: 'number',
+          description: '매물의 평수 (단위: 평). 기본값은 15평입니다.',
+        },
+        floor: {
+          type: 'number',
+          description: '매물의 층수. 기본값은 1층입니다.',
+        },
+      },
+      required: ['areaCd', 'categoryCode'],
+      additionalProperties: false,
+    },
+    strict: false,
+  },
 ];

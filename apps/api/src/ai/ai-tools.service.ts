@@ -44,6 +44,8 @@ export class AiToolsService {
         return this.toolsRepository.getCompetitionAnalysis(args);
       case 'get_commercial_risk':
         return this.toolsRepository.getCommercialRisk(args);
+      case 'estimate_revenue_and_cost':
+        return this.toolsRepository.estimateRevenueAndCost(args);
       default:
         return undefined;
     }

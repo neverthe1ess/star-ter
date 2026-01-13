@@ -8,4 +8,8 @@ export type QueryParams = {
   maxMonthlyRent?: number;
   minSize?: number;
   keywords?: string;
+  deposit?: number;
+  monthlyRent?: number;
+  size?: number;
+  floor?: number;
 };

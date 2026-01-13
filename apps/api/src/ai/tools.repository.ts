@@ -748,4 +748,148 @@ export class ToolsRepository {
       },
     };
   }
+
+  // 20) 예상 수익/비용 분석 (Task 3.2)
+  async estimateRevenueAndCost(params: QueryParams) {
+    const {
+      areaCd,
+      categoryCode,
+      stdrYyquCd = '20243',
+      deposit,
+      monthlyRent,
+      size = 15,
+      floor = 1,
+    } = params;
+
+    // 1. 예상 매출 및 점포 수 조회 (병렬 처리)
+    const [salesResult, storeResult] = await Promise.all([
+      this.prisma.salesCommercial.findFirst({
+        where: {
+          trdar_cd: areaCd,
+          svc_induty_cd: categoryCode,
+          stdr_yyqu_cd: { lte: stdrYyquCd },
+        },
+        orderBy: { stdr_yyqu_cd: 'desc' },
+        select: {
+          thsmon_selng_amt: true, // 상권 전체 월 매출
+        },
+      }),
+      this.prisma.storeCommercial.findFirst({
+        where: {
+          trdar_cd: areaCd,
+          svc_induty_cd: categoryCode,
+          stdr_yyqu_cd: { lte: stdrYyquCd },
+        },
+        orderBy: { stdr_yyqu_cd: 'desc' },
+        select: {
+          stor_co: true, // 점포 수
+        },
+      }),
+    ]);
+
+    if (!salesResult) {
+      return {
+        summary:
+          '해당 상권/업종의 매출 데이터를 찾을 수 없어 수익 분석이 어렵습니다.',
+        data: null,
+      };
+    }
+
+    const totalRevenue = Number(salesResult.thsmon_selng_amt);
+    const storeCount = storeResult ? storeResult.stor_co : 1; // 점포 수 없으면 1로 나눔 (방어)
+
+    // 상권 전체 매출 / 점포 수 / 3개월 = 점포당 월 평균 매출 (분기 데이터이므로 3으로 나눔)
+    const monthlyRevenue =
+      storeCount > 0
+        ? Math.floor(totalRevenue / storeCount / 3)
+        : Math.floor(totalRevenue / 3);
+
+    // 2. 임대료 계산 (Rent)
+    let finalMonthlyRent = 0;
+    let rentSource = '통계 추정';
+
+    if (monthlyRent) {
+      // Case A: 매물 정보 사용 (입력 단위가 만원이면 * 10000)
+      // *주의*: 보통 사용자 입력은 '300' (만원) 형태로 옴.
+      // Rent DB나 Sales DB 단위는 '원'.
+      finalMonthlyRent = monthlyRent * 100000;
+      rentSource = '매물 정보';
+    } else {
+      // Case B: 통계 데이터 사용 (AreaCommercial -> Gu Name -> Rent Table)
+      const areaInfo = await this.prisma.areaCommercial.findUnique({
+        where: { trdar_cd: areaCd },
+        select: { signgu_cd_nm: true },
+      });
+
+      if (areaInfo && areaInfo.signgu_cd_nm) {
+        // 구 이름으로 임대료 테이블 조회 (여기서는 소형 점포 기준: rent_small_shop)
+        const rentStats = await this.prisma.rent_small_shop.findUnique({
+          where: { gu_name: areaInfo.signgu_cd_nm },
+        });
+
+        if (rentStats) {
+          // 층별 임대료 선택 (없으면 1층 기준)
+          // Prisma Decimal 타입 안전 변환
+          const toNum = (val: any) =>
+            val?.toNumber ? val.toNumber() : Number(val || 0);
+
+          const f1 = toNum(rentStats.f1);
+          const f2 = toNum(rentStats.f2);
+          const b1f = toNum(rentStats.b1f);
+
+          let rentPerPyung = 0;
+          if (floor === 1) rentPerPyung = f1;
+          else if (floor >= 2) rentPerPyung = f2 || f1;
+          else rentPerPyung = b1f || f1;
+
+          // 평당 임대료(원) * 평수 -> 0이면 기본값(10만원) 적용 등 방어 로직
+          if (rentPerPyung === 0) rentPerPyung = 100000;
+
+          finalMonthlyRent = rentPerPyung * size;
+        }
+      }
+    }
+
+    if (finalMonthlyRent === 0) {
+      finalMonthlyRent = 1500000; // 최후의 기본값 (150만원)
+    }
+
+    // 3. 비용 및 순이익 계산
+    // 가정: 재료비 35%, 인건비/기타 25% -> 총 변동비 60%
+    const cogsRate = 0.35;
+    const otherCostRate = 0.25;
+    const totalCostRate = cogsRate + otherCostRate;
+
+    const variableCost = Math.floor(monthlyRevenue * totalCostRate);
+    const totalCost = variableCost + finalMonthlyRent; // 변동비 + 고정비(임대료)
+    const netProfit = monthlyRevenue - totalCost;
+    const profitMargin = ((netProfit / monthlyRevenue) * 100).toFixed(1);
+
+    const formatCurrency = (amount: number) => {
+      if (amount >= 100000000) {
+        const uk = Math.floor(amount / 100000000);
+        const man = Math.floor((amount % 100000000) / 10000);
+        return `${uk}억 ${man.toLocaleString()}만원`;
+      }
+      return `${Math.floor(amount / 10000).toLocaleString()}만원`;
+    };
+
+    return {
+      summary: `월 예상 매출은 약 ${formatCurrency(monthlyRevenue)}이며, 임대료(${formatCurrency(finalMonthlyRent)}, ${rentSource})와 비용을 제외한 추정 순수익은 약 ${formatCurrency(netProfit)}(이익률 ${profitMargin}%)입니다.`,
+      data: {
+        revenue: monthlyRevenue,
+        rent: finalMonthlyRent,
+        variableCost: variableCost,
+        totalCost: totalCost,
+        netProfit: netProfit,
+        profitMargin: Number(profitMargin),
+        rentSource: rentSource,
+      },
+      meta: {
+        unit: '원',
+        revenueType: storeCount > 1 ? '점포당 평균 매출' : '전체 매출',
+        storeCount,
+      },
+    };
+  }
 }
