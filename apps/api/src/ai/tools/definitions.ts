@@ -142,13 +142,13 @@ export const TOOLS = [
     parameters: {
       type: 'object',
       properties: {
-        areaCodes: {
+        areaCdList: {
           type: 'array',
           items: { type: 'string' },
           description: '비교할 상권의 areaCd 목록입니다.',
         },
       },
-      required: ['areaCodes'],
+      required: ['areaCdList'],
       additionalProperties: false,
     },
     strict: true,
@@ -268,6 +268,46 @@ export const TOOLS = [
     name: 'get_foot_traffic_detail',
     description:
       '상권의 시간대별(0~24시), 요일별(월~일) 유동인구 상세 데이터를 조회합니다. 언제 사람이 가장 많은지 분석할 때 사용합니다.',
+    parameters: {
+      type: 'object',
+      properties: {
+        areaCd: {
+          type: 'string',
+          description: '조회할 상권의 areaCd입니다.',
+        },
+      },
+      required: ['areaCd'],
+      additionalProperties: false,
+    },
+    strict: true,
+  },
+  {
+    type: 'function',
+    name: 'get_competition_analysis',
+    description:
+      '상권 내 특정 업종의 경쟁 강도(점포 수)와 리스크(개폐업률)를 조회합니다.',
+    parameters: {
+      type: 'object',
+      properties: {
+        areaCd: {
+          type: 'string',
+          description: '조회할 상권의 areaCd입니다.',
+        },
+        categoryCode: {
+          type: 'string',
+          description: '조회할 업종 코드(svc_induty_cd)입니다.',
+        },
+      },
+      required: ['areaCd', 'categoryCode'],
+      additionalProperties: false,
+    },
+    strict: true,
+  },
+  {
+    type: 'function',
+    name: 'get_commercial_risk',
+    description:
+      '상권의 장기적 리스크(상권 등급, 평균 생존 기간)를 조회합니다.',
     parameters: {
       type: 'object',
       properties: {

@@ -40,6 +40,10 @@ export class AiToolsService {
         return this.toolsRepository.getFootTrafficTimeSeries(args);
       case 'get_foot_traffic_detail':
         return this.toolsRepository.getFootTrafficDetail(args);
+      case 'get_competition_analysis':
+        return this.toolsRepository.getCompetitionAnalysis(args);
+      case 'get_commercial_risk':
+        return this.toolsRepository.getCommercialRisk(args);
       default:
         return undefined;
     }

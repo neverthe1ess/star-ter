@@ -290,7 +290,8 @@ export class ToolsRepository {
           area_nm AS "지역 이름",
           trdar_se_cd AS "상권 구분 코드",
           trdar_se_cd_nm AS "상권 구분 코드 명",
-          tot_flpop_co AS "총 유동인구"
+          tot_flpop_co AS "총 유동인구",
+          (agrde_20_flpop_co + agrde_30_flpop_co) AS "2030 유동인구"
         FROM v_foot_traffic
         WHERE stdr_yyqu_cd = ${stdrYyquCd}
           AND area_cd IN (${Prisma.join(areaCdList)})
@@ -303,16 +304,35 @@ export class ToolsRepository {
           area_nm AS "지역 이름",
           trdar_se_cd AS "상권 구분 코드",
           trdar_se_cd_nm AS "상권 구분 코드 명",
-          SUM(thsmon_selng_amt) AS "해당 분기 매출 금액"
+          SUM(thsmon_selng_amt) AS "해당 분기 매출 금액",
+          SUM(mdwk_selng_amt) AS "주중 매출 금액",
+          SUM(wkend_selng_amt) AS "주말 매출 금액"
         FROM v_sales
         WHERE stdr_yyqu_cd = ${stdrYyquCd}
           AND area_cd IN (${Prisma.join(areaCdList)})
         GROUP BY 1, 2, 3, 4, 5, 6
+      ),
+      wp AS (
+        SELECT
+          stdr_yyqu_cd AS "기준 년분기 코드",
+          area_level AS "지역 수준",
+          area_cd AS "지역 코드",
+          area_nm AS "지역 이름",
+          trdar_se_cd AS "상권 구분 코드",
+          trdar_se_cd_nm AS "상권 구분 코드 명",
+          tot_wrc_popltn_co AS "총 직장인구"
+        FROM v_working_population
+        WHERE stdr_yyqu_cd = ${stdrYyquCd}
+          AND area_cd IN (${Prisma.join(areaCdList)})
       )
       SELECT
         ft."지역 이름" AS "지역 이름",
         ft."총 유동인구" AS "총 유동인구",
-        sales."해당 분기 매출 금액" AS "해당 분기 매출 금액"
+        ft."2030 유동인구" AS "2030 유동인구",
+        wp."총 직장인구" AS "총 직장인구",
+        sales."해당 분기 매출 금액" AS "해당 분기 매출 금액",
+        sales."주중 매출 금액" AS "주중 매출 금액",
+        sales."주말 매출 금액" AS "주말 매출 금액"
       FROM ft
       LEFT JOIN sales
         ON sales."기준 년분기 코드" = ft."기준 년분기 코드"
@@ -321,6 +341,13 @@ export class ToolsRepository {
       AND sales."지역 이름" = ft."지역 이름"
       AND sales."상권 구분 코드" = ft."상권 구분 코드"
       AND sales."상권 구분 코드 명" = ft."상권 구분 코드 명"
+      LEFT JOIN wp
+        ON wp."기준 년분기 코드" = ft."기준 년분기 코드"
+      AND wp."지역 수준" = ft."지역 수준"
+      AND wp."지역 코드" = ft."지역 코드"
+      AND wp."지역 이름" = ft."지역 이름"
+      AND wp."상권 구분 코드" = ft."상권 구분 코드"
+      AND wp."상권 구분 코드 명" = ft."상권 구분 코드 명"
       ORDER BY sales."해당 분기 매출 금액" DESC NULLS LAST
     `;
     return rows;
@@ -633,5 +660,92 @@ export class ToolsRepository {
       LIMIT 1
     `;
     return rows;
+  }
+
+  // 18) 경쟁/리스크 분석 (Task 3.1)
+  async getCompetitionAnalysis(params: QueryParams) {
+    const { areaCd, stdrYyquCd = '20253', categoryCode } = params;
+
+    // Prisma Model: StoreCommercial (trdar_cd 기준)
+    const result = await this.prisma.storeCommercial.findFirst({
+      where: {
+        trdar_cd: areaCd,
+        svc_induty_cd: categoryCode,
+        stdr_yyqu_cd: stdrYyquCd,
+      },
+      select: {
+        stor_co: true,
+        similr_induty_stor_co: true,
+        frc_stor_co: true,
+        opbiz_rt: true,
+        clsbiz_rt: true,
+        opbiz_stor_co: true,
+        clsbiz_stor_co: true,
+      },
+    });
+
+    if (!result) {
+      return {
+        summary: '해당 상권/업종의 경쟁 분석 데이터를 찾을 수 없습니다.',
+        data: null,
+      };
+    }
+
+    return {
+      summary: `경쟁점포 ${result.similr_induty_stor_co}개, 프랜차이즈 ${result.frc_stor_co}개, 폐업률 ${result.clsbiz_rt}% 입니다.`,
+      data: {
+        storeCount: Number(result.stor_co),
+        competitorCount: Number(result.similr_induty_stor_co),
+        franchiseCount: Number(result.frc_stor_co),
+        openingRate: result.opbiz_rt,
+        closingRate: result.clsbiz_rt,
+        openingCount: Number(result.opbiz_stor_co),
+        closingCount: Number(result.clsbiz_stor_co),
+      },
+      meta: {
+        unit: '개/%',
+        period: stdrYyquCd,
+        source: 'v_store (store_commercial)',
+      },
+    };
+  }
+
+  // 19) 상권 장기 리스크 분석 (Task 3.1.5)
+  async getCommercialRisk(params: QueryParams) {
+    const { areaCd, stdrYyquCd = '20253' } = params;
+
+    // Prisma Model: CommercialChangeCommercial (trdar_cd 기준)
+    const result = await this.prisma.commercialChangeCommercial.findFirst({
+      where: {
+        trdar_cd: areaCd,
+        stdr_yyqu_cd: stdrYyquCd,
+      },
+      select: {
+        trdar_chnge_ix_nm: true, // 상권 등급 (상권축소, 정체, 활성화, 다이나믹)
+        opr_sale_mt_avrg: true, // 평균 영업 기간
+        cls_sale_mt_avrg: true, // 평균 폐업 기간
+      },
+    });
+
+    if (!result) {
+      return {
+        summary: '해당 상권의 리스크 분석 데이터를 찾을 수 없습니다.',
+        data: null,
+      };
+    }
+
+    return {
+      summary: `이 상권은 '${result.trdar_chnge_ix_nm}' 상태이며, 평균 영업 기간은 ${result.opr_sale_mt_avrg}개월, 폐업까지 평균 ${result.cls_sale_mt_avrg}개월이 소요됩니다.`,
+      data: {
+        changeIndex: result.trdar_chnge_ix_nm,
+        avgOperatingMonths: result.opr_sale_mt_avrg,
+        avgClosingMonths: result.cls_sale_mt_avrg,
+      },
+      meta: {
+        unit: '개월',
+        period: stdrYyquCd,
+        source: 'v_commercial_change',
+      },
+    };
   }
 }

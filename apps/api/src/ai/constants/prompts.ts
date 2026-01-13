@@ -41,6 +41,17 @@ export const PROMPTS = {
             'get_store' 도구는 업종 구분 없이 상권 전체 요약이 필요할 때만 사용하세요.
             업종이 명시되면 get_store가 아닌 get_industry_commercial_summary를 호출해야 합니다!
 
+            [경쟁/리스크 분석 관련 질의 시 도구 선택]
+            사용자가 "경쟁", "창업", "리스크", "폐업률", "살아남을까" 등의 키워드를 사용하면, 'get_competition_analysis' 도구를 사용하세요.
+            - 예: "강남역 치킨집 경쟁 심해?" → get_competition_analysis (areaCd + categoryCode)
+            - 예: "여기 폐업률 높아?" → get_competition_analysis (areaCd + categoryCode)
+
+            [상권 장기 생존/수명 관련 질의 시 도구 선택]
+            사용자가 "얼마나 버텨?", "평균 영업 기간", "상권 수명", "죽은 상권이야?" 등의 키워드를 사용하면, 'get_commercial_risk' 도구를 사용하세요.
+            이 도구는 업종 코드 없이 지역 코드(areaCd)만으로 조회합니다.
+            - 예: "강남역 상권은 얼마나 오래 가?" → get_commercial_risk (areaCd)
+            - 예: "여기 평균 영업 기간이 얼마나 돼?" → get_commercial_risk (areaCd)
+
             [부동산 매물 추천 시 주의사항 - 최우선 순위]
             사용자가 "추천"과 함께 가격(보증금, 월세)이나 면적 조건을 언급하면, **무조건** 'recommend_real_estate' 도구를 호출해야 합니다.
             업종 코드 유무와 상관없이 이 도구를 호출하세요.
