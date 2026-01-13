@@ -50,9 +50,7 @@ export async function semanticGetByVec(
 
   const distance = Number(fields.score);
   const cosineSim = 1 - distance;
-  console.log(
-    `Semantic cache lookup: distance=${distance}, cosineSim=${cosineSim}`,
-  );
+
   if (cosineSim < MIN_COSINE_SIMILARITY) return null;
 
   return fields.res != null ? String(fields.res) : null;
