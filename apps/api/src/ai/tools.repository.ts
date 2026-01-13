@@ -1214,7 +1214,8 @@ export class ToolsRepository {
       }),
     ]);
 
-    if (!storeStat || !changeStat) {
+    // changeStat도 없으면 분석 불가
+    if (!changeStat) {
       return {
         summary: '생존확률 분석을 위한 충분한 데이터가 없습니다.',
         data: null,
@@ -1224,9 +1225,11 @@ export class ToolsRepository {
     // 2. 생존 점수 계산 로직 (0 ~ 100점)
     let score = 60; // 기본 점수
 
-    const closingRate = storeStat.clsbiz_rt; // 폐업률 (%)
-    const avgOperationMonths = changeStat.opr_sale_mt_avrg; // 평균 영업 기간 (월)
+    // storeStat이 없으면 폐업률을 상권 평균으로 가정 (5%)
+    const closingRate = storeStat ? Number(storeStat.clsbiz_rt || 5) : 5;
+    const avgOperationMonths = Number(changeStat.opr_sale_mt_avrg || 36); // 평균 영업 기간 (월)
     const changeStatus = changeStat.trdar_chnge_ix_nm; // 상권 등급
+    const dataSource = storeStat ? '업종별 데이터' : '상권 전체 평균';
 
     // (1) 상권 등급 보정
     if (changeStatus === '상권활성화' || changeStatus === '상권확장')
@@ -1260,13 +1263,14 @@ export class ToolsRepository {
       interpretation = '초기 생존에 주의가 필요한 지역입니다. ⚠️';
 
     return {
-      summary: `예상 생존 점수는 ${score}점입니다. ${interpretation} (폐업률: ${closingRate}%, 평균 영업: ${avgOperationMonths}개월)`,
+      summary: `예상 생존 점수는 ${score}점입니다(${dataSource}). ${interpretation} (폐업률: ${closingRate}%, 평균 영업: ${avgOperationMonths}개월, 상권 상태: ${changeStatus || '정보없음'})`,
       data: {
         score,
         interpretation,
         closingRate,
         avgOperationMonths,
         changeStatus,
+        dataSource,
       },
       meta: {
         unit: '점',

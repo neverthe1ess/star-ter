@@ -66,6 +66,7 @@ export class OpenAiService {
     return this.client.responses.create({
       model: 'gpt-4.1-mini',
       input: input,
+      service_tier: 'priority',
       temperature: 0.1,
       text: {
         format: FINAL_RESPONSE_SCHEMA_FOR_ACTION,

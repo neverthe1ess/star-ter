@@ -80,17 +80,29 @@ export function useChat(userId?: string) {
         // userId를 전달하여 개인화 추천 지원
         const response = await apiSendMessage(text, history, userId);
 
+        // 차트/리스트 액션과 지도 액션 분리
+        const chartActions =
+          response.actions?.filter(
+            (a) => a.type.startsWith('chart.') || a.type.startsWith('list.'),
+          ) || [];
+        const mapActions =
+          response.actions?.filter(
+            (a) => !a.type.startsWith('chart.') && !a.type.startsWith('list.'),
+          ) || [];
+
         const aiMessage: Message = {
           id: crypto.randomUUID(),
           role: 'assistant',
           content: response.reply,
           timestamp: new Date(),
+          chartActions: chartActions.length > 0 ? chartActions : undefined,
         };
 
         setMessages((prev) => [...prev, aiMessage]);
 
-        if (response.actions && response.actions.length > 0 && onActions) {
-          onActions(response.actions);
+        // 지도 관련 액션만 onActions로 전달
+        if (mapActions.length > 0 && onActions) {
+          onActions(mapActions);
         }
       } catch (error) {
         console.error('Failed to get AI response:', error);

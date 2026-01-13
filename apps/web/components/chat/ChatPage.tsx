@@ -124,7 +124,7 @@ export function ChatPage() {
                         </div>
                       </div>
                     )}
-                    <ChatMessage message={message} />
+                    <ChatMessage message={message} chartActions={message.chartActions} />
                   </div>
                 ))
               )}
