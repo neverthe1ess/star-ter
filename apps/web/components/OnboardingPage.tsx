@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Button } from './ui/button';
-import { Logo } from './landing/header/Logo';
 import { ArrowLeft } from 'lucide-react';
 import { OnboardingStepAge } from './onboarding/OnboardingStepAge';
 import { OnboardingStepRegion } from './onboarding/OnboardingStepRegion';
@@ -93,8 +92,8 @@ export function OnboardingPage({
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <header className="px-8 py-6 flex items-center justify-between">
+    <div className="h-screen h-[100dvh] bg-white flex flex-col overflow-hidden">
+      <header className="relative px-8 py-4 flex items-center justify-between shrink-0">
         <button
           onClick={handleBack}
           className="flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors"
@@ -102,6 +101,13 @@ export function OnboardingPage({
           <ArrowLeft className="w-5 h-5" />
           <span className="font-medium">뒤로</span>
         </button>
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="flex items-center gap-1 text-lg font-bold">
+            <span className="text-gray-900">{step}</span>
+            <span className="text-gray-400">/</span>
+            <span className="text-gray-400">5</span>
+          </div>
+        </div>
         <div className="w-20"></div>
       </header>
 
@@ -112,10 +118,10 @@ export function OnboardingPage({
         />
       </div>
 
-      <div className="flex-1 flex flex-col justify-center px-8 py-20">
+      <div className="flex-1 flex flex-col px-[5%] pt-[5vh] pb-[5vh] overflow-y-auto">
         <div
           className={`w-full mx-auto ${
-            step === 5 ? 'max-w-5xl' : 'max-w-4xl'
+            step === 5 ? 'max-w-[1200px]' : 'max-w-[1000px]'
           }`}
         >
           {step === 1 && (
@@ -159,7 +165,7 @@ export function OnboardingPage({
         </div>
       </div>
 
-      <div className="px-8 py-8 border-t">
+      <div className="px-8 py-4 border-t shrink-0">
         <div
           className={`max-w-4xl mx-auto flex items-center ${
             step === 5 && onSkip ? 'justify-between' : 'justify-end'
