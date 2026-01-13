@@ -91,7 +91,7 @@ export class NewsService {
     const searchKeyword = await this.resolveLocationName(region);
 
     // 여기서 검색어 바꾸기
-    const query = `"${searchKeyword}" 상권 소상공인`;
+    const query = `"${searchKeyword}" 소상공인 상권`;
 
     // 네이버 API start 파라미터 계산 (1-based index)
     // page 1 -> start 1

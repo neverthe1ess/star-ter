@@ -260,7 +260,7 @@ export function LocationSearchPage({
   const hasMore = displayCount < currentData.length;
 
   return (
-    <div className="flex flex-1 flex-col h-screen bg-[#f7f7f8] py-4 pr-4 overflow-hidden">
+    <div className="flex flex-1 flex-col h-full overflow-hidden">
       <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-10 border-b border-gray-100 shrink-0">
           <div className="flex justify-between items-center gap-8">

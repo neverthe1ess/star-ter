@@ -31,8 +31,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         activeMenu={activeMenu}
         onMenuClick={(id) => {
           if (id === 'home') router.push('/locations');
-          if (id === 'templates')
-            router.push('/locations/search?tab=맞춤 추천');
+          if (id === 'templates') router.push('/locations/search');
           if (id === 'meetings') router.push('/locations/detail');
           if (id === 'chat') router.push('/chat');
         }}
@@ -40,7 +39,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         onToggle={setIsSidebarOpen}
       />
       <div
-        className={`flex-1 h-screen overflow-y-auto transition-all duration-300 ease-in-out ${
+        className={`flex-1 h-screen overflow-hidden transition-all duration-300 ease-in-out py-4 pr-4 bg-[#f7f7f8] ${
           isSidebarOpen ? 'ml-87.5' : 'ml-20'
         }`}
       >
