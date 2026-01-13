@@ -145,19 +145,26 @@ export const TOOLS = [
   {
     type: 'function',
     name: 'recommend_commercial_by_industry',
-    description: '특정 업종의 매출 상위 상권을 추천합니다.',
+    description:
+      '사용자의 선호도(타겟 연령대, 자본금, 선호 지역 등)를 기반으로 맞춤형 상권을 추천합니다. "나한테 맞는 상권 추천해줘", "치킨집 창업하기 좋은 곳 추천" 등의 질문에 사용하세요.',
     parameters: {
       type: 'object',
       properties: {
         categoryCode: {
           type: 'string',
-          description: '추천할 업종 코드(svc_induty_cd)입니다.',
+          description:
+            '추천할 업종 코드(svc_induty_cd)입니다. 선택 사항입니다.',
+        },
+        userId: {
+          type: 'string',
+          description:
+            '로그인된 사용자 ID (UUID). 제공되면 DB에서 선호도를 조회합니다.',
         },
       },
-      required: ['categoryCode'],
+      required: [],
       additionalProperties: false,
     },
-    strict: true,
+    strict: false,
   },
   {
     type: 'function',

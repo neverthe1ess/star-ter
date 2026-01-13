@@ -12,7 +12,6 @@ export class AiToolsService {
     switch (toolName) {
       case 'get_store':
         return this.toolsRepository.getCommercialSummary(args);
-
       case 'get_resident_population':
         return this.toolsRepository.getResidentPopulationSummary(args);
       case 'get_working_population':

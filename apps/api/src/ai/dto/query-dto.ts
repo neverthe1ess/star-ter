@@ -17,6 +17,8 @@ export type QueryParams = {
   // Task 4.6 & 4.7 additions
   listingId?: string;
   title?: string;
+  // Task 6: Personalized Recommendation
+  userId?: string;
 };
 
 // TODO: 정훈 ㅈㅅ

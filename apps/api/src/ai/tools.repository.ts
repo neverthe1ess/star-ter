@@ -3,10 +3,14 @@ import { Prisma } from 'generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { QueryParams } from './dto/query-dto';
 import { BUSINESS_COSTS } from '../market/constants/business-costs';
+import { LocationRecommendService } from '../location-recommend/location-recommend.service';
 
 @Injectable()
 export class ToolsRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly locationRecommendService: LocationRecommendService,
+  ) {}
 
   // 2) 상권 기본 요약(간단): 유동/상주/직장/매출/점포 (업종 합계 기준)
   async getCommercialSummary(params: QueryParams) {
@@ -517,74 +521,76 @@ export class ToolsRepository {
     return rows;
   }
 
-  // 13) 업종별 상권 추천(간단): 특정 업종의 매출 상위 상권 TOP N
+  // 13) 개인화 상권 추천: 사용자 선호도 기반 추천 (LocationRecommendService 활용)
   async recommendCommercialByIndustry(params: QueryParams) {
-    const { stdrYyquCd, categoryCode, limit = 5 } = params;
-    const rows = await this.prisma.$queryRaw<unknown[]>`
-      WITH
-      sales AS (
-        SELECT
-          stdr_yyqu_cd AS "기준 년분기 코드",
-          area_level AS "지역 수준",
-          area_cd AS "지역 코드",
-          area_nm AS "지역 이름",
-          trdar_se_cd AS "상권 구분 코드",
-          trdar_se_cd_nm AS "상권 구분 코드 명",
-          svc_induty_cd AS "서비스업종 코드",
-          svc_induty_cd_nm AS "서비스업종 이름",
-          SUM(thsmon_selng_amt) AS "해당 분기 매출 금액",
-          SUM(thsmon_selng_co) AS "해당 분기 매출 건수"
-        FROM v_sales
-        WHERE stdr_yyqu_cd = ${stdrYyquCd}
-          AND area_level = 'commercial'
-          AND svc_induty_cd = ${categoryCode}
-        GROUP BY 1, 2, 3, 4, 5, 6, 7, 8
-      ),
-      store AS (
-        SELECT
-          stdr_yyqu_cd AS "기준 년분기 코드",
-          area_level AS "지역 수준",
-          area_cd AS "지역 코드",
-          area_nm AS "지역 이름",
-          trdar_se_cd AS "상권 구분 코드",
-          trdar_se_cd_nm AS "상권 구분 코드 명",
-          svc_induty_cd AS "서비스업종 코드",
-          SUM(stor_co) AS "점포 수",
-          SUM(similr_induty_stor_co) AS "유사 업종 점포 수",
-          SUM(frc_stor_co) AS "프랜차이즈 점포 수"
-        FROM v_store
-        WHERE stdr_yyqu_cd = ${stdrYyquCd}
-          AND area_level = 'commercial'
-          AND svc_induty_cd = ${categoryCode}
-        GROUP BY 1, 2, 3, 4, 5, 6, 7
-      )
-      SELECT
-        sales."기준 년분기 코드" AS "매출 기준 년분기 코드",
-        sales."지역 수준" AS "지역 수준",
-        sales."지역 코드" AS "지역 코드",
-        sales."지역 이름" AS "지역 이름",
-        sales."상권 구분 코드" AS "상권 구분 코드",
-        sales."상권 구분 코드 명" AS "상권 구분 코드 명",
-        sales."서비스업종 코드" AS "매출 서비스업종 코드",
-        sales."서비스업종 이름" AS "매출 서비스업종 이름",
-        sales."해당 분기 매출 금액" AS "해당 분기 매출 금액",
-        sales."해당 분기 매출 건수" AS "해당 분기 매출 건수",
-        store."점포 수" AS "점포 수",
-        store."유사 업종 점포 수" AS "유사 업종 점포 수",
-        store."프랜차이즈 점포 수" AS "프랜차이즈 점포 수"
-      FROM sales
-      LEFT JOIN store
-        ON store."기준 년분기 코드" = sales."기준 년분기 코드"
-      AND store."지역 수준" = sales."지역 수준"
-      AND store."지역 코드" = sales."지역 코드"
-      AND store."지역 이름" = sales."지역 이름"
-      AND store."상권 구분 코드" = sales."상권 구분 코드"
-      AND store."상권 구분 코드 명" = sales."상권 구분 코드 명"
-      AND store."서비스업종 코드" = sales."서비스업종 코드"
-      ORDER BY sales."해당 분기 매출 금액" DESC
-      LIMIT ${limit}
-    `;
-    return rows;
+    const { categoryCode, userId, limit = 5 } = params;
+
+    // 1. 사용자 선호도 조회 (로그인 사용자인 경우)
+    let userPreferences: {
+      age: string;
+      region: string;
+      operatingTime: string;
+      capital: string;
+      industryCode?: string;
+    } = {
+      // 기본값 (비로그인 또는 온보딩 미완료 시)
+      age: '전체',
+      region: '서울',
+      operatingTime: '오전/점심',
+      capital: '1억원 이하',
+      industryCode: categoryCode || undefined,
+    };
+
+    if (userId) {
+      const user = await this.prisma.user_info.findUnique({
+        where: { id: userId },
+        select: {
+          target_age_group: true,
+          preferred_region: true,
+          preferred_business_hours: true,
+          startup_capital: true,
+          preferred_industry: true,
+          on_boarding_completed: true,
+        },
+      });
+
+      if (user && user.on_boarding_completed) {
+        userPreferences = {
+          age: user.target_age_group || '전체',
+          region: user.preferred_region || '서울',
+          operatingTime: user.preferred_business_hours || '오전/점심',
+          capital: user.startup_capital || '1억원 이하',
+          industryCode: categoryCode || user.preferred_industry || undefined,
+        };
+      }
+    }
+
+    // 2. LocationRecommendService를 통해 개인화 추천 수행
+    const recommendations =
+      await this.locationRecommendService.getRecommendations({
+        age: userPreferences.age,
+        region: userPreferences.region,
+        operatingTime: userPreferences.operatingTime,
+        capital: userPreferences.capital,
+        industryCode: userPreferences.industryCode,
+      });
+
+    // 3. 상위 N개 결과 반환
+    const topLocations = recommendations.locations.slice(0, limit);
+
+    return {
+      summary: `${userPreferences.industryCode || '전체 업종'} 기준, 맞춤형 추천 상권 Top ${topLocations.length}입니다.`,
+      data: topLocations.map((loc) => ({
+        areaName: loc.name,
+        areaCd: loc.id,
+        totalScore: loc.totalScore,
+        scores: loc.scores,
+      })),
+      meta: {
+        userPreferences,
+        source: 'LocationRecommendService',
+      },
+    };
   }
 
   // 14) 업종별 상권 비교(2개 상권 예시): 동일 업종의 매출/점포/유동 비교

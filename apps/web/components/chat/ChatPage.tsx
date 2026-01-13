@@ -11,12 +11,16 @@ import { ChatWelcome } from "./ChatWelcome";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useChat } from "./hooks/useChat";
 import { useActionDispatcher } from "./hooks/useActionDispatcher";
+import { useUserStore } from "@/store/use-user-store";
 
 /**
  * ChatPage 컴포넌트 - AI 챗봇의 메인 페이지
  */
 export function ChatPage() {
-  // 커스텀 훅으로 로직 분리
+  // 로그인된 사용자 ID 가져오기 (개인화 추천에 사용)
+  const authUser = useUserStore((state) => state.authUser);
+
+  // 커스텀 훅으로 로직 분리 (userId 전달)
   const {
     messages,
     inputValue,
@@ -25,7 +29,7 @@ export function ChatPage() {
     currentThread,
     sendMessage,
     handleNewThread,
-  } = useChat();
+  } = useChat(authUser?.id);
 
   const [isMapOpen, setIsMapOpen] = useState(false);
 
