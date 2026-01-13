@@ -159,6 +159,9 @@ export function ChatPage() {
                 onSend={handleSendMessageWrapper}
                 isLoading={isLoading}
               />
+              <p className="mt-2 text-center text-md text-slate-400">
+                AI는 실수를 할 수 있습니다. 중요한 정보는 확인해 주세요.
+              </p>
             </div>
           </div>
         </div>

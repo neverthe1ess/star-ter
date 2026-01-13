@@ -29,7 +29,7 @@ interface ChartRendererProps {
 }
 
 // API 베이스 URL (환경변수 또는 기본값)
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
 export function ChartRenderer({ actions, className }: ChartRendererProps) {
   // 차트 타입 액션만 필터링
