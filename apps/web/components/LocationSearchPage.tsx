@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Loader2, ChevronDown, X } from 'lucide-react';
 import { motion } from 'motion/react';
 import {
@@ -36,15 +36,17 @@ const isClosureRateTab = (tab: string) => tab === '폐업률 높은 순';
 const isMZTab = (tab: string) => tab === 'MZ 선호 순';
 const isRecommendTab = (tab: string) => tab === '맞춤 추천';
 
-export function LocationSearchPage({}: { onBack?: () => void }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+interface LocationSearchPageProps {
+  initialTab?: string;
+}
 
-  // URL에서 초기 탭 읽기
-  const initialSubTab = searchParams.get('tab') || '평균 매출 순';
+export function LocationSearchPage({
+  initialTab = '평균 매출 순',
+}: LocationSearchPageProps) {
+  const router = useRouter();
 
   const [activeTab, setActiveTab] = useState('실시간 상권 차트');
-  const [subTab, setSubTab] = useState(initialSubTab);
+  const [subTab, setSubTab] = useState(initialTab);
   const [selectedMajor, setSelectedMajor] = useState<string | null>(null);
   const [industryCode, setIndustryCode] = useState('');
   const [isIndustryOpen, setIsIndustryOpen] = useState(false);
