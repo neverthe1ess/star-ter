@@ -28,13 +28,6 @@ import { useUserStore } from '@/store/use-user-store';
 
 export { type LocationRankItem } from '@/services/location/location.service';
 
-const getBarColor = (percentage: number) => {
-  if (percentage >= 100) return '#2C2F6C'; // main navy
-  if (percentage >= 70) return '#4C5BD4';
-  if (percentage >= 50) return '#9AA4FF';
-  return '#DDE1FF';
-};
-
 const ITEMS_PER_PAGE = 20;
 
 // 탭 타입 확인
@@ -521,7 +514,7 @@ export function LocationSearchPage({}: { onBack?: () => void }) {
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 pb-10 no-scrollbar">
+        <div className="flex-1 overflow-y-auto overflow-x-visible px-6 pb-10 no-scrollbar">
           {isLoading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
@@ -595,110 +588,219 @@ export function LocationSearchPage({}: { onBack?: () => void }) {
                   </span>
                 </div>
 
-                {/* 호버 시 점수 그래프 표시 */}
+                {/* 호버 시 점수 그래프 - 플로팅 툴팁 */}
                 <div className="flex items-center justify-center">
-                  <div className="text-xs text-slate-400 group-hover:hidden">
+                  <div className="text-xs text-slate-400">
                     마우스를 올려 상세 점수 보기
                   </div>
-                  <div className="hidden group-hover:block w-full">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-slate-500 w-12">
-                          타깃연령
-                        </span>
-                        <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+
+                  {/* 플로팅 툴팁 모달 - 상단 3개는 아래쪽, 나머지는 위쪽으로 표시 */}
+                  <div
+                    className={`hidden group-hover:block absolute right-0 z-9999 ${
+                      index < 5 ? 'top-full mt-2' : 'bottom-full mb-2'
+                    }`}
+                  >
+                    <div className="bg-white rounded-xl shadow-xl border border-slate-200 p-5 relative">
+                      {/* 화살표 - 방향에 따라 다르게 (테두리 효과) */}
+                      {index < 5 ? (
+                        <div className="absolute -top-2.5 right-8">
+                          {/* 테두리용 삼각형 (뒤) */}
                           <div
-                            className="h-full rounded-full transition-all"
+                            className="w-0 h-0 border-l-11 border-r-11 border-b-11 border-l-transparent border-r-transparent border-b-slate-300"
                             style={{
-                              width: `${Math.round(item.scores.age * 100)}%`,
-                              backgroundColor: getBarColor(
-                                Math.round(item.scores.age * 100),
-                              ),
+                              position: 'absolute',
+                              top: '-1px',
+                              left: '-1px',
+                            }}
+                          />
+                          {/* 흰색 삼각형 (앞) */}
+                          <div
+                            className="w-0 h-0 border-l-10 border-r-10 border-b-10 border-l-transparent border-r-transparent border-b-white"
+                            style={{
+                              position: 'absolute',
+                              top: '1px',
+                              left: '0px',
                             }}
                           />
                         </div>
-                        <span className="text-[10px] text-slate-600 w-8">
-                          {Math.round(item.scores.age * 100)}%
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-slate-500 w-12">
-                          창업비용
-                        </span>
-                        <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                      ) : (
+                        <div className="absolute -bottom-2.5 right-8">
+                          {/* 테두리용 삼각형 (뒤) */}
                           <div
-                            className="h-full rounded-full transition-all"
+                            className="w-0 h-0 border-l-11 border-r-11 border-t-11 border-l-transparent border-r-transparent border-t-slate-300"
                             style={{
-                              width: `${Math.round(item.scores.rent * 100)}%`,
-                              backgroundColor: getBarColor(
-                                Math.round(item.scores.rent * 100),
-                              ),
+                              position: 'absolute',
+                              bottom: '-1px',
+                              left: '-1px',
                             }}
                           />
-                        </div>
-                        <span className="text-[10px] text-slate-600 w-8">
-                          {Math.round(item.scores.rent * 100)}%
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-slate-500 w-12">
-                          상권테마
-                        </span>
-                        <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                          {/* 흰색 삼각형 (앞) */}
                           <div
-                            className="h-full rounded-full transition-all"
+                            className="w-0 h-0 border-l-10 border-r-10 border-t-10 border-l-transparent border-r-transparent border-t-white"
                             style={{
-                              width: `${Math.round(item.scores.region * 100)}%`,
-                              backgroundColor: getBarColor(
-                                Math.round(item.scores.region * 100),
-                              ),
+                              position: 'absolute',
+                              bottom: '1px',
+                              left: '0px',
                             }}
                           />
-                        </div>
-                        <span className="text-[10px] text-slate-600 w-8">
-                          {Math.round(item.scores.region * 100)}%
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-slate-500 w-12">
-                          운영시간
-                        </span>
-                        <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all"
-                            style={{
-                              width: `${Math.round(item.scores.time * 100)}%`,
-                              backgroundColor: getBarColor(
-                                Math.round(item.scores.time * 100),
-                              ),
-                            }}
-                          />
-                        </div>
-                        <span className="text-[10px] text-slate-600 w-8">
-                          {Math.round(item.scores.time * 100)}%
-                        </span>
-                      </div>
-                      {item.scores.industry !== null && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-slate-500 w-12">
-                            업종적합
-                          </span>
-                          <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full transition-all"
-                              style={{
-                                width: `${Math.round(item.scores.industry * 100)}%`,
-                                backgroundColor: getBarColor(
-                                  Math.round(item.scores.industry * 100),
-                                ),
-                              }}
-                            />
-                          </div>
-                          <span className="text-[10px] text-slate-600 w-8">
-                            {Math.round(item.scores.industry * 100)}%
-                          </span>
                         </div>
                       )}
+
+                      {/* 라인 차트 */}
+                      {(() => {
+                        const scores = [
+                          { label: '타깃연령', value: item.scores.age },
+                          { label: '창업비용', value: item.scores.rent },
+                          { label: '상권테마', value: item.scores.region },
+                          { label: '운영시간', value: item.scores.time },
+                          {
+                            label: '업종적합',
+                            value: item.scores.industry ?? 0.5,
+                          },
+                        ];
+
+                        const chartWidth = 400;
+                        const chartHeight = 220;
+                        const padding = {
+                          top: 20,
+                          right: 25,
+                          bottom: 50,
+                          left: 45,
+                        };
+                        const innerWidth =
+                          chartWidth - padding.left - padding.right;
+                        const innerHeight =
+                          chartHeight - padding.top - padding.bottom;
+
+                        // X, Y 좌표 계산
+                        const xStep = innerWidth / (scores.length - 1);
+                        const getX = (i: number) => padding.left + i * xStep;
+                        const getY = (value: number) =>
+                          padding.top + innerHeight * (1 - value);
+
+                        // 라인 경로 생성
+                        const linePath = scores
+                          .map(
+                            (s, i) =>
+                              `${i === 0 ? 'M' : 'L'} ${getX(i)} ${getY(s.value)}`,
+                          )
+                          .join(' ');
+
+                        return (
+                          <div className="flex flex-col items-center">
+                            <svg width={chartWidth} height={chartHeight}>
+                              {/* Y축 그리드 라인 (25%, 50%, 75%, 100%) */}
+                              {[0.25, 0.5, 0.75, 1].map((level, i) => (
+                                <g key={i}>
+                                  <line
+                                    x1={padding.left}
+                                    y1={getY(level)}
+                                    x2={chartWidth - padding.right}
+                                    y2={getY(level)}
+                                    stroke="#e2e8f0"
+                                    strokeWidth="1"
+                                    strokeDasharray={level === 1 ? '0' : '3,3'}
+                                  />
+                                  <text
+                                    x={padding.left - 8}
+                                    y={getY(level)}
+                                    textAnchor="end"
+                                    dominantBaseline="middle"
+                                    className="text-[11px] fill-slate-400"
+                                  >
+                                    {Math.round(level * 100)}
+                                  </text>
+                                </g>
+                              ))}
+
+                              {/* X축 기준선 */}
+                              <line
+                                x1={padding.left}
+                                y1={getY(0)}
+                                x2={chartWidth - padding.right}
+                                y2={getY(0)}
+                                stroke="#cbd5e1"
+                                strokeWidth="1"
+                              />
+
+                              {/* 데이터 영역 (그라데이션) */}
+                              <defs>
+                                <linearGradient
+                                  id={`areaGradient-${item.id}`}
+                                  x1="0"
+                                  y1="0"
+                                  x2="0"
+                                  y2="1"
+                                >
+                                  <stop
+                                    offset="0%"
+                                    stopColor="#3b82f6"
+                                    stopOpacity="0.3"
+                                  />
+                                  <stop
+                                    offset="100%"
+                                    stopColor="#3b82f6"
+                                    stopOpacity="0"
+                                  />
+                                </linearGradient>
+                              </defs>
+                              <path
+                                d={`${linePath} L ${getX(scores.length - 1)} ${getY(0)} L ${getX(0)} ${getY(0)} Z`}
+                                fill={`url(#areaGradient-${item.id})`}
+                              />
+
+                              {/* 데이터 라인 */}
+                              <path
+                                d={linePath}
+                                fill="none"
+                                stroke="#3b82f6"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+
+                              {/* 데이터 포인트 */}
+                              {scores.map((s, i) => (
+                                <circle
+                                  key={i}
+                                  cx={getX(i)}
+                                  cy={getY(s.value)}
+                                  r="5"
+                                  fill="#3b82f6"
+                                  stroke="white"
+                                  strokeWidth="2"
+                                />
+                              ))}
+
+                              {/* X축 라벨 */}
+                              {scores.map((s, i) => (
+                                <text
+                                  key={i}
+                                  x={getX(i)}
+                                  y={chartHeight - 20}
+                                  textAnchor="middle"
+                                  className="text-[11px] fill-slate-600 font-medium"
+                                >
+                                  {s.label}
+                                </text>
+                              ))}
+
+                              {/* X축 점수 값 */}
+                              {scores.map((s, i) => (
+                                <text
+                                  key={`val-${i}`}
+                                  x={getX(i)}
+                                  y={chartHeight - 5}
+                                  textAnchor="middle"
+                                  className="text-[12px] fill-blue-600 font-bold"
+                                >
+                                  {Math.round(s.value * 100)}%
+                                </text>
+                              ))}
+                            </svg>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
