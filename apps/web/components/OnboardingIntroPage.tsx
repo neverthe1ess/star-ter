@@ -43,167 +43,92 @@ export function OnboardingIntroPage({
         <div className="max-w-6xl w-full mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center px-4">
           <div className="flex justify-center lg:justify-end">
             <div className="relative">
-              <div className="w-[clamp(320px,35vw,480px)] aspect-square shrink-0 rounded-2xl bg-white shadow-lg shadow-gray-200/80 border border-slate-200 p-[8%] transition-all duration-200 hover:-translate-y-1 hover:shadow-xl flex flex-col justify-between">
-                <div className="space-y-1.5">
-                  <div className="inline-flex items-center rounded-full px-3 py-1 text-[10px] font-bold text-white bg-blue-500">
+              <div className="w-[clamp(300px,30vw,380px)] aspect-square shrink-0 rounded-2xl bg-white shadow-lg shadow-gray-200/80 border border-slate-200 p-[6%] transition-all duration-200 hover:-translate-y-1 hover:shadow-xl flex flex-col justify-between">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[9px] font-bold text-white bg-blue-500">
                     추천
                   </div>
-                  <h3 className="mt-2 text-xl font-bold text-slate-900">
+                  <h3 className="mt-1 text-2xl font-bold text-slate-900">
                     홍대입구역(홍대)
                   </h3>
-                  <p className="text-sm font-semibold text-slate-400">서울</p>
+                  <p className="text-lg font-semibold text-slate-400">서울</p>
                 </div>
-                <div className="flex items-end justify-between gap-6">
+                <div className="flex items-end justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-slate-400 mb-2">
+                    <p className="text-xs font-semibold text-slate-400 mb-1">
                       매칭 점수
                     </p>
-                    <div className="flex items-end gap-1">
-                      <span className="text-4xl font-black text-blue-500">
+                    <div className="flex items-end gap-0.5">
+                      <span className="text-3xl font-black text-blue-500">
                         91.2
                       </span>
                       <span className="text-sm font-bold text-blue-500">점</span>
                     </div>
                   </div>
-                  <div className="relative right-6">
+                  <div className="relative right-3">
                     <div
                       className="relative"
-                      style={{ width: '200px', height: '200px' }}
+                      style={{ width: '160px', height: '160px' }}
                     >
-                      <svg width="200" height="200" viewBox="0 0 200 200">
+                      <svg width="160" height="160" viewBox="0 0 160 160">
                         <polygon
-                          points="100,30 166.57395614066075,78.36881039375368 141.14496766047313,156.63118960624632 58.855032339526886,156.63118960624632 33.426043859339245,78.36881039375369"
+                          points="80,24 133,63 113,125 47,125 27,63"
                           fill="none"
                           stroke="#e2e8f0"
                           strokeWidth="1"
                         ></polygon>
                         <polygon
-                          points="100,65 133.28697807033038,89.18440519687684 120.57248383023656,128.31559480312316 79.42751616976344,128.31559480312316 66.71302192966962,89.18440519687684"
+                          points="80,52 107,71 96,103 64,103 53,71"
                           fill="none"
                           stroke="#e2e8f0"
                           strokeWidth="1"
                           strokeDasharray="2,2"
                         ></polygon>
-                        <line
-                          x1="100"
-                          y1="100"
-                          x2="100"
-                          y2="30"
-                          stroke="#e2e8f0"
-                          strokeWidth="1"
-                        ></line>
-                        <line
-                          x1="100"
-                          y1="100"
-                          x2="166.57395614066075"
-                          y2="78.36881039375368"
-                          stroke="#e2e8f0"
-                          strokeWidth="1"
-                        ></line>
-                        <line
-                          x1="100"
-                          y1="100"
-                          x2="141.14496766047313"
-                          y2="156.63118960624632"
-                          stroke="#e2e8f0"
-                          strokeWidth="1"
-                        ></line>
-                        <line
-                          x1="100"
-                          y1="100"
-                          x2="58.855032339526886"
-                          y2="156.63118960624632"
-                          stroke="#e2e8f0"
-                          strokeWidth="1"
-                        ></line>
-                        <line
-                          x1="100"
-                          y1="100"
-                          x2="33.426043859339245"
-                          y2="78.36881039375369"
-                          stroke="#e2e8f0"
-                          strokeWidth="1"
-                        ></line>
+                        <line x1="80" y1="80" x2="80" y2="24" stroke="#e2e8f0" strokeWidth="1"></line>
+                        <line x1="80" y1="80" x2="133" y2="63" stroke="#e2e8f0" strokeWidth="1"></line>
+                        <line x1="80" y1="80" x2="113" y2="125" stroke="#e2e8f0" strokeWidth="1"></line>
+                        <line x1="80" y1="80" x2="47" y2="125" stroke="#e2e8f0" strokeWidth="1"></line>
+                        <line x1="80" y1="80" x2="27" y2="63" stroke="#e2e8f0" strokeWidth="1"></line>
                         <polygon
-                          points="100,45 166.57395614066075,78.36881039375368 141.14496766047313,156.63118960624632 58.855032339526886,156.63118960624632 56.72692850857051,85.9397267559399"
+                          points="80,36 133,63 113,125 47,125 45,69"
                           fill="#3b82f6"
                           fillOpacity="0.25"
                           stroke="#3b82f6"
-                          strokeWidth="2"
+                          strokeWidth="1.5"
                         ></polygon>
-                        <circle cx="100" cy="45" r="3" fill="#3b82f6"></circle>
-                        <circle
-                          cx="166.57395614066075"
-                          cy="78.36881039375368"
-                          r="3"
-                          fill="#3b82f6"
-                        ></circle>
-                        <circle
-                          cx="141.14496766047313"
-                          cy="156.63118960624632"
-                          r="3"
-                          fill="#3b82f6"
-                        ></circle>
-                        <circle
-                          cx="58.855032339526886"
-                          cy="156.63118960624632"
-                          r="3"
-                          fill="#3b82f6"
-                        ></circle>
-                        <circle
-                          cx="56.72692850857051"
-                          cy="85.9397267559399"
-                          r="3"
-                          fill="#3b82f6"
-                        ></circle>
+                        <circle cx="80" cy="36" r="2.5" fill="#3b82f6"></circle>
+                        <circle cx="133" cy="63" r="2.5" fill="#3b82f6"></circle>
+                        <circle cx="113" cy="125" r="2.5" fill="#3b82f6"></circle>
+                        <circle cx="47" cy="125" r="2.5" fill="#3b82f6"></circle>
+                        <circle cx="45" cy="69" r="2.5" fill="#3b82f6"></circle>
                       </svg>
                       <div
-                        className="absolute text-[14px] font-bold text-slate-500 whitespace-nowrap"
-                        style={{
-                          left: '100px',
-                          top: '16px',
-                          transform: 'translate(-50%, -50%)',
-                        }}
+                        className="absolute text-[11px] font-bold text-slate-500 whitespace-nowrap"
+                        style={{ left: '80px', top: '12px', transform: 'translate(-50%, -50%)' }}
                       >
                         타깃 연령
                       </div>
                       <div
-                        className="absolute text-[12px] font-semibold text-slate-500 whitespace-nowrap"
-                        style={{
-                          left: '181.889px',
-                          top: '74.0426px',
-                          transform: 'translate(0%, -50%)',
-                        }}
+                        className="absolute text-[10px] font-semibold text-slate-500 whitespace-nowrap"
+                        style={{ left: '145px', top: '60px', transform: 'translate(0%, -50%)' }}
                       >
                         창업 비용
                       </div>
                       <div
-                        className="absolute text-[12px] font-semibold text-slate-500 whitespace-nowrap"
-                        style={{
-                          left: '151.374px',
-                          top: '167.957px',
-                          transform: 'translate(0%, -50%)',
-                        }}
+                        className="absolute text-[10px] font-semibold text-slate-500 whitespace-nowrap"
+                        style={{ left: '121px', top: '135px', transform: 'translate(0%, -50%)' }}
                       >
                         상권 테마
                       </div>
                       <div
-                        className="absolute text-[12px] font-semibold text-slate-500 whitespace-nowrap"
-                        style={{
-                          left: '48.626px',
-                          top: '167.957px',
-                          transform: 'translate(-100%, -50%)',
-                        }}
+                        className="absolute text-[10px] font-semibold text-slate-500 whitespace-nowrap"
+                        style={{ left: '39px', top: '135px', transform: 'translate(-100%, -50%)' }}
                       >
                         운영 시간
                       </div>
                       <div
-                        className="absolute text-[12px] font-semibold text-slate-500 whitespace-nowrap"
-                        style={{
-                          left: '18.1113px',
-                          top: '74.0426px',
-                          transform: 'translate(-100%, -50%)',
-                        }}
+                        className="absolute text-[10px] font-semibold text-slate-500 whitespace-nowrap"
+                        style={{ left: '15px', top: '60px', transform: 'translate(-100%, -50%)' }}
                       >
                         업종 적합
                       </div>
