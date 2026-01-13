@@ -23,8 +23,16 @@ const AGE_COLUMN_MAP: Record<string, keyof SalesData> = {
 export class AgeScoreCalculator {
   /**
    * 연령대 점수 계산 (0~1)
-   * 해당 연령대 매출 비율이 높을수록 점수가 높음
+   *
+   * 캡핑 기반 정규화:
+   * - 33% 이상의 연령대 매출 비율 = 만점 (1.0)
+   * - 그 이하는 선형 증가 (ratio / 0.33)
+   *
+   * 이유: 6개 연령대 균등 분포 시 각 16.7%.
+   * 33%는 평균의 약 2배로, "타깃 연령대가 충분히 집중됨"을 의미.
    */
+  private readonly MAX_RATIO = 0.33;
+
   calculate(salesData: SalesData, targetAge: string): number {
     const total = Number(salesData.thsmon_selng_amt || 0);
     if (total === 0) return 0;
@@ -33,6 +41,9 @@ export class AgeScoreCalculator {
     if (!ageColumn) return 0;
 
     const ageAmount = Number(salesData[ageColumn] || 0);
-    return ageAmount / total;
+    const ratio = ageAmount / total;
+
+    // 캡핑 기반 정규화: 33% 이상이면 만점
+    return Math.min(ratio / this.MAX_RATIO, 1);
   }
 }
