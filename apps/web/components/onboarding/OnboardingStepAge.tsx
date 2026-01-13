@@ -18,17 +18,17 @@ export function OnboardingStepAge({
   onChange,
 }: OnboardingStepAgeProps) {
   return (
-    <div className="space-y-12">
-      <h1 className="text-5xl font-semibold text-gray-900">
-        타겟 연령층을 알려주세요.
+    <div className="space-y-[4vh]">
+      <h1 className="text-[clamp(1.875rem,4vw,2.5rem)] font-bold text-gray-900">
+        타겟 연령층을 알려주세요
       </h1>
 
-      <div className="space-y-4">
+      <div className="space-y-[1.5vh]">
         {AGE_OPTIONS.map((option) => (
           <button
             key={option.value}
             onClick={() => onChange(option.value)}
-            className={`w-full p-8 border-2 rounded-2xl text-left transition-all hover:border-gray-900 hover:shadow-lg ${
+            className={`w-full px-[3%] py-[2%] border-2 rounded-2xl text-left transition-all hover:border-gray-900 hover:shadow-lg ${
               value === option.value
                 ? 'border-gray-900 bg-gray-50 shadow-lg'
                 : 'border-gray-300'
@@ -36,10 +36,10 @@ export function OnboardingStepAge({
           >
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-semibold text-gray-900 mb-2">
+                <div className="text-[clamp(1.125rem,2vw,1.25rem)] font-bold text-gray-900 mb-[0.5vh]">
                   {option.label}
                 </div>
-                <div className="text-lg text-gray-600">{option.desc}</div>
+                <div className="text-[clamp(0.875rem,1.5vw,1rem)] text-gray-500">{option.desc}</div>
               </div>
             </div>
           </button>
