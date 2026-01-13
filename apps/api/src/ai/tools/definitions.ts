@@ -168,6 +168,28 @@ export const TOOLS = [
   },
   {
     type: 'function',
+    name: 'find_similar_commercial_areas',
+    description:
+      '특정 상권과 유사한 상권을 찾습니다. "서울대입구역이랑 비슷한 곳", "여기랑 비슷한 상권 추천" 등의 질문에 사용하세요. 연령대, 시간대, 인구 구성이 유사한 상권을 추천합니다.',
+    parameters: {
+      type: 'object',
+      properties: {
+        areaCd: {
+          type: 'string',
+          description: '기준 상권 코드 (유사 상권을 찾을 대상)',
+        },
+        limit: {
+          type: 'number',
+          description: '반환할 유사 상권 수 (기본 5)',
+        },
+      },
+      required: ['areaCd'],
+      additionalProperties: false,
+    },
+    strict: false,
+  },
+  {
+    type: 'function',
     name: 'compare_commercial_by_industry',
     description: '특정 업종 기준으로 여러 상권을 비교합니다.',
     parameters: {

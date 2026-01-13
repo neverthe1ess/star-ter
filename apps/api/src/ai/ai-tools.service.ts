@@ -52,6 +52,8 @@ export class AiToolsService {
         return this.toolsRepository.requestReportGeneration(args);
       case 'calc_break_even_with_listing':
         return this.toolsRepository.calcBreakEvenWithListing(args);
+      case 'find_similar_commercial_areas':
+        return this.toolsRepository.findSimilarCommercialAreas(args);
       default:
         return undefined;
     }

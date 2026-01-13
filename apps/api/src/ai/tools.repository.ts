@@ -1422,4 +1422,76 @@ export class ToolsRepository {
     }
     return Number(val || 0);
   }
+
+  // 27) 유사 상권 추천 (pgvector 기반)
+  async findSimilarCommercialAreas(params: QueryParams) {
+    const { areaCd, limit = 5 } = params;
+
+    if (!areaCd) {
+      return {
+        summary: '기준 상권 코드(areaCd)가 필요합니다.',
+        data: [],
+        error: 'areaCd is required',
+      };
+    }
+
+    try {
+      // 유사 상권 검색 (코사인 유사도 사용)
+      interface SimilarAreaRow {
+        target_name: string;
+        area_cd: string;
+        area_name: string;
+        similarity: number;
+      }
+
+      const rows = await this.prisma.$queryRaw<SimilarAreaRow[]>`
+        WITH target AS (
+          SELECT area_cd, area_name, feature_vector 
+          FROM commercial_feature_vector 
+          WHERE area_cd = ${areaCd}
+          LIMIT 1
+        )
+        SELECT 
+          t.area_name as target_name,
+          cfv.area_cd,
+          cfv.area_name,
+          ROUND((1 - (cfv.feature_vector <=> t.feature_vector))::numeric, 4) as similarity
+        FROM commercial_feature_vector cfv, target t
+        WHERE cfv.area_cd != t.area_cd
+        ORDER BY cfv.feature_vector <=> t.feature_vector
+        LIMIT ${limit}
+      `;
+
+      if (rows.length === 0) {
+        return {
+          summary: `해당 상권(${areaCd})의 Feature Vector 데이터가 없습니다.`,
+          data: [],
+        };
+      }
+
+      const targetName = rows[0]?.target_name || areaCd;
+
+      return {
+        summary: `'${targetName}'과(와) 유사한 상권 Top ${rows.length}입니다.`,
+        data: rows.map((row) => ({
+          areaCd: row.area_cd,
+          areaName: row.area_name,
+          similarity: Number(row.similarity),
+          similarityPercent: `${Math.round(Number(row.similarity) * 100)}%`,
+        })),
+        meta: {
+          targetAreaCd: areaCd,
+          targetAreaName: targetName,
+          algorithm: 'pgvector cosine similarity',
+        },
+      };
+    } catch (error) {
+      console.error('[findSimilarCommercialAreas] Error:', error);
+      return {
+        summary: '유사 상권 검색 중 오류가 발생했습니다.',
+        data: [],
+        error: String(error),
+      };
+    }
+  }
 }
