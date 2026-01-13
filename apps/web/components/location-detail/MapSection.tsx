@@ -93,7 +93,7 @@ export function MapSection({
   onTrafficFilterChange,
 }: MapSectionProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const polygonRef = useRef<KakaoPolygon | null>(null);
+  const polygonRef = useRef<KakaoPolygon[] | null>([]);
   const markersRef = useRef<KakaoCustomOverlay[]>([]);
   const industryMarkersRef = useRef<KakaoCustomOverlay[]>([]); // 업종 분석 마커용
   const isDraggingRef = useRef(false); // 드래그 상태 추적
@@ -192,42 +192,42 @@ export function MapSection({
 
     if (!polygonData) return;
 
-    const polygonRings = polygonData.coordinates[0];
-    const exteriorRing = polygonRings[0];
-
-    const centerLat = centerY ?? exteriorRing[0][1];
-    const centerLng = centerX ?? exteriorRing[0][0];
-    const centerLatLng = new window.kakao.maps.LatLng(centerLat, centerLng);
-
-    map.setCenter(centerLatLng);
-    map.setLevel(3);
-
     if (polygonRef.current) {
-      polygonRef.current.setMap(null);
-      polygonRef.current = null;
+      polygonRef.current.forEach((polygon) => polygon.setMap(null));
+      polygonRef.current = [];
     }
 
-    const kakaoPath = exteriorRing.map(
-      (coord) => new window.kakao.maps.LatLng(coord[1], coord[0]),
-    );
+    for (const polygon of polygonData.coordinates) {
+      const exteriorRing = polygon[0];
 
-    const kakaoPolygon = new window.kakao.maps.Polygon({
-      path: kakaoPath,
-      strokeWeight: 3,
-      strokeColor: '#3B82F6',
-      strokeOpacity: 1,
-      strokeStyle: 'solid',
-      fillColor: '#ffffff',
-      fillOpacity: 0.3,
-    });
+      const centerLat = centerY ?? exteriorRing[0][1];
+      const centerLng = centerX ?? exteriorRing[0][0];
+      const centerLatLng = new window.kakao.maps.LatLng(centerLat, centerLng);
 
-    kakaoPolygon.setMap(map);
-    polygonRef.current = kakaoPolygon;
+      map.setCenter(centerLatLng);
+      map.setLevel(3);
+
+      const kakaoPath = exteriorRing.map(
+        (coord) => new window.kakao.maps.LatLng(coord[1], coord[0]),
+      );
+
+      const kakaoPolygon = new window.kakao.maps.Polygon({
+        path: kakaoPath,
+        strokeWeight: 3,
+        strokeColor: '#3B82F6',
+        strokeOpacity: 1,
+        strokeStyle: 'solid',
+        fillColor: '#ffffff',
+        fillOpacity: 0.3,
+      });
+      kakaoPolygon.setMap(map);
+      polygonRef.current?.push(kakaoPolygon);
+    }
 
     return () => {
       if (polygonRef.current) {
-        polygonRef.current.setMap(null);
-        polygonRef.current = null;
+        polygonRef.current.forEach((polygon) => polygon.setMap(null));
+        polygonRef.current = [];
       }
     };
   }, [map, loaded, polygonData, centerX, centerY, onBoundsChange]);
@@ -331,7 +331,11 @@ export function MapSection({
         const baseRadius = 15 + 25 * density;
 
         // 🔥 헬퍼 함수: 펄스 콘텐츠 생성 (고유 클래스명으로 스타일 충돌 방지)
-        const createPulseContent = (color: string, radius: number, uniqueId: number) => `
+        const createPulseContent = (
+          color: string,
+          radius: number,
+          uniqueId: number,
+        ) => `
           <div style="position: relative; width: 0; height: 0;">
             <style>
               @keyframes mapPulse-${uniqueId} {
@@ -361,12 +365,15 @@ export function MapSection({
             <div class="density-pulse-${uniqueId}"></div>
           </div>
         `;
-        
+
         // 🔥 모든 밀도에 동일한 펄스 효과 적용
         const overlay = new window.kakao.maps.CustomOverlay({
-          position: new window.kakao.maps.LatLng(item.store.lat, item.store.lng),
+          position: new window.kakao.maps.LatLng(
+            item.store.lat,
+            item.store.lng,
+          ),
           content: createPulseContent(fillColor, baseRadius, index),
-          zIndex: 1
+          zIndex: 1,
         });
         overlay.setMap(map);
         circles.push(overlay);
