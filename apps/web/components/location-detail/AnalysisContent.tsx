@@ -94,13 +94,13 @@ export function AnalysisContent({ analytics, regionCode, onCategoryChange }: Ana
                 {/* 개업 */}
                 <div>
                   <div className="flex items-baseline gap-1 mb-1">
-                    <span className="text-3xl font-extrabold text-blue-600 tracking-tight">
+                    <span className="text-3xl font-extrabold text-emerald-600 tracking-tight">
                       {vitality.opbizStoreCount.toLocaleString()}
                     </span>
                     <span className="text-gray-500 font-medium text-sm">개소</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-md font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
+                    <span className="text-md font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
                       개업
                     </span>
                     <span className="text-gray-600 text-md">
@@ -112,13 +112,13 @@ export function AnalysisContent({ analytics, regionCode, onCategoryChange }: Ana
                 {/* 폐업 */}
                 <div className="text-right">
                   <div className="flex items-baseline gap-1 justify-end mb-1">
-                    <span className="text-3xl font-extrabold text-rose-500 tracking-tight">
+                    <span className="text-3xl font-extrabold text-red-500 tracking-tight">
                       {vitality.clsbizStoreCount.toLocaleString()}
                     </span>
                     <span className="text-gray-500 font-medium text-sm">개소</span>
                   </div>
                   <div className="flex items-center gap-1.5 justify-end">
-                    <span className="text-md font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-md">
+                    <span className="text-md font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-md">
                       폐업
                     </span>
                     <span className="text-gray-600 text-md">
@@ -131,13 +131,13 @@ export function AnalysisContent({ analytics, regionCode, onCategoryChange }: Ana
               {/* 비교 바 */}
               <div className="h-3 bg-gray-100 rounded-full overflow-hidden flex mb-5 ring-1 ring-gray-100">
                 <div 
-                  className="h-full bg-blue-500 transition-all duration-700 ease-out relative group"
+                  className="h-full bg-emerald-500 transition-all duration-700 ease-out relative group"
                   style={{ width: `${(vitality.opbizStoreCount / (vitality.opbizStoreCount + vitality.clsbizStoreCount + 0.001)) * 100}%` }}
                 >
                   <div className="absolute inset-0 bg-white/20 group-hover:bg-transparent transition-colors" />
                 </div>
                 <div 
-                  className="h-full bg-rose-400 transition-all duration-700 ease-out relative group"
+                  className="h-full bg-red-400 transition-all duration-700 ease-out relative group"
                   style={{ width: `${(vitality.clsbizStoreCount / (vitality.opbizStoreCount + vitality.clsbizStoreCount + 0.001)) * 100}%` }}
                 >
                    <div className="absolute inset-0 bg-white/20 group-hover:bg-transparent transition-colors" />
@@ -145,20 +145,18 @@ export function AnalysisContent({ analytics, regionCode, onCategoryChange }: Ana
               </div>
 
               {/* 결론 메시지 */}
-              <div className={`text-center py-3 rounded-xl border ${
-                netChange >= 0 
-                  ? 'bg-emerald-50/50 border-emerald-100 text-emerald-700' 
-                  : 'bg-orange-50/50 border-orange-100 text-orange-700'
-              }`}>
+              <div className="py-4 px-4 bg-gray-50 rounded-lg text-center">
                 {netChange >= 0 ? (
-                  <p className="font-bold text-lg flex items-center justify-center gap-2">
-                    <TrendingUp className="w-4 h-4" />
-                    성장하는 시장입니다<span className="text-emerald-600/70 font-semibold text-md ml-1">(진입 추천)</span>
+                  <p className="flex items-center justify-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-emerald-500" />
+                    <span className="font-bold text-gray-900 text-lg">성장하는 시장입니다</span>
+                    <span className="text-gray-400 text-sm font-medium">(진입 추천)</span>
                   </p>
                 ) : (
-                  <p className="font-bold text-lg flex items-center justify-center gap-2">
-                    <TrendingDown className="w-4 h-4" />
-                    위축되는 시장입니다 <span className="text-orange-600/70 font-semibold text-md ml-1">(주의 필요)</span>
+                  <p className="flex items-center justify-center gap-2">
+                    <TrendingDown className="w-5 h-5 text-red-400" />
+                    <span className="font-bold text-gray-900 text-lg">위축되는 시장입니다</span>
+                    <span className="text-gray-400 text-sm font-medium">(주의 필요)</span>
                   </p>
                 )}
               </div>
@@ -178,20 +176,20 @@ export function AnalysisContent({ analytics, regionCode, onCategoryChange }: Ana
                 <div className="flex items-center gap-5 mb-6">
                   <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm border ${
                     netChange >= 0 
-                      ? '' 
-                      : ''
+                      ? 'bg-emerald-50 border-emerald-100' 
+                      : 'bg-red-50 border-red-100'
                   }`}>
                      {netChange >= 0 ? (
                        <TrendingUp className="w-8 h-8 text-emerald-600" />
                      ) : (
-                       <TrendingDown className="w-8 h-8 text-orange-500" />
+                       <TrendingDown className="w-8 h-8 text-red-500" />
                      )}
                   </div>
                   <div>
                     <p className="text-md font-bold text-gray-500 mb-1">신규 - 폐업 (순증감)</p>
                     <div className="flex items-baseline gap-1">
                       <p className={`text-4xl font-extrabold tracking-tight ${
-                        netChange >= 0 ? 'text-emerald-600' : 'text-orange-500'
+                        netChange >= 0 ? 'text-emerald-600' : 'text-red-500'
                       }`}>
                         {netChange > 0 ? '+' : ''}{netChange.toLocaleString()}
                       </p>
@@ -202,9 +200,9 @@ export function AnalysisContent({ analytics, regionCode, onCategoryChange }: Ana
               </div>
 
                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <p className="text-blue-950 font-bold text-xl leading-relaxed">
-                  지난 분기 동안 <span className="font-bold text-blue-600">{vitality.opbizStoreCount.toLocaleString()}개</span>가 새로 생기고,<br/>
-                  <span className="font-bold text-rose-500">{vitality.clsbizStoreCount.toLocaleString()}개</span>가 문을 닫았습니다.
+                <p className="text-gray-800 font-bold text-lg leading-relaxed">
+                  지난 분기 동안 <span className="font-bold text-emerald-600">{vitality.opbizStoreCount.toLocaleString()}개</span>가 새로 생기고,<br/>
+                  <span className="font-bold text-red-500">{vitality.clsbizStoreCount.toLocaleString()}개</span>가 문을 닫았습니다.
                 </p>
               </div>
             </div>
