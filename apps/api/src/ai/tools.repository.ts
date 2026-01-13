@@ -356,9 +356,9 @@ export class ToolsRepository {
       const toNum = (v: any) => Number(v || 0);
 
       const revenue = toNum(s?._sum?.thsmon_selng_amt);
-      const pop = numberSafe(f?.tot_flpop_co);
-      const res = numberSafe(r?.tot_repop_co);
-      const work = numberSafe(w?.tot_wrc_popltn_co);
+      const pop = this.numberSafe(f?.tot_flpop_co);
+      const res = this.numberSafe(r?.tot_repop_co);
+      const work = this.numberSafe(w?.tot_wrc_popltn_co);
       const closingRate = toNum(st?._avg?.clsbiz_rt);
       const stability = 100 - closingRate;
 
@@ -369,13 +369,6 @@ export class ToolsRepository {
         raw: { closingRate },
       };
     });
-
-    // Helper for safe number conversion
-    function numberSafe(val: any) {
-      if (typeof val === 'bigint') return Number(val);
-      if (val?.toNumber) return val.toNumber();
-      return Number(val || 0);
-    }
 
     // 3. 정규화 (Max값 기준 점수화, 0 div 방지)
     const maxValues = {
@@ -882,8 +875,7 @@ export class ToolsRepository {
         if (rentStats) {
           // 층별 임대료 선택 (없으면 1층 기준)
           // Prisma Decimal 타입 안전 변환
-          const toNum = (val: any) =>
-            (val?.toNumber ? val.toNumber() : Number(val || 0)) * 1000; // 천원 -> 원
+          const toNum = (val: unknown) => this.numberSafe(val) * 1000; // 천원 -> 원
 
           const f1 = toNum(rentStats.f1);
           const f2 = toNum(rentStats.f2);
@@ -969,8 +961,7 @@ export class ToolsRepository {
         });
 
         if (rentStats) {
-          const toNum = (val: any) =>
-            (val?.toNumber ? val.toNumber() : Number(val || 0)) * 1000; // 천원 -> 원
+          const toNum = (val: unknown) => this.numberSafe(val) * 1000; // 천원 -> 원
 
           const f1 = toNum(rentStats.f1);
           const f2 = toNum(rentStats.f2);
@@ -1162,7 +1153,19 @@ export class ToolsRepository {
     // Also DB columns are Decimal, so cast to float for trig functions.
     // Use try-catch for safety
     try {
-      const items = await this.prisma.$queryRaw<any[]>`
+      const items = await this.prisma.$queryRaw<
+        Array<{
+          id: string;
+          title: string;
+          deposit: bigint;
+          monthlyrent: bigint;
+          size: number;
+          floor: number;
+          centerlatitude: number;
+          centerlongitude: number;
+          distance: number;
+        }>
+      >`
         SELECT
           id,
           title,
@@ -1206,9 +1209,9 @@ export class ToolsRepository {
           monthlyRent: rent, // 만원
           size: Number(item.size || 0), // 평
           floor: item.floor,
-          distance: `${dist}km`,
-          lat: item.centerlatitude,
-          lng: item.centerlongitude,
+          latitude: Number(item.centerlatitude),
+          longitude: Number(item.centerlongitude),
+          distance: dist,
         };
       });
 
@@ -1232,94 +1235,123 @@ export class ToolsRepository {
   // 23) 정책자금/대출 안내 (Task 4.5)
   // Mock Data Implementation
   async getFundingPrograms(params: QueryParams) {
-    // 실제로는 정부 API나 전용 DB테이블에서 조회해야 함.
-    // 현재는 예시 정적 데이터 반환.
-    const { areaCd, categoryCode } = params;
+    try {
+      // 실제로는 정부 API나 전용 DB테이블에서 조회해야 함.
+      // 현재는 예시 정적 데이터 반환.
+      const { areaCd, categoryCode } = params;
 
-    // Remove unused warnings
-    void areaCd;
-    void categoryCode;
+      // Remove unused warnings
+      void areaCd;
+      void categoryCode;
 
-    const programs = [
-      {
-        title: '소상공인 정책자금 (성장기반자금)',
-        provider: '소상공인시장진흥공단',
-        description: '업력 3년 이상 소상공인 대상, 시설자금 및 운전자금 지원',
-        eligibility: '업력 3년 이상 소상공인',
-        limit: '최대 1억원',
-        rate: '연 3%대 (변동)',
-        url: 'https://www.semas.or.kr/',
-      },
-      {
-        title: '서울신용보증재단 창업자금',
-        provider: '서울신용보증재단',
-        description:
-          '서울시 내 창업 예정자 및 창업 6개월 이내 소상공인 대상 보증 지원',
-        eligibility: '서울시 소재 창업 예정 또는 초기 창업자',
-        limit: '최대 5,000만원',
-        rate: '보증료 1% + 은행 금리',
-        url: 'https://www.seoulshinbo.co.kr/',
-      },
-      {
-        title: '희망리턴패키지 (재기지원)',
-        provider: '중소벤처기업부',
-        description: '폐업(예정) 소상공인의 재기 지원 (철거비, 재취업 교육 등)',
-        eligibility: '폐업 예정 또는 기폐업 소상공인',
-        limit: '최대 250만원 (철거비)',
-        rate: '-',
-        url: 'https://www.sbiz.or.kr/nhrp/main.do',
-      },
-    ];
+      const programs = [
+        {
+          title: '소상공인 정책자금 (성장기반자금)',
+          provider: '소상공인시장진흥공단',
+          description: '업력 3년 이상 소상공인 대상, 시설자금 및 운전자금 지원',
+          eligibility: '업력 3년 이상 소상공인',
+          limit: '최대 1억원',
+          rate: '연 3%대 (변동)',
+          url: 'https://www.semas.or.kr/',
+        },
+        {
+          title: '서울신용보증재단 창업자금',
+          provider: '서울신용보증재단',
+          description:
+            '서울시 내 창업 예정자 및 창업 6개월 이내 소상공인 대상 보증 지원',
+          eligibility: '서울시 소재 창업 예정 또는 초기 창업자',
+          limit: '최대 5,000만원',
+          rate: '보증료 1% + 은행 금리',
+          url: 'https://www.seoulshinbo.co.kr/',
+        },
+        {
+          title: '희망리턴패키지 (재기지원)',
+          provider: '중소벤처기업부',
+          description:
+            '폐업(예정) 소상공인의 재기 지원 (철거비, 재취업 교육 등)',
+          eligibility: '폐업 예정 또는 기폐업 소상공인',
+          limit: '최대 250만원 (철거비)',
+          rate: '-',
+          url: 'https://www.sbiz.or.kr/nhrp/main.do',
+        },
+      ];
 
-    // Simulate async operation
-    await new Promise((resolve) => setTimeout(resolve, 10));
+      // Simulate async operation
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
-    return {
-      summary: '현재 신청 가능한 주요 정책자금 및 지원 프로그램입니다.',
-      data: programs,
-      meta: {
-        source: 'Public Data Portal (Mock)',
-        updated: '2024-01',
-      },
-    };
+      return {
+        summary: '현재 신청 가능한 주요 정책자금 및 지원 프로그램입니다.',
+        data: programs,
+        meta: {
+          source: 'Public Data Portal (Mock)',
+          updated: '2024-01',
+        },
+      };
+    } catch (e) {
+      console.error('Funding Programs Error:', e);
+      return {
+        summary: '정책자금 정보를 불러오는 중 오류가 발생했습니다.',
+        data: [],
+      };
+    }
   }
   // 24) 리포트 생성 요청 (Task 4.6)
   // Action Trigger Only
   async requestReportGeneration(params: QueryParams) {
-    const { title = '상권 분석 보고서' } = params as any;
+    try {
+      const { title = '상권 분석 보고서' } = params;
 
-    await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
-    // 이 메서드는 실제 데이터를 조회하지 않고,
-    // 프론트엔드가 'report.generate' 액션을 처리할 수 있도록 트리거만 제공합니다.
-    return {
-      summary: `요청하신 '${title}' 생성이 시작되었습니다. 잠시 후 다운로드 링크가 제공됩니다.`,
-      actions: [
-        {
-          type: 'report.generate',
-          payload: {
-            title,
-            // Mockup Download Link
-            url: `/api/reports/download?id=mock-report-${Date.now()}`,
-            timestamp: new Date().toISOString(),
+      // 이 메서드는 실제 데이터를 조회하지 않고,
+      // 프론트엔드가 'report.generate' 액션을 처리할 수 있도록 트리거만 제공합니다.
+      return {
+        summary: `요청하신 '${title}' 생성이 시작되었습니다. 잠시 후 다운로드 링크가 제공됩니다.`,
+        actions: [
+          {
+            type: 'report.generate',
+            payload: {
+              title,
+              // Mockup Download Link
+              url: `/api/reports/download?id=mock-report-${Date.now()}`,
+              timestamp: new Date().toISOString(),
+            },
           },
-        },
-      ],
-      data: null, // 데이터는 액션 페이로드에 포함되거나 프론트에서 처리
-    };
+        ],
+        data: null, // 데이터는 액션 페이로드에 포함되거나 프론트에서 처리
+      };
+    } catch (e) {
+      console.error('Report Generation Error:', e);
+      return {
+        summary: '리포트 생성 요청 중 오류가 발생했습니다.',
+        data: null,
+      };
+    }
   }
   // 25) 매물 기반 손익분기점 계산 (Task 4.7)
   async calcBreakEvenWithListing(params: QueryParams) {
-    const { listingId, categoryCode } = params as any;
+    const { listingId } = params;
+    // categoryCode는 params에서 optional로 처리되므로 명시적 추출 안함 (필요 시 destructuring)
 
     try {
       // 1. 매물 정보 조회 (raw query for convenience with snake_case mapping)
-      // Note: listingId comes as string from tool, convert to number if id is Int
-      const listingIdNum = Number(listingId);
-      const listings = await this.prisma.$queryRaw<any[]>`
+      // Note: listingId comes as string (UUID) from tool
+      // const listingIdNum = Number(listingId); // DO NOT CONVERT UUID TO NUMBER
+
+      // Prisma raw query: pass string directly.
+      // If the input is not a valid UUID, PG will throw.
+      // We should ideally validate it's a UUID, but for now strict passing is okay.
+      const listings = await this.prisma.$queryRaw<
+        Array<{
+          id: string;
+          monthlyrent: bigint;
+          deposit: bigint;
+          size: number; // Decimal in DB but mapped to number-like in raw often, check
+        }>
+      >`
         SELECT id, monthlyrent, deposit, size
         FROM real_estate_info
-        WHERE id = ${listingIdNum}
+        WHERE id = ${listingId}::uuid
       `;
 
       if (!listings || listings.length === 0) {
@@ -1371,5 +1403,17 @@ export class ToolsRepository {
         data: null,
       };
     }
+  }
+  // Helper for safe number conversion (Private Method)
+  private numberSafe(val: unknown): number {
+    if (typeof val === 'bigint') return Number(val);
+    if (typeof val === 'number') return val;
+    if (typeof val === 'string') return parseFloat(val);
+
+    // Handle Decimal-like objects (e.g., from Prisma)
+    if (val && typeof val === 'object' && 'toNumber' in val) {
+      return (val as { toNumber: () => number }).toNumber();
+    }
+    return Number(val || 0);
   }
 }

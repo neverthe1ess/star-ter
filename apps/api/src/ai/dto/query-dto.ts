@@ -14,4 +14,9 @@ export type QueryParams = {
   floor?: number;
   latitude?: number;
   longitude?: number;
+  // Task 4.6 & 4.7 additions
+  listingId?: string;
+  title?: string;
 };
+
+// TODO: 정훈 ㅈㅅ

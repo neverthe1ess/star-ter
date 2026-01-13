@@ -16,23 +16,7 @@ export const TOOLS = [
     },
     strict: true,
   },
-  {
-    type: 'function',
-    name: 'get_foot_traffic',
-    description: '유동인구 요약 정보를 조회합니다.',
-    parameters: {
-      type: 'object',
-      properties: {
-        areaCd: {
-          type: 'string',
-          description: 'areaCd 값을 이용하여 유동인구 정보를 가져온다.',
-        },
-      },
-      required: ['areaCd'],
-      additionalProperties: false,
-    },
-    strict: true,
-  },
+
   {
     type: 'function',
     name: 'get_resident_population',
@@ -118,23 +102,7 @@ export const TOOLS = [
     },
     strict: true,
   },
-  {
-    type: 'function',
-    name: 'get_commercial_change',
-    description: '상권 변화지표 요약 정보를 조회합니다.',
-    parameters: {
-      type: 'object',
-      properties: {
-        areaCd: {
-          type: 'string',
-          description: 'areaCd 값을 이용하여 상권 변화지표 정보를 가져온다.',
-        },
-      },
-      required: ['areaCd'],
-      additionalProperties: false,
-    },
-    strict: true,
-  },
+
   {
     type: 'function',
     name: 'compare_commercial_areas',

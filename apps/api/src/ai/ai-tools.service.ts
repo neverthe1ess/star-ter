@@ -12,8 +12,7 @@ export class AiToolsService {
     switch (toolName) {
       case 'get_store':
         return this.toolsRepository.getCommercialSummary(args);
-      case 'get_foot_traffic':
-        return this.toolsRepository.getFootTrafficSummary(args);
+
       case 'get_resident_population':
         return this.toolsRepository.getResidentPopulationSummary(args);
       case 'get_working_population':
@@ -24,8 +23,6 @@ export class AiToolsService {
         return this.toolsRepository.getStoreTopIndustries(args);
       case 'get_income_consumption':
         return this.toolsRepository.getIncomeConsumptionSummary(args);
-      case 'get_commercial_change':
-        return this.toolsRepository.getCommercialChangeSummary(args);
       case 'compare_commercial_areas':
         return this.toolsRepository.compareCommercialAreas(args);
       case 'get_industry_commercial_summary':
