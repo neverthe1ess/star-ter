@@ -31,7 +31,7 @@ export function ChatHeader({ threadTitle, onNewThread, isMapOpen, onMapToggle }:
           <div className="w-6 h-6 bg-gradient-to-br from-slate-700 to-slate-900 rounded-lg flex items-center justify-center">
             <span className="text-xs text-white font-bold">AI</span>
           </div>
-          <span className="text-base font-medium text-slate-700 hidden sm:inline">Starter AI</span>
+          <span className="text-base font-medium text-slate-700 hidden sm:inline">지리응답 AI</span>
           <ChevronDown className="w-5 h-5 text-slate-400" />
         </button>
       </div>
