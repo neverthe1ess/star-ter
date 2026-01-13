@@ -209,7 +209,7 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
           <header className={sidebarHeaderClass}>
             {!useCompactLayout && (
               <span className="text-lg font-black text-slate-900 tracking-tight whitespace-nowrap">
-                Starter
+                지리응답
               </span>
             )}
             <button

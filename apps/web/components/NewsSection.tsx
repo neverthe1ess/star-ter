@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 interface NewsItem {
   title: string;
@@ -26,41 +26,85 @@ export default function NewsSection({
 }: NewsSectionProps) {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isTimeout, setIsTimeout] = useState(false);
   const [page, setPage] = useState(1);
 
+  const fetchNews = useCallback(async () => {
+    try {
+      setLoading(true);
+      setIsTimeout(false);
+      const API_URL =
+        process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+      const targetRegion = region || '서울';
+      const res = await fetch(
+        `${API_URL}/news?region=${encodeURIComponent(
+          targetRegion,
+        )}&page=${page}&limit=5`,
+      );
+      if (!res.ok) {
+        throw new Error('Failed to fetch news');
+      }
+      const data = await res.json();
+      if (data.items) {
+        setNews(data.items);
+      }
+    } catch {
+      // 에러는 타임아웃으로 처리됨
+    } finally {
+      setLoading(false);
+    }
+  }, [region, page]);
+
   useEffect(() => {
-    async function fetchNews() {
-      try {
-        setLoading(true); // Set loading to true when fetching new data
-        const API_URL =
-          process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
-        const targetRegion = region || '서울';
-        const res = await fetch(
-          `${API_URL}/news?region=${encodeURIComponent(
-            targetRegion,
-          )}&page=${page}&limit=5`,
-        );
-        if (!res.ok) {
-          throw new Error('Failed to fetch news');
-        }
-        const data = await res.json();
-        if (data.items) {
-          setNews(data.items);
-        }
-      } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError('An unknown error occurred');
-        }
-      } finally {
+    fetchNews();
+  }, [fetchNews]);
+
+  // 10초 타임아웃 처리
+  useEffect(() => {
+    if (!loading) return;
+
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        setIsTimeout(true);
         setLoading(false);
       }
-    }
+    }, 10000); // 10초
 
+    return () => clearTimeout(timeoutId);
+  }, [loading]);
+
+  const handleRetry = () => {
     fetchNews();
-  }, [region, page]);
+  };
+
+  // 타임아웃 또는 에러 시 표시할 UI
+  if (isTimeout || (!loading && news.length === 0)) {
+    return (
+      <div className="w-full max-w-7xl mx-auto px-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-bold text-xl">
+            {locationName || region ? `${locationName || region} ` : ''}상권
+            뉴스
+          </h2>
+        </div>
+        <div className="py-12 text-center bg-slate-50 rounded-xl">
+          <p className="text-slate-400 text-sm mb-3">
+            {isTimeout
+              ? '뉴스를 불러오는 데 시간이 너무 오래 걸립니다.'
+              : '관련 뉴스가 없습니다.'}
+          </p>
+          {isTimeout && (
+            <button
+              onClick={handleRetry}
+              className="text-sm text-blue-500 hover:underline font-medium"
+            >
+              다시 시도
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -92,8 +136,6 @@ export default function NewsSection({
       </div>
     );
   }
-  if (error)
-    return <div className="p-8 text-center text-red-500">Error: {error}</div>;
 
   const displayTitle = locationName || region;
 
