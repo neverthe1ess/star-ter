@@ -10,9 +10,10 @@ import { RegionScoreCalculator } from './calculators/region-score.calculator';
 import { RentRepository } from './repositories/rent.repository';
 import { PopulationRepository } from './repositories/region.repository';
 import { SalesRepository } from './repositories/sales.repository';
+import { UsersModule } from '../user/user.module';
 
 @Module({
-  imports: [MarketModule, PrismaModule],
+  imports: [MarketModule, PrismaModule, UsersModule],
   controllers: [LocationRecommendController],
   providers: [
     LocationRecommendService,

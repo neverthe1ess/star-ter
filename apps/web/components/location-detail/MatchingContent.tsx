@@ -1,30 +1,27 @@
+'use client';
+
 import { useEffect, useState } from 'react';
+import {
+  AgeScoreSection,
+  RegionScoreSection,
+  TimeScoreSection,
+  CostScoreSection,
+  IndustryScoreSection,
+  MatchingContentSkeleton,
+  formatMoney,
+} from './matching-content';
+import type { ScoreData } from './matching-content';
 
 interface MatchingContentProps {
   locationName: string;
   trdarCd: string;
 }
 
-interface RevenueData {
-  estimatedRevenue: number;
-  startupCost: {
-    total: number;
-    deposit: number;
-    premium: number;
-    interior: number;
-  };
-  competitorCount: number;
-  avgMonthlyRent: number;
-  appliedIndustry: string;
-  appliedIndustryName: string;
-  matchingScore: number;
-}
-
 export function MatchingContent({
   locationName,
   trdarCd,
 }: MatchingContentProps) {
-  const [data, setData] = useState<RevenueData | null>(null);
+  const [scoreData, setScoreData] = useState<ScoreData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,19 +30,15 @@ export function MatchingContent({
         const API_URL =
           process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
-        const res = await fetch(
-          `${API_URL}/analysis/revenue-cost?trdar_cd=${trdarCd}`,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-          },
-        );
+        // 통합 API 호출 (점수 + businessMetrics)
+        const res = await fetch(`${API_URL}/location-recommend/${trdarCd}`, {
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+        });
 
         if (res.ok) {
           const result = await res.json();
-          setData(result);
+          setScoreData(result);
         }
       } catch (error) {
         console.error('Failed to fetch analysis data', error);
@@ -59,17 +52,25 @@ export function MatchingContent({
     }
   }, [trdarCd]);
 
-  // locationName을 사용하지 않아도 lint 경고 방지
+  // locationName 사용하지 않아도 lint 경고 방지
   void locationName;
 
-  const formatMoney = (amount: number) => {
-    if (amount >= 100000000) {
-      const uk = Math.floor(amount / 100000000);
-      const man = Math.floor((amount % 100000000) / 10000);
-      return `${uk}억 ${man > 0 ? man.toLocaleString() + '만' : ''}원`;
-    }
-    return `${Math.floor(amount / 10000).toLocaleString()}만원`;
-  };
+  // businessMetrics에서 데이터 추출
+  const metrics = scoreData?.businessMetrics;
+
+  // 로딩 중이면 스켈레톤 표시
+  if (loading) {
+    return (
+      <div className="space-y-10">
+        <div className="space-y-6">
+          <h2 className="text-2xl font-black text-slate-900">
+            업종 정밀 매칭 결과
+          </h2>
+          <MatchingContentSkeleton />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-10">
@@ -79,7 +80,7 @@ export function MatchingContent({
         </h2>
 
         <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100">
-          {data && data.matchingScore > 0 ? (
+          {scoreData && scoreData.totalScore > 0 ? (
             <div className="flex flex-col lg:flex-row items-center gap-10">
               {(() => {
                 const getScoreContent = (score: number) => {
@@ -129,7 +130,7 @@ export function MatchingContent({
                   }
                 };
 
-                const content = getScoreContent(data.matchingScore);
+                const content = getScoreContent(scoreData.totalScore);
 
                 return (
                   <>
@@ -153,7 +154,7 @@ export function MatchingContent({
                           fill="transparent"
                           strokeDasharray={364}
                           strokeDashoffset={
-                            364 * (1 - data.matchingScore / 100)
+                            364 * (1 - scoreData.totalScore / 100)
                           }
                           className={content.color}
                           strokeLinecap="round"
@@ -163,7 +164,7 @@ export function MatchingContent({
                         <span
                           className={`text-3xl font-black ${content.color}`}
                         >
-                          {data.matchingScore}%
+                          {scoreData.totalScore}
                         </span>
                       </div>
                     </div>
@@ -192,88 +193,92 @@ export function MatchingContent({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="p-8 bg-slate-50/50 border border-slate-100 rounded-3xl">
-          <p className="text-slate-400 text-md font-bold mb-3 uppercase tracking-wider">
-            예상 월 매출액
-          </p>
-          <div className="flex items-baseline gap-2 my-4">
-            {loading ? (
-              <div className="h-9 w-32 bg-slate-200 animate-pulse rounded" />
-            ) : (
-              <span className="text-3xl font-black text-blue-950">
-                {data
-                  ? data.estimatedRevenue === 0
-                    ? '점포 없음'
-                    : `약 ${formatMoney(data.estimatedRevenue)}`
-                  : '-'}
-              </span>
-            )}
-          </div>
-          <p className="text-slate-900 text-md font-bold flex items-center gap-1">
-            <span>
-              상권 내 {data?.appliedIndustryName || '전체 업종'} 매출 평균
-            </span>
-          </p>
-        </div>
-
-        <div className="p-8 bg-slate-50/50 border border-slate-100 rounded-3xl">
-          <p className="text-slate-400 text-md font-bold my-4 uppercase tracking-wider">
-            초기 예상 창업 비용
-          </p>
-          <div className="flex items-baseline gap-2 mb-2">
-            {loading ? (
-              <div className="h-9 w-32 bg-slate-200 animate-pulse rounded" />
-            ) : (
-              <span className="text-3xl font-black text-blue-950">
-                약 {data ? formatMoney(data.startupCost.total) : '-'}
-              </span>
-            )}
-          </div>
-          <p className="text-slate-900 text-md font-bold">
-            보증금, 권리금, 인테리어 일체 포함
-          </p>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <h3 className="text-xl font-bold text-slate-900">핵심 상권 지표</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {[
-            {
-              label: '경쟁 업체 수',
-              value: data?.competitorCount
-                ? `약 ${data.competitorCount}개`
-                : '-',
-              sub: '선호 업종 기준',
-              color: 'text-rose-500',
-            },
-            {
-              label: '평균 임대료',
-              value: data?.avgMonthlyRent
-                ? `약 ${formatMoney(data.avgMonthlyRent)}`
-                : '-',
-              sub: '상권 내 임대료 평균',
-              color: 'text-blue-500',
-            },
-          ].map((metric) => (
-            <div
-              key={metric.label}
-              className="bg-slate-50 p-6 rounded-2xl border border-slate-100"
-            >
-              <p className="text-md font-bold text-slate-400 uppercase tracking-wider">
-                {metric.label}
-              </p>
-              <p className="text-2xl font-black text-slate-900 mt-2">
-                {metric.value}
-              </p>
-              <p
-                className={`text-md font-bold mt-1 ${metric.color || 'text-slate-400'}`}
-              >
-                {metric.sub}
-              </p>
+      {/* 점수 설명 섹션 - 시각화된 비교 */}
+      {scoreData && (
+        <div className="space-y-6">
+          <h3 className="text-xl font-bold text-slate-900">
+            사장님 맞춤 분석 결과
+          </h3>
+          <div className="space-y-4">
+            {/* 타깃 연령 + 상권 테마 (같은 row) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <AgeScoreSection
+                score={scoreData.scores.age}
+                userAge={scoreData.userPreferences.age}
+              />
+              <RegionScoreSection
+                score={scoreData.scores.region}
+                userRegion={scoreData.userPreferences.region}
+              />
             </div>
-          ))}
+
+            {/* 운영 시간 */}
+            <TimeScoreSection
+              score={scoreData.scores.time}
+              userOperatingTime={scoreData.userPreferences.operatingTime}
+            />
+
+            {/* 창업 비용 */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <CostScoreSection
+                score={scoreData.scores.rent}
+                userCapital={scoreData.userPreferences.capital}
+                actualDeposit={metrics?.startupCost?.deposit || 0}
+                actualRent={metrics?.startupCost?.monthlyRent || 0}
+              />
+
+              {/* 업종 적합도 */}
+              {scoreData.scores.industry && (
+                <IndustryScoreSection
+                  score={scoreData.scores.industry}
+                  industryName={metrics?.appliedIndustryName || '업종 선택됨'}
+                  competitorCount={metrics?.competitorCount || 0}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="w-full">
+        <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <p className="text-slate-400 font-bold mb-1 text-xs uppercase tracking-wider">
+                상권 내 {metrics?.appliedIndustryName || '선택 업종'} 월 매출
+                규모
+              </p>
+              <div className="flex items-baseline gap-2">
+                {loading ? (
+                  <div className="h-9 w-32 bg-slate-200 animate-pulse rounded" />
+                ) : (
+                  <span className="text-2xl font-black text-blue-950">
+                    {metrics
+                      ? metrics.industryRevenue === 0
+                        ? '데이터 없음'
+                        : `약 ${formatMoney(metrics.industryRevenue)}`
+                      : '-'}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-slate-50 px-4 py-3 rounded-xl border border-slate-100 flex items-center gap-2">
+              <span className="text-sm font-bold text-slate-600">
+                상권 전체 매출의
+              </span>
+              <span className="text-lg font-black text-blue-600">
+                {metrics && metrics.totalRevenue > 0
+                  ? (
+                      (metrics.industryRevenue / metrics.totalRevenue) *
+                      100
+                    ).toFixed(1)
+                  : 0}
+                %
+              </span>
+              <span className="text-sm font-bold text-slate-600">차지</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
