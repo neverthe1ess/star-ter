@@ -88,7 +88,7 @@ export function RegisterPage({ onRegister }: RegisterPageProps) {
               </div>
             </div>
            </div>
-           <h1 className="text-[44px] bg-clip-text text-transparent bg-gradient-to-r from-[#65439f] to-[#090647] font-[family-name:var(--font-maplestory)] font-normal">
+           <h1 className="text-[44px] bg-clip-text text-transparent bg-gradient-to-r from-[#65439f] to-[#090647] font-bold tracking-tight">
              지리응답
            </h1>
          </div>
