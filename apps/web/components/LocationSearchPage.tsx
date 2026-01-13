@@ -469,42 +469,42 @@ export function LocationSearchPage({}: { onBack?: () => void }) {
 
         {/* 테이블 헤더 - 탭에 따라 다르게 표시 */}
         <div
-          className="px-6 py-3 grid items-center text-[13px] font-bold text-slate-400 shrink-0 border-b border-gray-50 bg-slate-50/30 gap-4"
+          className="px-6 py-3 grid items-center text-base font-bold text-slate-400 shrink-0 border-b border-gray-50 bg-slate-50/30 gap-4"
           style={{
             gridTemplateColumns: isRecommendTab(subTab)
-              ? '1fr 160px 290px'
+              ? '3fr 1fr 2fr'
               : isPopulationTab(subTab)
-                ? '1fr 180px 100px 150px'
+                ? '3fr 1.2fr 0.8fr 1fr'
                 : isMZTab(subTab)
-                  ? '1fr 190px 100px 150px'
+                  ? '3fr 1.2fr 0.8fr 1fr'
                   : isClosureRateTab(subTab)
-                    ? '1fr 80px 190px 200px 150px'
-                    : '1fr 120px 190px 130px 190px',
+                    ? '3fr 0.6fr 1fr 1.2fr 1fr'
+                    : '3fr 1fr 1.2fr 1fr 1.2fr',
           }}
         >
           {isRecommendTab(subTab) ? (
             <>
-              <div className="text-left">순위 / 상권명</div>
+              <div className="text-left pl-6">순위 / 상권명</div>
               <div className="text-center">매칭 점수</div>
               <div className="text-center">상세 점수</div>
             </>
           ) : isPopulationTab(subTab) ? (
             <>
-              <div className="text-left">순위 / 상권명</div>
+              <div className="text-left pl-6">순위 / 상권명</div>
               <div className="text-center">유동인구 (명)</div>
               <div className="text-center">등락률</div>
               <div className="text-center">상권 상태</div>
             </>
           ) : isMZTab(subTab) ? (
             <>
-              <div className="text-left">순위 / 상권명</div>
+              <div className="text-left pl-6">순위 / 상권명</div>
               <div className="text-center">MZ 인구 (명)</div>
               <div className="text-center">MZ 비중</div>
               <div className="text-center">상권 상태</div>
             </>
           ) : isClosureRateTab(subTab) ? (
             <>
-              <div className="text-left">순위 / 상권명</div>
+              <div className="text-left pl-6">순위 / 상권명</div>
               <div className="text-center">폐업률</div>
               <div className="text-center">폐업 점포</div>
               <div className="text-center">점포 수 변화 (전분기 → 현분기)</div>
@@ -512,7 +512,7 @@ export function LocationSearchPage({}: { onBack?: () => void }) {
             </>
           ) : (
             <>
-              <div className="text-left">순위 · 상권명 / 점포 수</div>
+              <div className="text-left pl-6">순위 · 상권명 / 점포 수</div>
               <div className="text-center">평균 매출(분기)</div>
               <div className="text-center">전분기 대비</div>
               <div className="text-center">분기 총 매출</div>
@@ -527,8 +527,32 @@ export function LocationSearchPage({}: { onBack?: () => void }) {
               <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
             </div>
           ) : error ? (
-            <div className="flex items-center justify-center py-20 text-slate-500">
-              {error}
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-2">
+                <svg
+                  className="w-8 h-8 text-slate-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
+              </div>
+              <p className="text-lg font-bold text-slate-700">{error}</p>
+              <p className="text-sm text-slate-500">
+                맞춤 추천을 받으려면 로그인이 필요합니다.
+              </p>
+              <button
+                onClick={() => router.push('/login')}
+                className="mt-2 px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors"
+              >
+                로그인하기
+              </button>
             </div>
           ) : currentData.length === 0 ? (
             <div className="flex items-center justify-center py-20 text-slate-500">
@@ -541,14 +565,14 @@ export function LocationSearchPage({}: { onBack?: () => void }) {
                 key={item.id}
                 onClick={() => router.push(`/locations/detail/${item.id}`)}
                 className="w-full py-4 items-center hover:bg-slate-50/80 rounded-2xl transition-all group relative grid gap-4 text-left"
-                style={{ gridTemplateColumns: '1fr 160px 290px' }}
+                style={{ gridTemplateColumns: '3fr 1fr 2fr' }}
               >
                 <div className="flex items-center gap-4">
                   <span className="w-6 text-lg font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
                     {index + 1}
                   </span>
                   <div className="text-left">
-                    <div className="text-[15px] font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <div className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                       {item.name}
                     </div>
                   </div>
@@ -687,26 +711,26 @@ export function LocationSearchPage({}: { onBack?: () => void }) {
                 key={`${item.id}-${item.rank}-${item.name}`}
                 onClick={() => handleLocationClick(item)}
                 className="w-full py-4 items-center hover:bg-slate-50/80 rounded-2xl transition-all group grid gap-4 text-left"
-                style={{ gridTemplateColumns: '1fr 180px 100px 150px' }}
+                style={{ gridTemplateColumns: '3fr 1.2fr 0.8fr 1fr' }}
               >
                 <div className="flex items-center gap-4">
                   <span className="w-6 text-lg font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
                     {item.rank}
                   </span>
                   <div className="text-left">
-                    <div className="text-[15px] font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <div className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                       {item.name}
                     </div>
                   </div>
                 </div>
 
-                <div className="text-center text-[15px] font-bold text-slate-900">
+                <div className="text-center text-lg font-bold text-slate-900">
                   {item.population}
                 </div>
 
                 <div className="flex justify-center">
                   <div
-                    className={`px-2 py-1 rounded-lg text-xs font-black min-w-15 ${
+                    className={`px-2 py-1 rounded-lg text-base font-black min-w-15 ${
                       item.growthRate > 0
                         ? 'bg-red-50 text-red-500'
                         : 'bg-blue-50 text-blue-500'
@@ -741,25 +765,25 @@ export function LocationSearchPage({}: { onBack?: () => void }) {
                 key={`${item.id}-${item.rank}-${item.name}`}
                 onClick={() => handleLocationClick(item)}
                 className="w-full py-4 items-center hover:bg-slate-50/80 rounded-2xl transition-all group grid gap-4 text-left"
-                style={{ gridTemplateColumns: '1fr 190px 100px 150px' }}
+                style={{ gridTemplateColumns: '3fr 1.2fr 0.8fr 1fr' }}
               >
                 <div className="flex items-center gap-4">
                   <span className="w-6 text-lg font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
                     {item.rank}
                   </span>
                   <div className="text-left">
-                    <div className="text-[15px] font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <div className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                       {item.name}
                     </div>
                   </div>
                 </div>
 
-                <div className="text-center text-[15px] font-bold text-slate-900">
+                <div className="text-center text-lg font-bold text-slate-900">
                   {item.population}
                 </div>
 
                 <div className="flex justify-center">
-                  <div className="px-2 py-1 rounded-lg text-xs font-black min-w-15 bg-violet-50 text-violet-600">
+                  <div className="px-2 py-1 rounded-lg text-base font-black min-w-15 bg-violet-50 text-violet-600">
                     {item.growthRate.toFixed(1)}%
                   </div>
                 </div>
@@ -788,24 +812,24 @@ export function LocationSearchPage({}: { onBack?: () => void }) {
                 key={`${item.id}-${item.rank}-${item.name}`}
                 onClick={() => handleLocationClick(item)}
                 className="w-full py-4 items-center hover:bg-slate-50/80 rounded-2xl transition-all group grid gap-4 text-left"
-                style={{ gridTemplateColumns: '1fr 80px 190px 200px 150px' }}
+                style={{ gridTemplateColumns: '3fr 0.6fr 1fr 1.2fr 1fr' }}
               >
                 <div className="flex items-center gap-4">
                   <span className="w-6 text-lg font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
                     {item.rank}
                   </span>
                   <div className="text-left">
-                    <div className="text-[15px] font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <div className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                       {item.name}
                     </div>
                   </div>
                 </div>
 
-                <div className="text-center text-[15px] font-bold text-slate-900">
+                <div className="text-center text-base font-bold text-slate-900">
                   {item.closureRate}%
                 </div>
 
-                <div className="text-center text-[15px] font-medium text-slate-600">
+                <div className="text-center text-lg font-medium text-slate-600">
                   <span className="text-red-500 font-bold">
                     {item.closedStoreCount}
                   </span>
@@ -844,7 +868,7 @@ export function LocationSearchPage({}: { onBack?: () => void }) {
                 key={`${item.id}-${item.rank}-${item.name}`}
                 onClick={() => handleLocationClick(item)}
                 className="w-full py-4 items-center hover:bg-slate-50/80 rounded-2xl transition-all group grid gap-4 text-left"
-                style={{ gridTemplateColumns: '1fr 120px 190px 130px 190px' }}
+                style={{ gridTemplateColumns: '3fr 1fr 1.2fr 1fr 1.2fr' }}
               >
                 <div className="flex items-center gap-4">
                   <span className="w-6 text-lg font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
@@ -852,22 +876,22 @@ export function LocationSearchPage({}: { onBack?: () => void }) {
                   </span>
 
                   <div className="text-left">
-                    <div className="text-[15px] font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <div className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                       {item.name}
                     </div>
-                    <div className="text-[12px] font-medium text-slate-400">
+                    <div className="text-sm font-medium text-slate-400">
                       점포 수: {item.storeCount}개
                     </div>
                   </div>
                 </div>
 
-                <div className="text-center text-[15px] font-bold text-slate-900">
+                <div className="text-center text-lg font-bold text-slate-900">
                   {item.avgRevenue}
                 </div>
 
                 <div className="w-full flex justify-center items-center">
                   <div
-                    className={`px-2 py-1 rounded-lg text-xs font-black min-w-20 ${
+                    className={`px-2 py-1 rounded-lg text-base font-black min-w-20 ${
                       item.growthRate > 0
                         ? 'bg-red-50 text-red-500'
                         : 'bg-blue-50 text-blue-500'
@@ -878,7 +902,7 @@ export function LocationSearchPage({}: { onBack?: () => void }) {
                   </div>
                 </div>
 
-                <div className="text-center text-[15px] font-bold text-slate-900">
+                <div className="text-center text-base font-bold text-slate-900">
                   {item.totalRevenue}
                 </div>
 
@@ -893,7 +917,7 @@ export function LocationSearchPage({}: { onBack?: () => void }) {
                       style={{ width: `${item.ratio.female}%` }}
                     />
                   </div>
-                  <div className="flex justify-between w-32 text-[11px] font-black text-slate-400">
+                  <div className="flex justify-between w-32 text-sm font-black text-slate-400">
                     <span className="text-blue-500">{item.ratio.male}</span>
                     <span className="text-red-500">{item.ratio.female}</span>
                   </div>
