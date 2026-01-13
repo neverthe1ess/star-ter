@@ -285,13 +285,11 @@ export class ToolsRepository {
     if (!areaCdList || areaCdList.length === 0) return [];
 
     // 1. 최신 분기 확인 (임시로 고정하거나 조회 필요. 여기선 DB 최신값 사용 권장하지만 편의상 20243 등 사용.
-    //    정확성을 위해 먼저 최신 분기를 조회하는 것이 좋으나, 성능상 파라미터나 하드코딩 고려. 일단 '20243' 가정 or orderBy로 하나만 가져오는 방식은 groupBy에서 복잡함.
-    //    User flow: stdrYyquCd defaults to '20243' in definitions but params might be empty.
-    const targetQuarter = params.stdrYyquCd || '20243';
+    const targetQuarter = params.stdrYyquCd || '20253';
 
     // 2. 주요 지표 병렬 조회
     // 주의: groupBy는 prisma client에서 지원.
-    const [salesStats, footTraffic, resident, working, storeStats] =
+    const [salesStats, footTraffic, resident, working, storeStats, rentStats] =
       await Promise.all([
         // 매출 (총 매출 Sum)
         this.prisma.salesCommercial.groupBy({
@@ -339,6 +337,28 @@ export class ToolsRepository {
             clsbiz_rt: true,
           },
         }),
+        // 임대료 (real_estate_info의 좌표로 상권 매칭)
+        this.prisma.$queryRaw<
+          {
+            trdar_cd: string;
+            avg_deposit: number;
+            avg_rent: number;
+            listing_count: number;
+          }[]
+        >`
+          SELECT 
+            g.trdar_cd,
+            COALESCE(AVG(r.deposit), 0)::bigint as avg_deposit,
+            COALESCE(AVG(r.monthlyrent), 0)::bigint as avg_rent,
+            COUNT(r.id)::int as listing_count
+          FROM seoul_commercial_area_grid g
+          LEFT JOIN real_estate_info r ON ST_Contains(
+            ST_Transform(g.geom, 4326),
+            ST_SetSRID(ST_MakePoint(r.centerlongitude::float, r.centerlatitude::float), 4326)
+          )
+          WHERE g.trdar_cd = ANY(${areaCdList})
+          GROUP BY g.trdar_cd
+        `,
       ]);
 
     // Area Name 매핑을 위해 별도 조회 필요 (groupBy 결과엔 이름 없음)
@@ -355,9 +375,10 @@ export class ToolsRepository {
       const r = resident.find((item) => item.trdar_cd === code);
       const w = working.find((item) => item.trdar_cd === code);
       const st = storeStats.find((item) => item.trdar_cd === code);
+      const rent = rentStats.find((item) => item.trdar_cd === code);
 
       // 숫자 변환 (safely)
-      const toNum = (v: any) => Number(v || 0);
+      const toNum = (v: unknown) => Number(v || 0);
 
       const revenue = toNum(s?._sum?.thsmon_selng_amt);
       const pop = this.numberSafe(f?.tot_flpop_co);
@@ -365,40 +386,59 @@ export class ToolsRepository {
       const work = this.numberSafe(w?.tot_wrc_popltn_co);
       const closingRate = toNum(st?._avg?.clsbiz_rt);
       const stability = 100 - closingRate;
+      const avgDeposit = toNum(rent?.avg_deposit);
+      const avgRent = toNum(rent?.avg_rent);
+      const listingCount = toNum(rent?.listing_count);
 
       return {
         areaCode: code,
         areaName: nameObj?.trdar_cd_nm || code,
-        metrics: { revenue, pop, res, work, stability },
-        raw: { closingRate },
+        metrics: { revenue, pop, res, work, stability, avgDeposit, avgRent },
+        raw: { closingRate, listingCount },
       };
     });
 
-    // 3. 정규화 (Max값 기준 점수화, 0 div 방지)
+    // 4. 정규화 (Log Log Scale 적용)
+    // 매출, 인구 등 편차가 큰 값은 로그 스케일로 변환하여 점수화 (규모/체급 비교)
+    // 비율(안정성)은 그대로 사용
     const maxValues = {
       revenue: Math.max(...mergedData.map((d) => d.metrics.revenue)) || 1,
       pop: Math.max(...mergedData.map((d) => d.metrics.pop)) || 1,
       res: Math.max(...mergedData.map((d) => d.metrics.res)) || 1,
       work: Math.max(...mergedData.map((d) => d.metrics.work)) || 1,
-      stability: 100, // 안정성은 절대값(100점 만점) 사용
+      avgRent: Math.max(...mergedData.map((d) => d.metrics.avgRent)) || 1,
+    };
+
+    const calcLogScore = (val: number, max: number) => {
+      if (max <= 1) return 0;
+      if (val <= 0) return 0;
+      // 로그 스케일 적용: log10(val) / log10(max) * 100
+      // 100억(10^10) vs 1억(10^8) -> 100점 vs 80점
+      return Math.min(
+        100,
+        Math.round((Math.log10(val + 1) / Math.log10(max + 1)) * 100),
+      );
     };
 
     const radarData = mergedData.map((d) => ({
       areaName: d.areaName,
       scores: {
-        revenue: Math.min(
-          100,
-          Math.round((d.metrics.revenue / maxValues.revenue) * 100),
-        ),
-        pop: Math.min(100, Math.round((d.metrics.pop / maxValues.pop) * 100)),
-        res: Math.min(100, Math.round((d.metrics.res / maxValues.res) * 100)),
-        work: Math.min(
-          100,
-          Math.round((d.metrics.work / maxValues.work) * 100),
-        ),
-        stability: Math.round(d.metrics.stability),
+        revenue: calcLogScore(d.metrics.revenue, maxValues.revenue),
+        pop: calcLogScore(d.metrics.pop, maxValues.pop),
+        res: calcLogScore(d.metrics.res, maxValues.res),
+        work: calcLogScore(d.metrics.work, maxValues.work),
+        stability: Math.round(d.metrics.stability), // 폐업률 기반(%)은 선형 유지
+        // 임대료 역점수 (Linear + Min Floor)
+        // 최대값(가장 비싼 곳)이라도 0점이 아닌 20점을 부여하여 극단적 점수 방지
+        rentAffordability:
+          d.metrics.avgRent > 0
+            ? Math.round(100 - (d.metrics.avgRent / maxValues.avgRent) * 80)
+            : 0,
       },
-      rawMetrics: d.metrics,
+      rawMetrics: {
+        ...d.metrics,
+        listingCount: d.raw.listingCount,
+      },
     }));
 
     return {
@@ -412,7 +452,9 @@ export class ToolsRepository {
           '주거인구',
           '직장인구',
           '안정성(100-폐업률)',
+          '임대료 부담도(낮을수록 좋음)',
         ],
+        note: '임대료 부담도는 해당 상권 내 매물 평균 월세 기준입니다. 매물이 없으면 0점입니다.',
       },
     };
   }
@@ -807,82 +849,141 @@ export class ToolsRepository {
     const {
       areaCd,
       categoryCode,
-      stdrYyquCd = '20243',
+      stdrYyquCd = '20253',
       monthlyRent,
       size = 15,
       floor = 1,
     } = params;
 
-    // 1. 예상 매출 및 점포 수 조회 (병렬 처리)
-    const [salesResult, storeResult] = await Promise.all([
-      this.prisma.salesCommercial.findFirst({
+    console.log(
+      '[DEBUG] estimateRevenueAndCost Params:',
+      JSON.stringify(params),
+    );
+
+    // 1. 최근 4분기 매출 및 점포 수 조회 (병렬 처리)
+    const [salesResults, storeResults] = await Promise.all([
+      this.prisma.salesCommercial.findMany({
         where: {
           trdar_cd: areaCd,
           svc_induty_cd: categoryCode,
           stdr_yyqu_cd: { lte: stdrYyquCd },
         },
         orderBy: { stdr_yyqu_cd: 'desc' },
+        take: 4, // 최근 4분기
         select: {
-          thsmon_selng_amt: true, // 상권 전체 월 매출
+          thsmon_selng_amt: true, // 분기 매출
+          thsmon_selng_co: true, // 결제 건수 (객단가 계산용)
         },
       }),
-      this.prisma.storeCommercial.findFirst({
+      this.prisma.storeCommercial.findMany({
         where: {
           trdar_cd: areaCd,
           svc_induty_cd: categoryCode,
           stdr_yyqu_cd: { lte: stdrYyquCd },
         },
         orderBy: { stdr_yyqu_cd: 'desc' },
+        take: 4,
         select: {
           stor_co: true, // 점포 수
         },
       }),
     ]);
 
-    if (!salesResult) {
-      return {
-        summary:
-          '해당 상권/업종의 매출 데이터를 찾을 수 없어 수익 분석이 어렵습니다.',
-        data: null,
-      };
+    console.log('[DEBUG] Sales Results (4Q):', salesResults);
+    console.log('[DEBUG] Store Results (4Q):', storeResults);
+
+    let totalRevenue = 0;
+    let totalTransactions = 0;
+    let storeCount = 1;
+    let revenueSource = '상권 데이터';
+    let quartersUsed = salesResults.length;
+
+    // 2. 상권 데이터가 있고 점포 수가 충분하면 4분기 평균 사용
+    const localStoreCount =
+      storeResults.length > 0 ? Number(storeResults[0].stor_co || 0) : 0;
+
+    if (salesResults.length > 0 && localStoreCount > 2) {
+      totalRevenue =
+        salesResults.reduce(
+          (sum, r) => sum + Number(r.thsmon_selng_amt || 0),
+          0,
+        ) / salesResults.length; // 분기 평균
+      totalTransactions =
+        salesResults.reduce(
+          (sum, r) => sum + Number(r.thsmon_selng_co || 0),
+          0,
+        ) / salesResults.length;
+      storeCount = Math.max(1, localStoreCount);
+    } else {
+      // 3. Fallback: 해당 업종의 서울시 전체 평균 매출 조회
+      console.log(
+        '[DEBUG] No local data, falling back to city-wide average...',
+      );
+      const [citySales, cityStores] = await Promise.all([
+        this.prisma.salesCommercial.aggregate({
+          where: {
+            svc_induty_cd: categoryCode,
+            stdr_yyqu_cd: stdrYyquCd,
+          },
+          _sum: { thsmon_selng_amt: true, thsmon_selng_co: true },
+        }),
+        this.prisma.storeCommercial.aggregate({
+          where: {
+            svc_induty_cd: categoryCode,
+            stdr_yyqu_cd: stdrYyquCd,
+          },
+          _sum: { stor_co: true },
+        }),
+      ]);
+
+      console.log('[DEBUG] City-wide Sales:', citySales);
+      console.log('[DEBUG] City-wide Stores:', cityStores);
+
+      if (!citySales._sum.thsmon_selng_amt) {
+        return {
+          summary:
+            '해당 업종의 매출 데이터를 찾을 수 없어 수익 분석이 어렵습니다.',
+          data: null,
+        };
+      }
+
+      totalRevenue = Number(citySales._sum.thsmon_selng_amt);
+      totalTransactions = Number(citySales._sum.thsmon_selng_co || 0);
+      storeCount = Math.max(1, Number(cityStores._sum.stor_co || 1));
+      revenueSource = '서울시 평균';
+      quartersUsed = 1;
     }
 
-    const totalRevenue = Number(salesResult.thsmon_selng_amt);
-    const storeCount = storeResult ? storeResult.stor_co : 1; // 점포 수 없으면 1로 나눔 (방어)
+    // 점포당 월 평균 매출 = 분기 매출 / 점포 수 / 3개월
+    const monthlyRevenue = Math.floor(totalRevenue / storeCount / 3);
+    // 객단가 = 분기 매출 / 결제 건수
+    const unitPrice =
+      totalTransactions > 0 ? Math.floor(totalRevenue / totalTransactions) : 0;
 
-    // 상권 전체 매출 / 점포 수 / 3개월 = 점포당 월 평균 매출 (분기 데이터이므로 3으로 나눔)
-    const monthlyRevenue =
-      storeCount > 0
-        ? Math.floor(totalRevenue / storeCount / 3)
-        : Math.floor(totalRevenue / 3);
+    console.log(
+      `[DEBUG] Revenue Calc: Total=${totalRevenue}, StoreCount=${storeCount}, Quarters=${quartersUsed} -> Monthly=${monthlyRevenue}, UnitPrice=${unitPrice}`,
+    );
 
-    // 2. 임대료 계산 (Rent)
+    // 4. 임대료 계산 (Rent)
     let finalMonthlyRent = 0;
     let rentSource = '통계 추정';
 
     if (monthlyRent) {
-      // Case A: 매물 정보 사용 (입력 단위가 만원이면 * 10000)
       finalMonthlyRent = monthlyRent * 10000;
       rentSource = '매물 정보';
     } else {
-      // Case B: 통계 데이터 사용 (AreaCommercial -> Gu Name -> Rent Table)
       const areaInfo = await this.prisma.areaCommercial.findUnique({
         where: { trdar_cd: areaCd },
         select: { signgu_cd_nm: true },
       });
 
       if (areaInfo && areaInfo.signgu_cd_nm) {
-        // 구 이름으로 임대료 테이블 조회 (여기서는 소형 점포 기준: rent_small_shop)
-        // *사용자 피드백*: DB 부동산 관련 단위는 '천원'이므로, 원 단위 변환 시 * 1000
         const rentStats = await this.prisma.rent_small_shop.findUnique({
           where: { gu_name: areaInfo.signgu_cd_nm },
         });
 
         if (rentStats) {
-          // 층별 임대료 선택 (없으면 1층 기준)
-          // Prisma Decimal 타입 안전 변환
-          const toNum = (val: unknown) => this.numberSafe(val) * 1000; // 천원 -> 원
-
+          const toNum = (val: unknown) => this.numberSafe(val) * 1000;
           const f1 = toNum(rentStats.f1);
           const f2 = toNum(rentStats.f2);
           const b1f = toNum(rentStats.b1f);
@@ -892,28 +993,52 @@ export class ToolsRepository {
           else if (floor >= 2) rentPerPyung = f2 || f1;
           else rentPerPyung = b1f || f1;
 
-          // 평당 임대료(원) * 평수 -> 0이면 기본값(10만원) 적용 등 방어 로직
           if (rentPerPyung === 0) rentPerPyung = 100000;
-
           finalMonthlyRent = rentPerPyung * size;
         }
       }
     }
 
     if (finalMonthlyRent === 0) {
-      finalMonthlyRent = 1500000; // 최후의 기본값 (150만원)
+      finalMonthlyRent = 1500000;
     }
 
-    // 3. 비용 및 순이익 계산
-    // 가정: 재료비 35%, 인건비/기타 25% -> 총 변동비 60%
+    // 5. 비용 및 순이익 계산
     const cogsRate = 0.35;
     const otherCostRate = 0.25;
     const totalCostRate = cogsRate + otherCostRate;
 
     const variableCost = Math.floor(monthlyRevenue * totalCostRate);
-    const totalCost = variableCost + finalMonthlyRent; // 변동비 + 고정비(임대료)
+    const totalCost = variableCost + finalMonthlyRent;
     const netProfit = monthlyRevenue - totalCost;
-    const profitMargin = ((netProfit / monthlyRevenue) * 100).toFixed(1);
+    const profitMargin =
+      monthlyRevenue > 0
+        ? ((netProfit / monthlyRevenue) * 100).toFixed(1)
+        : '0.0';
+
+    // 6. 임대료 비율(RCR) 계산 및 경고
+    const rentCostRatio =
+      monthlyRevenue > 0
+        ? ((finalMonthlyRent / monthlyRevenue) * 100).toFixed(1)
+        : '0.0';
+    const rcrWarning =
+      Number(rentCostRatio) > 15
+        ? '⚠️ 임대료 비중이 매출의 15%를 초과합니다. 수익성 주의!'
+        : Number(rentCostRatio) > 10
+          ? '⚡ 임대료 비중이 다소 높은 편입니다.'
+          : null;
+
+    console.log('[DEBUG] Final Metrics:', {
+      monthlyRevenue,
+      variableCost,
+      finalMonthlyRent,
+      totalCost,
+      netProfit,
+      profitMargin,
+      rentCostRatio,
+      unitPrice,
+      revenueSource,
+    });
 
     const formatCurrency = (amount: number) => {
       if (amount >= 100000000) {
@@ -925,7 +1050,7 @@ export class ToolsRepository {
     };
 
     return {
-      summary: `월 예상 매출은 약 ${formatCurrency(monthlyRevenue)}이며, 임대료(${formatCurrency(finalMonthlyRent)}, ${rentSource})와 비용을 제외한 추정 순수익은 약 ${formatCurrency(netProfit)}(이익률 ${profitMargin}%)입니다.`,
+      summary: `월 예상 매출은 약 ${formatCurrency(monthlyRevenue)}이며(${revenueSource}), 임대료(${formatCurrency(finalMonthlyRent)}, ${rentSource})와 비용을 제외한 추정 순수익은 약 ${formatCurrency(netProfit)}(이익률 ${profitMargin}%)입니다.${rcrWarning ? ' ' + rcrWarning : ''}`,
       data: {
         revenue: monthlyRevenue,
         rent: finalMonthlyRent,
@@ -933,7 +1058,12 @@ export class ToolsRepository {
         totalCost: totalCost,
         netProfit: netProfit,
         profitMargin: Number(profitMargin),
+        rentCostRatio: Number(rentCostRatio),
+        unitPrice: unitPrice,
         rentSource: rentSource,
+        revenueSource: revenueSource,
+        quartersUsed: quartersUsed,
+        storeCount: storeCount,
       },
       meta: {
         unit: '원',
@@ -1009,6 +1139,16 @@ export class ToolsRepository {
         ? Math.floor(totalFixedCost / contributionMarginRate)
         : 0;
 
+    // 4. 손익분기 도달 개월 수 계산 (초기 투자금 회수 기간)
+    // 월 순이익 = BEP 매출 기준 순이익 (BEP 도달 후 순이익)
+    // 여기서는 BEP 매출의 10% 정도를 순이익으로 가정하거나,
+    // 또는 deposit / (bepRevenue * contributionMarginRate - totalFixedCost) 방식
+    // 간단히: deposit을 예상 월 순이익으로 나눔
+    const deposit = params.deposit ? params.deposit * 10000 : 0; // 만원 -> 원
+    const estimatedMonthlyProfit = Math.max(1, bepRevenue * 0.1); // BEP 매출의 10%를 순이익으로 가정
+    const paybackMonths =
+      deposit > 0 ? Math.ceil(deposit / estimatedMonthlyProfit) : null;
+
     // 화폐 단위 포맷팅
     const formatCurrency = (amount: number) => {
       if (amount >= 100000000) {
@@ -1019,8 +1159,15 @@ export class ToolsRepository {
       return `${Math.floor(amount / 10000).toLocaleString()}만원`;
     };
 
+    // 5. 요약 메시지 생성
+    let summaryMsg = `손익분기점(BEP)은 월 매출 약 ${formatCurrency(bepRevenue)}입니다. (고정비: ${formatCurrency(totalFixedCost)}, 변동비율: ${(totalVariableRate * 100).toFixed(0)}% 가정)`;
+
+    if (paybackMonths !== null && paybackMonths > 0) {
+      summaryMsg += ` 보증금 ${formatCurrency(deposit)} 기준으로 약 **${paybackMonths}개월** 후 손익분기점에 도달할 것으로 추정됩니다.`;
+    }
+
     return {
-      summary: `손익분기점(BEP)은 월 매출 약 ${formatCurrency(bepRevenue)}입니다. (고정비: ${formatCurrency(totalFixedCost)}, 변동비율: ${(totalVariableRate * 100).toFixed(0)}% 가정)`,
+      summary: summaryMsg,
       data: {
         bepRevenue,
         totalFixedCost,
@@ -1029,18 +1176,21 @@ export class ToolsRepository {
         otherFixedCost: costStructure.otherFixedCost,
         variableRate: totalVariableRate,
         rentSource,
+        deposit,
+        paybackMonths,
+        estimatedMonthlyProfit,
       },
       meta: {
         unit: '원',
         categoryName: costStructure.categoryName,
-        note: '업종별 평균 비용 구조를 가정한 추정치입니다.',
+        note: '업종별 평균 비용 구조를 가정한 추정치입니다. 실제 순이익은 달라질 수 있습니다.',
       },
     };
   }
 
   // 21) 생존확률 예측 (Task 4.2)
   async predictSurvivalRate(params: QueryParams) {
-    const { areaCd, categoryCode, stdrYyquCd = '20243' } = params;
+    const { areaCd, categoryCode, stdrYyquCd = '20253' } = params;
 
     // 1. 필요한 데이터 병렬 조회
     const [storeStat, changeStat] = await Promise.all([
