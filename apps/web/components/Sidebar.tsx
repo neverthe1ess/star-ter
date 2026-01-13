@@ -6,7 +6,7 @@ import {
   FileText,
   Calendar,
   MessageSquare,
-  Plus,
+  MessageSquarePlus,
   X,
   Settings,
   Menu,
@@ -223,44 +223,65 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
 
           {!useCompactLayout ? (
             <div className={`flex flex-col flex-1 ${isOpen ? "" : "pointer-events-none"}`}>
-              <div className="px-4 py-4 border-b border-gray-100">
-                <button className="w-full min-w-0 flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors group">
-                  <span className="min-w-0 truncate group-hover:text-slate-900">New chat</span>
-                  <Plus className="w-4 h-4 text-gray-400 group-hover:text-slate-600" />
-                </button>
-              </div>
-
               <nav className="flex-1 px-4 py-3 overflow-y-auto no-scrollbar">
+                {/* 메인 네비게이션 */}
                 <div className="space-y-1">
-                  {MENU_ITEMS.map(({ id, icon: Icon, label }) => (
-                    <button
-                      key={id}
-                      onClick={() => onMenuClick(id)}
-                      className={`w-full min-w-0 flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                        activeMenu === id
-                          ? "bg-slate-100 text-slate-900 shadow-sm"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  <button
+                    onClick={() => onMenuClick("home")}
+                    className={`w-full min-w-0 flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                      activeMenu === "home"
+                        ? "bg-slate-50 text-slate-900"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    }`}
+                  >
+                    <Home
+                      className={`w-4 h-4 shrink-0 transition-colors ${
+                        activeMenu === "home" ? "text-slate-900" : "text-slate-400"
                       }`}
-                    >
-                      <Icon
-                        className={`w-4 h-4 shrink-0 transition-colors ${
-                          activeMenu === id ? "text-slate-900" : "text-slate-400"
-                        }`}
-                      />
-                      <span className="min-w-0 truncate">{label}</span>
-                    </button>
-                  ))}
+                    />
+                    <span className="min-w-0 truncate">홈</span>
+                  </button>
+                  <button
+                    onClick={() => onMenuClick("templates")}
+                    className={`w-full min-w-0 flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                      activeMenu === "templates"
+                        ? "bg-slate-50 text-slate-900"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    }`}
+                  >
+                    <FileText
+                      className={`w-4 h-4 shrink-0 transition-colors ${
+                        activeMenu === "templates" ? "text-slate-900" : "text-slate-400"
+                      }`}
+                    />
+                    <span className="min-w-0 truncate">상권 찾기</span>
+                  </button>
                 </div>
 
-                <div className="my-4 border-t border-gray-100" />
+                {/* 구분선 */}
+                <div className="my-4 border-t border-gray-200" />
 
+                {/* AI 채팅 섹션 */}
+                <div className="mb-3">
+                  <p className="px-4 text-xs font-medium text-gray-400 mb-2">AI 분석</p>
+                  <button
+                    onClick={() => onMenuClick("chat")}
+                    className="w-full min-w-0 flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-600 bg-white border border-indigo-100 shadow-sm hover:bg-indigo-50 hover:border-indigo-200 hover:shadow-md transition-all group"
+                  >
+                    <MessageSquarePlus className="w-4 h-4 text-slate-500 group-hover:text-slate-700 transition-colors" />
+                    <span className="min-w-0 truncate">New Chat</span>
+                  </button>
+                </div>
+
+                {/* 채팅 히스토리 */}
                 <div className="space-y-1">
-                  {COLLECTIONS.map(({ id, label, color }) => (
+                  <p className="px-4 text-xs font-medium text-gray-400 mb-2">History</p>
+                  {COLLECTIONS.map(({ id, label }) => (
                     <button
                       key={id}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors text-left"
+                      className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors text-left"
                     >
-                      <div className={`w-2 h-2 rounded-full shrink-0 ${color}`} />
+                      <MessageSquare className="w-3.5 h-3.5 shrink-0 text-slate-400" />
                       <span className="truncate">{label}</span>
                     </button>
                   ))}

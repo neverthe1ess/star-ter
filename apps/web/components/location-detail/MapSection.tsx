@@ -288,7 +288,7 @@ export function MapSection({
 
     // 클러스터링: 이미 처리된 근처 점포는 스킵
     const processed = new Set<number>();
-    const circles: KakaoCircle[] = [];
+    const circles: (KakaoCircle | KakaoCustomOverlay)[] = [];
     const warningPositions: { lat: number; lng: number }[] = []; // 경고 마커 위치 추적
 
     storesWithDensity
@@ -318,36 +318,58 @@ export function MapSection({
 
         // 색상: 초록 → 노랑 → 빨강
         let fillColor: string;
-        let strokeColor: string;
-        const isHotspot = density >= 0.6; // 경쟁 과열 여부
+        const isHotspot = density >= 0.6;
 
         if (density < 0.3) {
-          fillColor = '#22C55E'; // green
-          strokeColor = '#16A34A';
+          fillColor = '#10B981'; // emerald
         } else if (density < 0.6) {
-          fillColor = '#FBBF24'; // amber
-          strokeColor = '#F59E0B';
+          fillColor = '#F59E0B'; // amber
         } else {
-          fillColor = '#EF4444'; // red
-          strokeColor = '#DC2626';
+          fillColor = '#E11D48'; // Rose-600, more professional vibrant red
         }
 
-        // 반경: 30m ~ 60m
-        const radius = 30 + 30 * density;
+        const baseRadius = 15 + 25 * density;
 
-        // Kakao Circle 생성
-        const circle = new window.kakao.maps.Circle({
-          center: new window.kakao.maps.LatLng(item.store.lat, item.store.lng),
-          radius: radius,
-          strokeWeight: 2,
-          strokeColor: strokeColor,
-          strokeOpacity: 0.8,
-          fillColor: fillColor,
-          fillOpacity: 0.3 + density * 0.3, // 0.3 ~ 0.6
+        // 🔥 헬퍼 함수: 펄스 콘텐츠 생성 (고유 클래스명으로 스타일 충돌 방지)
+        const createPulseContent = (color: string, radius: number, uniqueId: number) => `
+          <div style="position: relative; width: 0; height: 0;">
+            <style>
+              @keyframes mapPulse-${uniqueId} {
+                0% { transform: translate(-50%, -50%) scale(1.0); opacity: 0.6; }
+                100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+              }
+              .density-pulse-${uniqueId} {
+                position: absolute;
+                width: ${radius * 2}px;
+                height: ${radius * 2}px;
+                background: radial-gradient(circle, ${color}77 0%, ${color}33 50%, ${color}00 100%);
+                border-radius: 50%;
+                transform: translate(-50%, -50%);
+              }
+              .density-pulse-${uniqueId}::after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 100%;
+                height: 100%;
+                border: 2px solid ${color}88;
+                border-radius: 50%;
+                animation: mapPulse-${uniqueId} 2.2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+              }
+            </style>
+            <div class="density-pulse-${uniqueId}"></div>
+          </div>
+        `;
+        
+        // 🔥 모든 밀도에 동일한 펄스 효과 적용
+        const overlay = new window.kakao.maps.CustomOverlay({
+          position: new window.kakao.maps.LatLng(item.store.lat, item.store.lng),
+          content: createPulseContent(fillColor, baseRadius, index),
+          zIndex: 1
         });
-
-        circle.setMap(map);
-        circles.push(circle);
+        overlay.setMap(map);
+        circles.push(overlay);
 
         // 🔥 경쟁 과열 지역에 경고 마커 추가
         // 이미 표시된 경고 마커와 100m 이내면 중복 표시 안 함
@@ -368,28 +390,39 @@ export function MapSection({
                 display: flex;
                 flex-direction: column;
                 align-items: center;
-                transform: translateY(-20px);
+                transform: translateY(-16px);
               ">
                 <div style="
-                  background: linear-gradient(135deg, #DC2626, #B91C1C);
-                  color: white;
-                  padding: 6px 12px;
-                  border-radius: 20px;
-                  font-size: 16px;
-                  font-weight: bold;
-                  box-shadow: 0 4px 12px rgba(185, 28, 28, 0.4);
+                  background: rgba(255, 255, 255, 0.98);
+                  backdrop-filter: blur(8px);
+                  color: #9F1239;
+                  padding: 7px 14px;
+                  border-radius: 100px;
+                  font-size: 13px;
+                  font-weight: 800;
+                  box-shadow: 0 4px 20px rgba(159, 18, 57, 0.12), 0 0 0 1px rgba(159, 18, 57, 0.1);
                   white-space: nowrap;
-                  border: 2px solid white;
+                  display: flex;
+                  align-items: center;
+                  gap: 6px;
                 ">
-                  ⚠️ 경쟁 과열
+                  <span style="
+                    width: 7px;
+                    height: 7px;
+                    background: #E11D48;
+                    border-radius: 50%;
+                    display: inline-block;
+                    box-shadow: 0 0 6px #E11D48;
+                  "></span>
+                  경쟁 과열
                 </div>
                 <div style="
                   width: 0;
                   height: 0;
-                  border-left: 8px solid transparent;
-                  border-right: 8px solid transparent;
-                  border-top: 8px solid #DC2626;
-                  margin-top: -2px;
+                  border-left: 7px solid transparent;
+                  border-right: 7px solid transparent;
+                  border-top: 7px solid rgba(255, 255, 255, 0.98);
+                  margin-top: -1px;
                 "></div>
               </div>
             `;

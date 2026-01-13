@@ -43,7 +43,23 @@ export function OnboardingIntroPage({
         <div className="max-w-6xl w-full mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center px-4">
           <div className="flex justify-center lg:justify-end">
             <div className="relative">
-              <div className="w-[clamp(300px,30vw,380px)] aspect-square shrink-0 rounded-2xl bg-white shadow-lg shadow-gray-200/80 border border-slate-200 p-[6%] transition-all duration-200 hover:-translate-y-1 hover:shadow-xl flex flex-col justify-between">
+              <div 
+                className="w-[clamp(300px,30vw,380px)] aspect-square shrink-0 rounded-2xl bg-white border border-slate-200 p-[6%] flex flex-col justify-between"
+                style={{
+                  animation: 'float 3s ease-in-out infinite, glow 2s ease-in-out infinite alternate',
+                  boxShadow: '0 10px 40px -10px rgba(59, 130, 246, 0.3), 0 4px 20px rgba(0, 0, 0, 0.08)',
+                }}
+              >
+                <style>{`
+                  @keyframes float {
+                    0%, 100% { transform: translateY(0px); }
+                    50% { transform: translateY(-8px); }
+                  }
+                  @keyframes glow {
+                    0% { box-shadow: 0 10px 40px -10px rgba(59, 130, 246, 0.2), 0 4px 20px rgba(0, 0, 0, 0.08); }
+                    100% { box-shadow: 0 10px 50px -10px rgba(59, 130, 246, 0.4), 0 4px 25px rgba(0, 0, 0, 0.1); }
+                  }
+                `}</style>
                 <div className="space-y-1">
                   <div className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[9px] font-bold text-white bg-blue-500">
                     추천
