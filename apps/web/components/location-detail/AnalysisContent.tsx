@@ -17,21 +17,28 @@ import { formatRevenue } from './utils';
 
 /**
  * 【리팩토링: 커스텀 훅 사용】
- * 
+ *
  * Before: 컴포넌트 내부에 useState + useEffect + fetch 로직이 있었음
  * After: useVitalityData 훅으로 분리하여 컴포넌트가 더 깔끔해짐
- * 
+ *
  * 장점:
  * 1. 컴포넌트는 UI 렌더링에만 집중
  * 2. 데이터 fetch 로직은 재사용 가능
  * 3. 테스트 용이성 향상
  */
-export function AnalysisContent({ analytics, regionCode, onCategoryChange }: AnalysisContentProps) {
+export function AnalysisContent({
+  analytics,
+  regionCode,
+  onCategoryChange,
+}: AnalysisContentProps) {
   // 선택된 대분류 탭
   const [selectedCategory, setSelectedCategory] = useState('ALL');
-  
+
   // 【커스텀 훅 사용】 개폐업 데이터 fetch 로직이 훅으로 분리됨
-  const { vitality, loading: vitalityLoading } = useVitalityData(regionCode, selectedCategory);
+  const { vitality, loading: vitalityLoading } = useVitalityData(
+    regionCode,
+    selectedCategory,
+  );
 
   // 카테고리 변경 시 부모에 알림
   useEffect(() => {
@@ -41,10 +48,14 @@ export function AnalysisContent({ analytics, regionCode, onCategoryChange }: Ana
   // 섹터 데이터 가공
   const sectors = analytics?.sectors || [];
   const totalRevenue = sectors.reduce((sum, s) => sum + s.value, 0);
-  const sortedSectors = [...sectors].sort((a, b) => b.value - a.value).slice(0, 5);
+  const sortedSectors = [...sectors]
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
 
   // 순증감 계산
-  const netChange = vitality ? vitality.opbizStoreCount - vitality.clsbizStoreCount : 0;
+  const netChange = vitality
+    ? vitality.opbizStoreCount - vitality.clsbizStoreCount
+    : 0;
 
   return (
     <div className="space-y-8">
@@ -75,8 +86,57 @@ export function AnalysisContent({ analytics, regionCode, onCategoryChange }: Ana
         {/* 두 카드 레이아웃 */}
         {vitalityLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-pulse">
-            <div className="h-48 bg-gray-50 rounded-2xl" />
-            <div className="h-48 bg-gray-50 rounded-2xl" />
+            {/* 시장 활성도 카드 스켈레톤 */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+              {/* 헤더 */}
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-8 h-8 rounded-full bg-slate-100" />
+                <div className="h-6 w-24 rounded bg-slate-100" />
+                <div className="h-5 w-20 rounded-full bg-slate-100" />
+              </div>
+              {/* 개업/폐업 숫자 영역 */}
+              <div className="flex justify-between items-end mb-5 px-1">
+                <div className="space-y-2">
+                  <div className="h-8 w-20 rounded bg-slate-100" />
+                  <div className="h-5 w-16 rounded bg-slate-100" />
+                </div>
+                <div className="space-y-2 text-right">
+                  <div className="h-8 w-20 rounded bg-slate-100 ml-auto" />
+                  <div className="h-5 w-16 rounded bg-slate-100 ml-auto" />
+                </div>
+              </div>
+              {/* 비교 바 */}
+              <div className="h-3 bg-slate-100 rounded-full mb-5" />
+              {/* 결론 메시지 */}
+              <div className="py-4 px-4 bg-gray-50 rounded-lg">
+                <div className="h-5 w-48 rounded bg-slate-100 mx-auto" />
+              </div>
+            </div>
+
+            {/* 경쟁 밀집도 카드 스켈레톤 */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col justify-between">
+              <div>
+                {/* 헤더 */}
+                <div className="flex items-center gap-2 mb-6">
+                  <div className="w-8 h-8 rounded-full bg-slate-100" />
+                  <div className="h-6 w-24 rounded bg-slate-100" />
+                  <div className="h-5 w-20 rounded-full bg-slate-100" />
+                </div>
+                {/* 아이콘 + 숫자 영역 */}
+                <div className="flex items-center gap-5 mb-6">
+                  <div className="w-16 h-16 rounded-2xl bg-slate-100" />
+                  <div className="space-y-2">
+                    <div className="h-4 w-28 rounded bg-slate-100" />
+                    <div className="h-10 w-24 rounded bg-slate-100" />
+                  </div>
+                </div>
+              </div>
+              {/* 하단 정보 박스 */}
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                <div className="h-5 w-full rounded bg-slate-100 mb-2" />
+                <div className="h-5 w-3/4 rounded bg-slate-100" />
+              </div>
+            </div>
           </div>
         ) : vitality ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -87,7 +147,9 @@ export function AnalysisContent({ analytics, regionCode, onCategoryChange }: Ana
                   <Activity className="w-6 h-6 text-blue-950" />
                 </div>
                 <h3 className="font-bold text-gray-900 text-xl">시장 활성도</h3>
-                <span className="text-sm font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded-full">개업 VS 폐업</span>
+                <span className="text-sm font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded-full">
+                  개업 VS 폐업
+                </span>
               </div>
 
               <div className="flex justify-between items-end mb-5 px-1">
@@ -97,7 +159,9 @@ export function AnalysisContent({ analytics, regionCode, onCategoryChange }: Ana
                     <span className="text-3xl font-extrabold text-emerald-600 tracking-tight">
                       {vitality.opbizStoreCount.toLocaleString()}
                     </span>
-                    <span className="text-gray-500 font-medium text-sm">개소</span>
+                    <span className="text-gray-500 font-medium text-sm">
+                      개소
+                    </span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="text-md font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
@@ -108,14 +172,16 @@ export function AnalysisContent({ analytics, regionCode, onCategoryChange }: Ana
                     </span>
                   </div>
                 </div>
-                
+
                 {/* 폐업 */}
                 <div className="text-right">
                   <div className="flex items-baseline gap-1 justify-end mb-1">
                     <span className="text-3xl font-extrabold text-red-500 tracking-tight">
                       {vitality.clsbizStoreCount.toLocaleString()}
                     </span>
-                    <span className="text-gray-500 font-medium text-sm">개소</span>
+                    <span className="text-gray-500 font-medium text-sm">
+                      개소
+                    </span>
                   </div>
                   <div className="flex items-center gap-1.5 justify-end">
                     <span className="text-md font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-md">
@@ -130,17 +196,21 @@ export function AnalysisContent({ analytics, regionCode, onCategoryChange }: Ana
 
               {/* 비교 바 */}
               <div className="h-3 bg-gray-100 rounded-full overflow-hidden flex mb-5 ring-1 ring-gray-100">
-                <div 
+                <div
                   className="h-full bg-emerald-500 transition-all duration-700 ease-out relative group"
-                  style={{ width: `${(vitality.opbizStoreCount / (vitality.opbizStoreCount + vitality.clsbizStoreCount + 0.001)) * 100}%` }}
+                  style={{
+                    width: `${(vitality.opbizStoreCount / (vitality.opbizStoreCount + vitality.clsbizStoreCount + 0.001)) * 100}%`,
+                  }}
                 >
                   <div className="absolute inset-0 bg-white/20 group-hover:bg-transparent transition-colors" />
                 </div>
-                <div 
+                <div
                   className="h-full bg-red-400 transition-all duration-700 ease-out relative group"
-                  style={{ width: `${(vitality.clsbizStoreCount / (vitality.opbizStoreCount + vitality.clsbizStoreCount + 0.001)) * 100}%` }}
+                  style={{
+                    width: `${(vitality.clsbizStoreCount / (vitality.opbizStoreCount + vitality.clsbizStoreCount + 0.001)) * 100}%`,
+                  }}
                 >
-                   <div className="absolute inset-0 bg-white/20 group-hover:bg-transparent transition-colors" />
+                  <div className="absolute inset-0 bg-white/20 group-hover:bg-transparent transition-colors" />
                 </div>
               </div>
 
@@ -149,14 +219,22 @@ export function AnalysisContent({ analytics, regionCode, onCategoryChange }: Ana
                 {netChange >= 0 ? (
                   <p className="flex items-center justify-center gap-2">
                     <TrendingUp className="w-5 h-5 text-emerald-500" />
-                    <span className="font-bold text-gray-900 text-lg">성장하는 시장입니다</span>
-                    <span className="text-gray-400 text-sm font-medium">(진입 추천)</span>
+                    <span className="font-bold text-gray-900 text-lg">
+                      성장하는 시장입니다
+                    </span>
+                    <span className="text-gray-400 text-sm font-medium">
+                      (진입 추천)
+                    </span>
                   </p>
                 ) : (
                   <p className="flex items-center justify-center gap-2">
                     <TrendingDown className="w-5 h-5 text-red-400" />
-                    <span className="font-bold text-gray-900 text-lg">위축되는 시장입니다</span>
-                    <span className="text-gray-400 text-sm font-medium">(주의 필요)</span>
+                    <span className="font-bold text-gray-900 text-lg">
+                      위축되는 시장입니다
+                    </span>
+                    <span className="text-gray-400 text-sm font-medium">
+                      (주의 필요)
+                    </span>
                   </p>
                 )}
               </div>
@@ -169,40 +247,61 @@ export function AnalysisContent({ analytics, regionCode, onCategoryChange }: Ana
                   <div className="w-8 h-8 rounded-full flex items-center justify-center">
                     <Store className="w-6 h-6 text-blue-950" />
                   </div>
-                  <h3 className="font-bold text-gray-900 text-xl">경쟁 밀집도</h3>
-                  <span className="text-sm font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded-full">점포수 증감</span>
+                  <h3 className="font-bold text-gray-900 text-xl">
+                    경쟁 밀집도
+                  </h3>
+                  <span className="text-sm font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded-full">
+                    점포수 증감
+                  </span>
                 </div>
 
                 <div className="flex items-center gap-5 mb-6">
-                  <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm border ${
-                    netChange >= 0 
-                      ? 'bg-emerald-50 border-emerald-100' 
-                      : 'bg-red-50 border-red-100'
-                  }`}>
-                     {netChange >= 0 ? (
-                       <TrendingUp className="w-8 h-8 text-emerald-600" />
-                     ) : (
-                       <TrendingDown className="w-8 h-8 text-red-500" />
-                     )}
+                  <div
+                    className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm border ${
+                      netChange >= 0
+                        ? 'bg-emerald-50 border-emerald-100'
+                        : 'bg-red-50 border-red-100'
+                    }`}
+                  >
+                    {netChange >= 0 ? (
+                      <TrendingUp className="w-8 h-8 text-emerald-600" />
+                    ) : (
+                      <TrendingDown className="w-8 h-8 text-red-500" />
+                    )}
                   </div>
                   <div>
-                    <p className="text-md font-bold text-gray-500 mb-1">신규 - 폐업 (순증감)</p>
+                    <p className="text-md font-bold text-gray-500 mb-1">
+                      신규 - 폐업 (순증감)
+                    </p>
                     <div className="flex items-baseline gap-1">
-                      <p className={`text-4xl font-extrabold tracking-tight ${
-                        netChange >= 0 ? 'text-emerald-600' : 'text-red-500'
-                      }`}>
-                        {netChange > 0 ? '+' : ''}{netChange.toLocaleString()}
+                      <p
+                        className={`text-4xl font-extrabold tracking-tight ${
+                          netChange >= 0 ? 'text-emerald-600' : 'text-red-500'
+                        }`}
+                      >
+                        {netChange > 0 ? '+' : ''}
+                        {netChange.toLocaleString()}
                       </p>
-                      <span className="text-lg font-bold text-gray-400">개</span>
+                      <span className="text-lg font-bold text-gray-400">
+                        개
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
 
-               <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                 <p className="text-gray-800 font-bold text-lg leading-relaxed">
-                  지난 분기 동안 <span className="font-bold text-emerald-600">{vitality.opbizStoreCount.toLocaleString()}개</span>가 새로 생기고,<br/>
-                  <span className="font-bold text-red-500">{vitality.clsbizStoreCount.toLocaleString()}개</span>가 문을 닫았습니다.
+                  지난 분기 동안{' '}
+                  <span className="font-bold text-emerald-600">
+                    {vitality.opbizStoreCount.toLocaleString()}개
+                  </span>
+                  가 새로 생기고,
+                  <br />
+                  <span className="font-bold text-red-500">
+                    {vitality.clsbizStoreCount.toLocaleString()}개
+                  </span>
+                  가 문을 닫았습니다.
                 </p>
               </div>
             </div>
@@ -220,22 +319,26 @@ export function AnalysisContent({ analytics, regionCode, onCategoryChange }: Ana
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
           업종별 매출 분석
         </h2>
-        <p className="text-gray-500 text-sm mb-6">
-        </p>
+        <p className="text-gray-500 text-sm mb-6"></p>
 
         {sortedSectors.length > 0 ? (
           <div className="space-y-4">
             {sortedSectors.map((item, index) => {
-              const share = totalRevenue > 0 ? Math.round((item.value / totalRevenue) * 100) : 0;
+              const share =
+                totalRevenue > 0
+                  ? Math.round((item.value / totalRevenue) * 100)
+                  : 0;
               // 1등은 Orange, 나머지는 Blue
               const colorClass = index === 0 ? 'bg-orange-500' : 'bg-blue-900';
-              
+
               return (
                 <div key={item.name} className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className={`w-3 h-3 rounded-full ${colorClass}`} />
-                      <span className="font-semibold text-gray-900">{item.name}</span>
+                      <span className="font-semibold text-gray-900">
+                        {item.name}
+                      </span>
                     </div>
                     <div className="text-right">
                       <span className="font-bold text-gray-900">
@@ -260,7 +363,9 @@ export function AnalysisContent({ analytics, regionCode, onCategoryChange }: Ana
             <div className="pt-4 mt-4 border-t border-gray-100">
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 font-medium">총 매출</span>
-                <span className="text-xl font-bold text-gray-900">{formatRevenue(totalRevenue)}</span>
+                <span className="text-xl font-bold text-gray-900">
+                  {formatRevenue(totalRevenue)}
+                </span>
               </div>
             </div>
           </div>
@@ -277,21 +382,28 @@ export function AnalysisContent({ analytics, regionCode, onCategoryChange }: Ana
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             업종별 경쟁 강도
           </h2>
-          <p className="text-gray-500 text-sm mb-6">
-          </p>
+          <p className="text-gray-500 text-sm mb-6"></p>
 
           <div className="grid grid-cols-2 gap-3">
             {analytics.saturation.slice(0, 4).map((item) => {
-              const statusColor = {
-                '위험': 'bg-red-500 text-white',
-                '경계': 'bg-yellow-500 text-white',
-                '추천': 'bg-green-500 text-white',
-              }[item.status] || 'bg-gray-500 text-white';
+              const statusColor =
+                {
+                  위험: 'bg-red-500 text-white',
+                  경계: 'bg-yellow-500 text-white',
+                  추천: 'bg-green-500 text-white',
+                }[item.status] || 'bg-gray-500 text-white';
 
               return (
-                <div key={item.name} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                  <span className="text-2xl font-bold text-blue-950 p-4">{item.name}</span>
-                  <span className={`px-3 py-1 rounded-full text-md font-bold ${statusColor}`}>
+                <div
+                  key={item.name}
+                  className="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
+                >
+                  <span className="text-2xl font-bold text-blue-950 p-4">
+                    {item.name}
+                  </span>
+                  <span
+                    className={`px-3 py-1 rounded-full text-md font-bold ${statusColor}`}
+                  >
                     {item.status}
                   </span>
                 </div>
