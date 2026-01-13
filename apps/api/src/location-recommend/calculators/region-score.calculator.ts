@@ -18,6 +18,15 @@ import { RegionData } from '../repositories/region.repository';
  * - tourist: 관광/숙박 시설 5개 이상
  */
 
+const THEME_LABEL_MAP: Record<string, string> = {
+  office: '오피스',
+  residential: '주거지역',
+  commercial: '핫플레이스',
+  university: '대학가',
+  station: '역세권',
+  tourist: '관광지',
+};
+
 @Injectable()
 export class RegionScoreCalculator {
   // 테마별 만점 기준 (비중)
@@ -126,6 +135,165 @@ export class RegionScoreCalculator {
 
       default:
         return 0.5;
+    }
+  }
+
+  /**
+   * 점수 + 설명 + 상권 세부 정보 함께 반환
+   */
+  calculateWithExplanation(
+    theme: string,
+    data: RegionData | undefined,
+  ): {
+    score: number;
+    explanation: string;
+    details: {
+      theme: string;
+      themeLabel: string;
+      mainAgeGroup: string;
+      mainAgeRatio: number;
+      nearbyUniversities: number;
+      nearbySubways: number;
+      footTraffic: number;
+    };
+  } {
+    const themeLabel = THEME_LABEL_MAP[theme] || theme;
+
+    // 기본 details
+    const details = {
+      theme,
+      themeLabel,
+      mainAgeGroup: '-',
+      mainAgeRatio: 0,
+      nearbyUniversities: 0,
+      nearbySubways: 0,
+      footTraffic: 0,
+    };
+
+    if (!data) {
+      return {
+        score: 0.5,
+        explanation: `상권 데이터가 없습니다`,
+        details,
+      };
+    }
+
+    // 상세 정보 채우기
+    details.nearbyUniversities = data.univ_co;
+    details.nearbySubways = data.subway_statn_co;
+    details.footTraffic = data.tot_flpop_co;
+
+    // 주요 연령층 계산 (유동인구 기준 20대 비중)
+    if (data.tot_flpop_co > 0) {
+      const twentiesRatio = (data.agrde_20_flpop_co / data.tot_flpop_co) * 100;
+      details.mainAgeGroup = '20대';
+      details.mainAgeRatio = twentiesRatio;
+    }
+
+    const totalPop =
+      data.tot_wrc_popltn_co + data.tot_repop_co + data.tot_flpop_co;
+
+    if (totalPop === 0) {
+      return {
+        score: 0.5,
+        explanation: `인구 데이터가 없습니다`,
+        details,
+      };
+    }
+
+    switch (theme) {
+      case 'office': {
+        const ratio = data.tot_wrc_popltn_co / totalPop;
+        const score = Math.min(ratio / this.THRESHOLDS.OFFICE, 1);
+        return {
+          score,
+          explanation: `직장인 비중 ${(ratio * 100).toFixed(1)}%`,
+          details,
+        };
+      }
+
+      case 'residential': {
+        const residentialRatio = data.tot_repop_co / totalPop;
+        const baseScore = Math.min(
+          residentialRatio / this.THRESHOLDS.RESIDENTIAL,
+          1,
+        );
+        const aptBonus =
+          Math.min(data.apt_hshld_co / 1000, 1) * this.BONUSES.APT_WEIGHT;
+        const score = Math.min(baseScore + aptBonus, 1);
+        const aptInfo =
+          data.apt_hshld_co > 0 ? `, 아파트 ${data.apt_hshld_co}세대` : '';
+        return {
+          score,
+          explanation: `거주 인구 비중 ${(residentialRatio * 100).toFixed(1)}%${aptInfo}`,
+          details,
+        };
+      }
+
+      case 'commercial': {
+        const commercialRatio = data.tot_flpop_co / totalPop;
+        const score = Math.min(commercialRatio / this.THRESHOLDS.COMMERCIAL, 1);
+        return {
+          score,
+          explanation: `유동인구 비중 ${(commercialRatio * 100).toFixed(1)}%`,
+          details,
+        };
+      }
+
+      case 'university': {
+        const twentiesRatio =
+          data.tot_flpop_co > 0
+            ? data.agrde_20_flpop_co / data.tot_flpop_co
+            : 0;
+        const baseScore = Math.min(
+          twentiesRatio / this.THRESHOLDS.UNIVERSITY,
+          1,
+        );
+        const univWeight =
+          data.univ_co > 0
+            ? this.WEIGHTS.UNIVERSITY_WITH_UNIV
+            : this.WEIGHTS.UNIVERSITY_WITHOUT_UNIV;
+        const score = baseScore * univWeight;
+        const univInfo =
+          data.univ_co > 0 ? `, 대학 ${data.univ_co}개` : ' (인근 대학 없음)';
+        return {
+          score,
+          explanation: `20대 비중 ${(twentiesRatio * 100).toFixed(1)}%${univInfo}`,
+          details,
+        };
+      }
+
+      case 'station': {
+        const score = data.subway_statn_co > 0 ? 1 : 0;
+        return {
+          score,
+          explanation:
+            data.subway_statn_co > 0
+              ? `지하철역 ${data.subway_statn_co}개`
+              : '인근 지하철역 없음',
+          details,
+        };
+      }
+
+      case 'tourist': {
+        const facilityCount = data.viatr_fclty_co + data.stayng_fclty_co;
+        const score = Math.min(
+          facilityCount / this.THRESHOLDS.TOURIST_FACILITIES,
+          1,
+        );
+        return {
+          score,
+          explanation: `관광/숙박 시설 ${facilityCount}개`,
+          details,
+        };
+      }
+
+      default:
+        return {
+          score: 0.5,
+          explanation: `${themeLabel} 테마`,
+          details,
+        };
     }
   }
 }

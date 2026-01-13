@@ -60,4 +60,55 @@ export class IndustryScoreCalculator {
 
     return industryScore;
   }
+
+  /**
+   * 점수 + 설명 함께 반환
+   */
+  calculateWithExplanation(
+    totalSales: number,
+    industrySales: number,
+    avgIndustrySales: number,
+    density: number = 0,
+    avgDensity: number = 0,
+    storeCount: number = 0,
+  ): { score: number; explanation: string } {
+    // 데이터 없으면 중립 점수
+    if (totalSales === 0 || avgIndustrySales === 0) {
+      return {
+        score: 0.5,
+        explanation: '업종 데이터가 없습니다',
+      };
+    }
+
+    // 해당 상권에 선택한 업종이 없으면 중립 점수
+    if (industrySales === 0) {
+      return {
+        score: 0.5,
+        explanation: '해당 업종 점포가 없습니다',
+      };
+    }
+
+    const score = this.calculate(
+      totalSales,
+      industrySales,
+      avgIndustrySales,
+      density,
+      avgDensity,
+    );
+
+    // 밀도 레벨 결정
+    let densityLevel = '낮음';
+    if (density >= this.DENSITY_THRESHOLDS.HIGH) {
+      densityLevel = '높음 (경쟁 치열)';
+    } else if (density >= this.DENSITY_THRESHOLDS.MEDIUM) {
+      densityLevel = '보통';
+    }
+
+    const industryShare = ((industrySales / totalSales) * 100).toFixed(1);
+
+    return {
+      score,
+      explanation: `동일 업종 ${storeCount}개, 업종 점유율 ${industryShare}%, 밀도 ${densityLevel}`,
+    };
+  }
 }
