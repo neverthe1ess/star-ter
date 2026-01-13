@@ -12,4 +12,6 @@ export type QueryParams = {
   monthlyRent?: number;
   size?: number;
   floor?: number;
+  latitude?: number;
+  longitude?: number;
 };

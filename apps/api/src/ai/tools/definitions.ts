@@ -213,34 +213,7 @@ export const TOOLS = [
     },
     strict: true,
   },
-  {
-    type: 'function',
-    name: 'recommend_real_estate',
-    description: '조건에 맞는 부동산 매물을 추천합니다.',
-    parameters: {
-      type: 'object',
-      properties: {
-        maxDeposit: {
-          type: 'number',
-          description: '최대 보증금 (단위: 만원)',
-        },
-        maxMonthlyRent: {
-          type: 'number',
-          description: '최대 월세 (단위: 만원)',
-        },
-        minSize: {
-          type: 'number',
-          description: '최소 면적 (평수 또는 제곱미터)',
-        },
-        keywords: {
-          type: 'string',
-          description: '검색 키워드 (예: "치킨집", "1층", "카페")',
-        },
-      },
-      additionalProperties: false,
-    },
-    strict: false,
-  },
+
   {
     type: 'function',
     name: 'get_foot_traffic_timeseries',
@@ -419,6 +392,107 @@ export const TOOLS = [
         },
       },
       required: ['areaCd', 'categoryCode'],
+      additionalProperties: false,
+    },
+    strict: false,
+  },
+  {
+    type: 'function',
+    name: 'recommend_real_estate',
+    description:
+      '현재 보고 있는 위치 근처의 부동산 매물을 추천합니다. "여기 근처 500/30 매물 있어?", "보증금 1억 이하 매물 찾아줘" 등의 요청에 사용하세요. 지도 중심 좌표(latitude, longitude)를 기반으로 검색합니다.',
+    parameters: {
+      type: 'object',
+      properties: {
+        latitude: {
+          type: 'number',
+          description: '검색 중심 위도',
+        },
+        longitude: {
+          type: 'number',
+          description: '검색 중심 경도',
+        },
+        maxDeposit: {
+          type: 'number',
+          description: '최대 보증금 (단위: 만원)',
+        },
+        maxMonthlyRent: {
+          type: 'number',
+          description: '최대 월세 (단위: 만원)',
+        },
+        minSize: {
+          type: 'number',
+          description: '최소 평수 (단위: 평)',
+        },
+        limit: {
+          type: 'number',
+          description: '최대 검색 개수 (기본 5개)',
+        },
+      },
+      required: ['latitude', 'longitude'],
+      additionalProperties: false,
+    },
+    strict: false,
+  },
+  {
+    type: 'function',
+    name: 'get_funding_programs',
+    description:
+      '소상공인 정책자금, 대출, 창업 지원금 정보를 조회합니다. "대출", "정부 지원", "창업 자금" 등의 질문에 사용하세요.',
+    parameters: {
+      type: 'object',
+      properties: {
+        areaCd: {
+          type: 'string',
+          description: '상권 코드 (선택 사항)',
+        },
+        categoryCode: {
+          type: 'string',
+          description: '업종 코드 (선택 사항)',
+        },
+      },
+      required: [],
+      additionalProperties: false,
+    },
+    strict: false,
+  },
+  {
+    type: 'function',
+    name: 'request_report_generation',
+    description:
+      '사용자가 분석 결과나 대화 내용을 "리포트(보고서)로 만들어줘", "PDF로 저장해줘"라고 요청할 때 사용합니다. 이 도구는 실제 데이터를 조회하지 않고 리포트 생성 프로세스를 트리거합니다.',
+    parameters: {
+      type: 'object',
+      properties: {
+        title: {
+          type: 'string',
+          description:
+            '리포트 제목 (예: "서울대입구역 아메리카노 상권 분석 보고서")',
+        },
+      },
+      required: [],
+      additionalProperties: false,
+    },
+    strict: false,
+  },
+  {
+    type: 'function',
+    name: 'calc_break_even_with_listing',
+    description:
+      '특정 부동산 매물의 임대료 정보를 바탕으로 손익분기점을 계산합니다. "이 매물에서 장사하면 얼마나 팔아야 해?" 등의 질문에 사용하세요.',
+    parameters: {
+      type: 'object',
+      properties: {
+        listingId: {
+          type: 'string',
+          description: '부동산 매물 ID (action payload에 포함된 id)',
+        },
+        categoryCode: {
+          type: 'string',
+          description: '업종 코드 (예: "CS100010")',
+        },
+      },
+      required: ['listingId', 'categoryCode'],
       additionalProperties: false,
     },
     strict: false,

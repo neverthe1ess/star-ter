@@ -35,7 +35,7 @@ export class AiToolsService {
       case 'compare_commercial_by_industry':
         return this.toolsRepository.compareCommercialByIndustry(args);
       case 'recommend_real_estate':
-        return this.toolsRepository.getRecommendRealEstate(args);
+        return this.toolsRepository.recommendRealEstate(args);
       case 'get_foot_traffic_timeseries':
         return this.toolsRepository.getFootTrafficTimeSeries(args);
       case 'get_foot_traffic_detail':
@@ -50,6 +50,12 @@ export class AiToolsService {
         return this.toolsRepository.calcBreakEven(args);
       case 'predict_survival_rate':
         return this.toolsRepository.predictSurvivalRate(args);
+      case 'get_funding_programs':
+        return this.toolsRepository.getFundingPrograms(args);
+      case 'request_report_generation':
+        return this.toolsRepository.requestReportGeneration(args);
+      case 'calc_break_even_with_listing':
+        return this.toolsRepository.calcBreakEvenWithListing(args);
       default:
         return undefined;
     }

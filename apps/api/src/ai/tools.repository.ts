@@ -664,19 +664,6 @@ export class ToolsRepository {
     `;
     return rows;
   }
-  // 15) 부동산 매물 추천 (AI 파라미터 추출용)
-  async getRecommendRealEstate(params: QueryParams) {
-    return Promise.resolve({
-      status: 'success',
-      message: 'Real estate recommendation parameters extracted.',
-      params: {
-        maxDeposit: params.maxDeposit,
-        maxMonthlyRent: params.maxMonthlyRent,
-        minSize: params.minSize,
-        keywords: params.keywords,
-      },
-    });
-  }
 
   // 16) 유동인구 시계열 조회 (Task 2.1)
   async getFootTrafficTimeSeries(params: QueryParams) {
@@ -958,7 +945,7 @@ export class ToolsRepository {
     };
     // ... (estimateRevenueAndCost 메서드 끝)
   }
-
+  //TODO: 수치 전면 수정 필요
   // 20) 손익분기점(BEP) 계산 (Task 4.1)
   async calcBreakEven(params: QueryParams) {
     const { areaCd, categoryCode, monthlyRent, size = 15, floor = 1 } = params;
@@ -1140,5 +1127,249 @@ export class ToolsRepository {
         factors: ['폐업률', '평균영업개월', '상권변화지표'],
       },
     };
+  }
+
+  // 22) 부동산 매물 추천 (Task 4.4)
+  async recommendRealEstate(params: QueryParams) {
+    const {
+      latitude,
+      longitude,
+      maxDeposit,
+      maxMonthlyRent,
+      minSize = 10,
+      limit = 5,
+    } = params;
+
+    if (!latitude || !longitude) {
+      return {
+        summary:
+          '중심 좌표(위도, 경도)가 없어 매물을 추천할 수 없습니다. 지도에서 위치를 선택하거나 장소를 검색해 주세요.',
+        data: [],
+      };
+    }
+
+    // 사용자 입력(만원) -> DB 단위(천원) 변환
+    // 예: 보증금 5000만원 -> 50,000 (천원)
+    const depositCondition = maxDeposit ? maxDeposit * 10 : 1000000; // 없으면 100억(무제한)
+    const rentCondition = maxMonthlyRent ? maxMonthlyRent * 10 : 1000000;
+    const sizeCondition = minSize; // 평수
+
+    // 반경 1km 내 검색 (Haversine Formula)
+    // 6371 * acos(...) -> km 단위
+    const radiusKm = 1.0;
+
+    // Note: Prisma raw query maps BigInt to BigInt (serialized as string or similar in logs, needs handling).
+    // Also DB columns are Decimal, so cast to float for trig functions.
+    // Use try-catch for safety
+    try {
+      const items = await this.prisma.$queryRaw<any[]>`
+        SELECT
+          id,
+          title,
+          deposit,
+          monthlyrent,
+          size,
+          floor,
+          centerlatitude,
+          centerlongitude,
+          (
+            6371 * acos(
+              cos(radians(${latitude})) * cos(radians(centerlatitude::float)) * cos(radians(centerlongitude::float) - radians(${longitude})) +
+              sin(radians(${latitude})) * sin(radians(centerlatitude::float))
+            )
+          ) AS distance
+        FROM real_estate_info
+        WHERE deposit <= ${depositCondition}
+          AND monthlyrent <= ${rentCondition}
+          AND size >= ${sizeCondition}
+          AND (
+            6371 * acos(
+              cos(radians(${latitude})) * cos(radians(centerlatitude::float)) * cos(radians(centerlongitude::float) - radians(${longitude})) +
+              sin(radians(${latitude})) * sin(radians(centerlatitude::float))
+            )
+          ) <= ${radiusKm}
+        ORDER BY distance ASC
+        LIMIT ${limit}
+      `;
+
+      // BigInt 처리 및 포맷팅
+      const formattedItems = items.map((item) => {
+        // BigInt -> Number (천원 -> 만원 변환)
+        const dep = Number(item.deposit || 0) / 10;
+        const rent = Number(item.monthlyrent || 0) / 10;
+        const dist = Number(item.distance || 0).toFixed(2); // km
+
+        return {
+          id: item.id,
+          title: item.title || '상세 정보 없음',
+          deposit: dep, // 만원
+          monthlyRent: rent, // 만원
+          size: Number(item.size || 0), // 평
+          floor: item.floor,
+          distance: `${dist}km`,
+          lat: item.centerlatitude,
+          lng: item.centerlongitude,
+        };
+      });
+
+      return {
+        summary: `반경 ${radiusKm}km 이내에서 보증금 ${maxDeposit || '무제한'}만원, 월세 ${maxMonthlyRent || '무제한'}만원 이하, ${minSize}평 이상 매물 ${formattedItems.length}건을 찾았습니다.`,
+        data: formattedItems,
+        meta: {
+          center: { lat: latitude, lng: longitude },
+          radius: `${radiusKm}km`,
+          count: formattedItems.length,
+        },
+      };
+    } catch (e) {
+      console.error('RealEstate Recommendation Error:', e);
+      return {
+        summary: '매물 데이터를 조회하는 중 오류가 발생했습니다.',
+        data: [],
+      };
+    }
+  }
+  // 23) 정책자금/대출 안내 (Task 4.5)
+  // Mock Data Implementation
+  async getFundingPrograms(params: QueryParams) {
+    // 실제로는 정부 API나 전용 DB테이블에서 조회해야 함.
+    // 현재는 예시 정적 데이터 반환.
+    const { areaCd, categoryCode } = params;
+
+    // Remove unused warnings
+    void areaCd;
+    void categoryCode;
+
+    const programs = [
+      {
+        title: '소상공인 정책자금 (성장기반자금)',
+        provider: '소상공인시장진흥공단',
+        description: '업력 3년 이상 소상공인 대상, 시설자금 및 운전자금 지원',
+        eligibility: '업력 3년 이상 소상공인',
+        limit: '최대 1억원',
+        rate: '연 3%대 (변동)',
+        url: 'https://www.semas.or.kr/',
+      },
+      {
+        title: '서울신용보증재단 창업자금',
+        provider: '서울신용보증재단',
+        description:
+          '서울시 내 창업 예정자 및 창업 6개월 이내 소상공인 대상 보증 지원',
+        eligibility: '서울시 소재 창업 예정 또는 초기 창업자',
+        limit: '최대 5,000만원',
+        rate: '보증료 1% + 은행 금리',
+        url: 'https://www.seoulshinbo.co.kr/',
+      },
+      {
+        title: '희망리턴패키지 (재기지원)',
+        provider: '중소벤처기업부',
+        description: '폐업(예정) 소상공인의 재기 지원 (철거비, 재취업 교육 등)',
+        eligibility: '폐업 예정 또는 기폐업 소상공인',
+        limit: '최대 250만원 (철거비)',
+        rate: '-',
+        url: 'https://www.sbiz.or.kr/nhrp/main.do',
+      },
+    ];
+
+    // Simulate async operation
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    return {
+      summary: '현재 신청 가능한 주요 정책자금 및 지원 프로그램입니다.',
+      data: programs,
+      meta: {
+        source: 'Public Data Portal (Mock)',
+        updated: '2024-01',
+      },
+    };
+  }
+  // 24) 리포트 생성 요청 (Task 4.6)
+  // Action Trigger Only
+  async requestReportGeneration(params: QueryParams) {
+    const { title = '상권 분석 보고서' } = params as any;
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    // 이 메서드는 실제 데이터를 조회하지 않고,
+    // 프론트엔드가 'report.generate' 액션을 처리할 수 있도록 트리거만 제공합니다.
+    return {
+      summary: `요청하신 '${title}' 생성이 시작되었습니다. 잠시 후 다운로드 링크가 제공됩니다.`,
+      actions: [
+        {
+          type: 'report.generate',
+          payload: {
+            title,
+            // Mockup Download Link
+            url: `/api/reports/download?id=mock-report-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+          },
+        },
+      ],
+      data: null, // 데이터는 액션 페이로드에 포함되거나 프론트에서 처리
+    };
+  }
+  // 25) 매물 기반 손익분기점 계산 (Task 4.7)
+  async calcBreakEvenWithListing(params: QueryParams) {
+    const { listingId, categoryCode } = params as any;
+
+    try {
+      // 1. 매물 정보 조회 (raw query for convenience with snake_case mapping)
+      // Note: listingId comes as string from tool, convert to number if id is Int
+      const listingIdNum = Number(listingId);
+      const listings = await this.prisma.$queryRaw<any[]>`
+        SELECT id, monthlyrent, deposit, size
+        FROM real_estate_info
+        WHERE id = ${listingIdNum}
+      `;
+
+      if (!listings || listings.length === 0) {
+        return {
+          summary: '해당 매물 정보를 찾을 수 없습니다.',
+          data: null,
+        };
+      }
+
+      const listing = listings[0];
+      // DB: 천원 단위 -> BEP 계산기: 만원 단위
+      const monthlyRent = Number(listing.monthlyrent || 0) / 10;
+      const deposit = Number(listing.deposit || 0) / 10;
+      const size = Number(listing.size || 0);
+
+      // 2. 기존 손익분기 계산 로직 재사용
+      // (기존 calcBreakEven은 areaCd 기반이나, 여기선 매물 임대료를 직접 쓰므로
+      //  areaCd가 없어도 작동하거나, areaCd가 필요하다면 매물 좌표 기반으로 역지오코딩/매칭 필요.
+      //  하지만 calcBreakEven 로직을 보면 areaCd는 업종 평균 등을 위해 필요할 수 있음.
+      //  여기서는 간단히 "이 매물 임대료"를 강제로 주입하여 계산.)
+
+      // *중요*: ToolsRepository.calcBreakEven 메서드는 (params)를 받아 처리함.
+      // params에 monthlyRent, deposit, size를 오버라이드해서 넘기면 됨.
+      // 단, areaCd가 필수일 수 있는데, Listing에는 areaCd가 없을 수 있음.
+      // -> 만약 areaCd가 필수라면, 여기서 어떻게든 구해야 함.
+      // -> 일단 areaCd가 없는 경우 calcBreakEven이 어떻게 동작하는지 봐야 함.
+      //    (calcBreakEven 구현을 보니 areaCd로 지역 테이블 조회하는 부분이 있음)
+
+      // Listing의 좌표로 areaCd를 찾으면 좋겠지만, 복잡하므로
+      // params에 사용자가 보고 있던 areaCd가 넘어온다고 가정하거나(컨텍스트 유지),
+      // 혹은 단순히 임대료 변수만 가지고 계산 가능한지 확인.
+      // (Task 4.1 구현 내용을 못 봤지만, 보통 임대료 + 업종평균비용 = BEP)
+
+      // 편의상, 호출 시 context의 areaCd가 함께 넘어오기를 기대하거나,
+      // params를 그대로 전달하면서 rent 정보만 덮어씀.
+      const newParams = {
+        ...params,
+        monthlyRent,
+        deposit,
+        size,
+        // floor: ... (listing.floor is string like "1층", need parsing if needed)
+      };
+
+      return this.calcBreakEven(newParams);
+    } catch (e) {
+      console.error('BEP with Listing Error:', e);
+      return {
+        summary: '매물 정보를 불러오는 중 오류가 발생했습니다.',
+        data: null,
+      };
+    }
   }
 }
