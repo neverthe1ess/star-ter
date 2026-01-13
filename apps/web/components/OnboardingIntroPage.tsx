@@ -60,7 +60,7 @@ export function OnboardingIntroPage({
                     </p>
                     <div className="flex items-end gap-1">
                       <span className="text-4xl font-black text-blue-500">
-                        81.2
+                        91.2
                       </span>
                       <span className="text-sm font-bold text-blue-500">점</span>
                     </div>
@@ -125,13 +125,13 @@ export function OnboardingIntroPage({
                           strokeWidth="1"
                         ></line>
                         <polygon
-                          points="100,71.3 166.57395614066075,78.36881039375368 141.14496766047313,156.63118960624632 58.855032339526886,156.63118960624632 56.72692850857051,85.9397267559399"
+                          points="100,45 166.57395614066075,78.36881039375368 141.14496766047313,156.63118960624632 58.855032339526886,156.63118960624632 56.72692850857051,85.9397267559399"
                           fill="#3b82f6"
                           fillOpacity="0.25"
                           stroke="#3b82f6"
                           strokeWidth="2"
                         ></polygon>
-                        <circle cx="100" cy="71.3" r="3" fill="#3b82f6"></circle>
+                        <circle cx="100" cy="45" r="3" fill="#3b82f6"></circle>
                         <circle
                           cx="166.57395614066075"
                           cy="78.36881039375368"
@@ -158,7 +158,7 @@ export function OnboardingIntroPage({
                         ></circle>
                       </svg>
                       <div
-                        className="absolute text-[12px] font-semibold text-slate-500 whitespace-nowrap"
+                        className="absolute text-[14px] font-bold text-slate-500 whitespace-nowrap"
                         style={{
                           left: '100px',
                           top: '16px',
