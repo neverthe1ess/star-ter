@@ -1,8 +1,10 @@
 "use client";
 
 import { useRef, useEffect, forwardRef, useImperativeHandle, useState } from "react";
-import { useKakaoMap } from "../../hooks/useKakaoMap";
+import { useKakaoMap, type KakaoCustomOverlay } from "../../hooks/useKakaoMap";
 import { type AiAction } from "../../lib/api/ai";
+import { usePopulationLayer } from "../location-detail/hooks/usePopulationLayer";
+import { type MarkerData } from "./types/markerTypes";
 
 /**
  * ChatMapSection 컴포넌트
@@ -13,6 +15,8 @@ import { type AiAction } from "../../lib/api/ai";
 
 export interface ChatMapSectionRef {
   executeAction: (action: AiAction) => void;
+  setHeatmapVisible: (visible: boolean) => void;
+  setMarkers: (markers: MarkerData[]) => void;
 }
 
 interface ChatMapSectionProps {
@@ -29,6 +33,7 @@ export const ChatMapSection = forwardRef<ChatMapSectionRef, ChatMapSectionProps>
   ({ isOpen}, ref) => {
     // 지도 DOM 참조
     const mapRef = useRef<HTMLDivElement>(null);
+    const markersRef = useRef<KakaoCustomOverlay[]>([]);
     
     // 카카오맵 훅 사용
     const { map, loaded, error } = useKakaoMap(mapRef, {
@@ -36,8 +41,91 @@ export const ChatMapSection = forwardRef<ChatMapSectionRef, ChatMapSectionProps>
       level: 4, 
     });
 
+    // 상태 관리
+    const [isHeatmapVisible, setIsHeatmapVisible] = useState(false);
+    const [markers, setMarkers] = useState<MarkerData[]>([]);
+
+    // 유동인구 히트맵 훅 사용
+    usePopulationLayer({
+      map,
+      hour: 12, // 기본값 12시
+      genderFilter: 'all',
+      ageFilter: 'all',
+      isVisible: isHeatmapVisible && loaded,
+      containerId: 'chat-map-container',
+    });
+
+    // 마커 렌더링 효과
+    useEffect(() => {
+      if (!map || !loaded) return;
+
+      // 기존 마커 제거
+      markersRef.current.forEach((marker) => marker.setMap(null));
+      markersRef.current = [];
+
+      if (markers.length === 0) return;
+
+      // 전역 함수 저장용 (클릭 이벤트)
+      const globalFunctionNames: string[] = [];
+
+      markers.forEach((item) => {
+        const position = new window.kakao.maps.LatLng(item.lat, item.lng);
+
+        // 마커 스타일 결정
+        const isCompetitor = item.type === 'competitor';
+        const bgColor = isCompetitor ? '#EF4444' : '#2563EB'; // 경쟁: 빨강, 매물/기본: 파랑
+        const textColor = '#FFFFFF';
+
+        // 클릭 핸들러 등록
+        const funcName = `__chatMarkerClick_${item.id.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        globalFunctionNames.push(funcName);
+        (window as unknown as Record<string, () => void>)[funcName] = () => {
+             console.log("Marker clicked:", item.id);
+             item.onClick?.();
+        };
+
+        const content = `
+          <div 
+            onclick="window.${funcName}()" 
+            style="
+              padding: 4px 8px; 
+              background: ${bgColor}; 
+              color: ${textColor}; 
+              font-size: 14px; 
+              font-weight: bold; 
+              border: 1px solid white; 
+              border-radius: 6px; 
+              white-space: nowrap; 
+              box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+              cursor: pointer;
+            "
+          >
+            ${item.label || (isCompetitor ? '경쟁점' : '매물')}
+          </div>
+        `;
+
+        const overlay = new window.kakao.maps.CustomOverlay({
+          position: position,
+          content: content,
+          yAnchor: 1.2,
+          zIndex: 10,
+        });
+
+        overlay.setMap(map);
+        markersRef.current.push(overlay);
+      });
+
+      return () => {
+        markersRef.current.forEach((marker) => marker.setMap(null));
+        markersRef.current = [];
+        // 전역 함수 정리는 여기서 생략하거나 필요시 추가
+      };
+    }, [map, loaded, markers]);
+
     // 부모 컴포넌트에 메서드 노출
     useImperativeHandle(ref, () => ({
+      setHeatmapVisible: (visible: boolean) => setIsHeatmapVisible(visible),
+      setMarkers: (newMarkers: MarkerData[]) => setMarkers(newMarkers),
       executeAction: (action: AiAction) => {
         if (!map || !loaded) {
           console.warn("Map is not ready yet.");
@@ -48,16 +136,52 @@ export const ChatMapSection = forwardRef<ChatMapSectionRef, ChatMapSectionProps>
 
         try {
            // 1. 지도 이동 및 줌
-           if (action.payload?.lat && action.payload?.lng) {
-             const moveLatLon = new window.kakao.maps.LatLng(action.payload.lat, action.payload.lng);
-             map.panTo(moveLatLon);
-             
-             if (action.payload.zoom) {
-                map.setLevel(action.payload.zoom);
+           if (action.type === 'map.pan_to' || (action.payload?.lat && action.payload?.lng)) {
+             if (action.payload?.lat && action.payload?.lng) {
+                const moveLatLon = new window.kakao.maps.LatLng(action.payload.lat, action.payload.lng);
+                map.panTo(moveLatLon);
+                
+                if (action.payload.zoom) {
+                    map.setLevel(action.payload.zoom);
+                }
              }
            }
+
+           // 2. 레이어 제어 (ActionHandler에서 setHeatmapVisible 호출 권장하지만, 여기서 직접 처리도 가능)
+           if (action.type === 'map.setLayer') {
+              if (action.payload.layer === 'footTraffic') {
+                  const visible = action.payload.visible !== false; // default true
+                  setIsHeatmapVisible(visible);
+                  
+                  // 히트맵을 켰을 때, 만약 panel이 열려있다면 닫거나 안내 메시지 표시 가능/
+                  console.log(`Heatmap visibility set to ${visible}`);
+              }
+           }
+
+           // 3. 마커 설정
+           if (action.type === 'map.setMarkers') {
+               // payload.markers 배열 사용
+               const markersPayload = action.payload.markers;
+               if (Array.isArray(markersPayload)) {
+                   const newMarkers: MarkerData[] = markersPayload.map((m: any) => ({
+                       id: m.id || Math.random().toString(36).substr(2, 9),
+                       lat: m.lat,
+                       lng: m.lng,
+                       label: m.label,
+                       type: m.type || 'default',
+                   }));
+                   setMarkers(newMarkers);
+                   
+                   // 마커들이 보이도록 지도 범위 조정 (옵션)
+                   if (newMarkers.length > 0) {
+                       const bounds = new window.kakao.maps.LatLngBounds();
+                       newMarkers.forEach(m => bounds.extend(new window.kakao.maps.LatLng(m.lat, m.lng)));
+                       // 여백을 두고 범위 설정은 map.setBounds가 필요한데, kakao api 확인 필요
+                       // 간단히 첫 번째 마커로 이동하거나 추후 구현
+                   }
+               }
+           }
            
-           // TODO: 추후 마커 표시 등 다른 액션 처리 로직 추가 가능
         } catch (e) {
           console.error("Failed to execute map action:", e);
         }
@@ -167,7 +291,7 @@ export const ChatMapSection = forwardRef<ChatMapSectionRef, ChatMapSectionProps>
 
         {/* 지도 영역 (60%) - 패딩 적용 */}
         <div className="h-[60%] w-full p-4 pb-0">
-          <div ref={mapRef} className="h-full w-full rounded-2xl overflow-hidden shadow-sm border border-slate-100 relative bg-slate-100">
+          <div id="chat-map-container" ref={mapRef} className="h-full w-full rounded-2xl overflow-hidden shadow-sm border border-slate-100 relative bg-slate-100">
             {!loaded && !error && (
               <div className="h-full flex items-center justify-center">
                 <div className="text-center text-slate-400">

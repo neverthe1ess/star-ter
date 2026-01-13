@@ -98,34 +98,68 @@ export class AiService {
     if (areaText === '""') return [];
     const messageAreaList = areaText.split(',').map((area) => area.trim());
 
+    const DISTANCE_THRESHOLD = 0.4; // 벡터 검색 신뢰도 임계값
+
     const results = await Promise.all(
       messageAreaList.map(async (area) => {
         const areaVector = await this.openAiService.embedText(area);
-        const [first] = await this.aiRepository.areaSearchByVector(
+        const vectorCandidates = await this.aiRepository.areaSearchByVector(
           areaVector.data[0].embedding,
-          1,
+          3,
         );
 
-        if (first) {
+        console.log(
+          `[DEBUG] Vector search for "${area}":`,
+          vectorCandidates.map((c) => `${c.areaName} (dist: ${c.distance})`),
+        );
+
+        // 신뢰도 체크: 최상위 결과의 distance가 임계값 초과하면 fallback
+        let finalCandidates = vectorCandidates;
+        if (
+          vectorCandidates.length === 0 ||
+          Number(vectorCandidates[0].distance) > DISTANCE_THRESHOLD
+        ) {
           console.log(
-            `[DEBUG] Area found in vector DB: ${first.areaName} (${first.areaCode}, ${first.areaLevel})`,
+            `[DEBUG] Vector search unreliable (dist > ${DISTANCE_THRESHOLD}), trying text fallback...`,
           );
-          const coords = await this.aiRepository.getAreaCoordinates(
-            first.areaCode,
-            first.areaLevel,
+          const textCandidates = await this.aiRepository.areaSearchByText(
+            area,
+            3,
           );
-          console.log(`[DEBUG] Coords fetched for ${first.areaName}:`, coords);
-          if (coords) {
-            first.lat = coords.lat;
-            first.lng = coords.lng;
+          if (textCandidates.length > 0) {
+            // 텍스트 검색 결과 우선, 벡터 결과 병합 (중복 제거)
+            const seenCodes = new Set(textCandidates.map((c) => c.areaCode));
+            const mergedCandidates = [
+              ...textCandidates,
+              ...vectorCandidates.filter((c) => !seenCodes.has(c.areaCode)),
+            ];
+            finalCandidates = mergedCandidates.slice(0, 3);
+            console.log('[DEBUG] Using text search results:', finalCandidates);
           }
         }
-        return first;
+
+        // 좌표 추가
+        const candidatesWithCoords = await Promise.all(
+          finalCandidates.map(async (candidate) => {
+            const coords = await this.aiRepository.getAreaCoordinates(
+              candidate.areaCode,
+              candidate.areaLevel,
+            );
+            if (coords) {
+              candidate.lat = coords.lat;
+              candidate.lng = coords.lng;
+            }
+            return candidate;
+          }),
+        );
+
+        return candidatesWithCoords;
       }),
     );
 
-    // Filter out undefined results to prevent errors during coordinate patching
-    return results.filter((item): item is NonNullable<typeof item> => !!item);
+    return results
+      .flat()
+      .filter((item): item is NonNullable<typeof item> => !!item);
   }
 
   async getCategories(message: string) {

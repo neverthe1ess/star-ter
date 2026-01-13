@@ -10,6 +10,7 @@ const API_BASE_URL =
 export async function sendMessage(
   message: string,
   history: Array<{ role: 'user' | 'assistant'; content: string }>,
+  userId?: string, // 로그인된 사용자 ID (개인화 추천에 사용)
 ): Promise<AiResponse> {
   console.log('[Server Action] Sending message to AI:', message);
 
@@ -22,6 +23,7 @@ export async function sendMessage(
       body: JSON.stringify({
         message,
         history,
+        userId, // 개인화 추천을 위한 사용자 ID
       }),
       // 캐싱 방지 (항상 새로운 응답 필요)
       cache: 'no-store',

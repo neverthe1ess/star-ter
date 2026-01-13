@@ -3,7 +3,8 @@ import { sendMessage as apiSendMessage } from '../../../app/actions/chat';
 import { type AiAction } from '../../../lib/api/ai';
 import { Message, Thread } from '../types';
 
-export function useChat() {
+// userId를 받아서 개인화 추천에 활용
+export function useChat(userId?: string) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -76,7 +77,8 @@ export function useChat() {
           content: msg.content,
         }));
 
-        const response = await apiSendMessage(text, history);
+        // userId를 전달하여 개인화 추천 지원
+        const response = await apiSendMessage(text, history, userId);
 
         const aiMessage: Message = {
           id: crypto.randomUUID(),
@@ -104,7 +106,7 @@ export function useChat() {
         setIsLoading(false);
       }
     },
-    [messages],
+    [messages, userId],
   );
 
   return {
