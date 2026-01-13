@@ -1,4 +1,12 @@
-import { Controller, Logger, Post, Body, Get, Query } from '@nestjs/common';
+import {
+  Controller,
+  Logger,
+  Post,
+  Body,
+  Get,
+  Query,
+  RequestTimeoutException,
+} from '@nestjs/common';
 import { AiService } from './ai.service';
 import { ToolsRepository } from './tools.repository';
 
@@ -23,12 +31,36 @@ export class AiController {
     this.logger.log(
       `Received message with history: ${body.message} (${body.history?.length || 0} previous messages)`,
     );
-    const response = await this.aiService.getAIMessageWithHistory(
-      body.message,
-      body.history || [],
+
+    // 50초 타임아웃 설정
+    const TIMEOUT_MS = 50000;
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(
+        () =>
+          reject(
+            new RequestTimeoutException(
+              'AI 응답 시간이 초과되었습니다. (50초 제한)',
+            ),
+          ),
+        TIMEOUT_MS,
+      ),
     );
-    this.logger.log(`Response time: ${Date.now() - startTime} ms`);
-    return response;
+
+    try {
+      const response = await Promise.race([
+        this.aiService.getAIMessageWithHistory(
+          body.message,
+          body.history || [],
+        ),
+        timeoutPromise,
+      ]);
+
+      this.logger.log(`Response time: ${Date.now() - startTime} ms`);
+      return response;
+    } catch (error) {
+      this.logger.error(`Error processing message: ${error.message}`);
+      throw error;
+    }
   }
 
   // =========================================

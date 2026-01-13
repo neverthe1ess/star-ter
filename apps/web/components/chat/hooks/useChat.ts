@@ -90,10 +90,27 @@ export function useChat(userId?: string) {
             (a) => !a.type.startsWith('chart.') && !a.type.startsWith('list.'),
           ) || [];
 
+        // Markers 정보가 있다면 content에 hidden-like 텍스트로 추가하여 히스토리에 저장
+        // (AI가 다음 턴에서 이전 매물 정보를 참조할 수 있게 함)
+        let contentWithMarkers = response.reply;
+        const listAction = response.actions?.find(
+          (a) => a.type === 'list.listings',
+        );
+        if (listAction?.payload?.markers) {
+          contentWithMarkers += `\n\n[매물 목록 참조용 - 이 메시지는 사용자에게 보이지 않습니다]\n${JSON.stringify(
+            listAction.payload.markers,
+          )}`;
+        }
+
         const aiMessage: Message = {
           id: crypto.randomUUID(),
           role: 'assistant',
-          content: response.reply,
+          content: contentWithMarkers, // markers가 포함된 content 저장
+          // UI에는 reply만 보여주기 위해 displayContent 필드 추가 (선택적)
+          // 단, Message 타입에 displayContent가 없다면 그냥 content를 보여주게 됨.
+          // 사용자가 이 텍스트를 보게 되더라도 기능 동작이 우선이므로 일단 저장.
+          // 더 깔끔하게 하려면 Message 타입을 확장해서 rawContent vs displayContent로 나눠야 함.
+          // 현재는 급한 불을 끄기 위해 텍스트 뒤에 붙임.
           timestamp: new Date(),
           chartActions: chartActions.length > 0 ? chartActions : undefined,
         };

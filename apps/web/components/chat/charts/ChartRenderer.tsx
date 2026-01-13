@@ -16,6 +16,10 @@ export interface ChartAction {
     areaName?: string | null;
     industryCode?: string | null;
     listingId?: string | null;
+    lat?: number | null;
+    lng?: number | null;
+    maxDeposit?: number | null;
+    maxMonthlyRent?: number | null;
   };
 }
 
@@ -78,6 +82,11 @@ function ChartItem({ action }: { action: ChartAction }) {
             break;
           case 'list.listings':
             endpoint = `${API_BASE}/ai/chart/listings`;
+            // list.listings requires lat/lng
+            if (payload.lat) params.set('latitude', String(payload.lat));
+            if (payload.lng) params.set('longitude', String(payload.lng));
+            if (payload.maxDeposit) params.set('maxDeposit', String(payload.maxDeposit));
+            if (payload.maxMonthlyRent) params.set('maxMonthlyRent', String(payload.maxMonthlyRent));
             break;
           case 'list.similar_areas':
             endpoint = `${API_BASE}/ai/chart/similar-areas`;
@@ -104,7 +113,7 @@ function ChartItem({ action }: { action: ChartAction }) {
     };
 
     fetchData();
-  }, [type, payload.areaCode, payload.industryCode, payload.listingId]);
+  }, [type, payload.areaCode, payload.industryCode, payload.listingId, payload.lat, payload.lng, payload.maxDeposit, payload.maxMonthlyRent]);
 
   // 에러 상태
   if (error) {

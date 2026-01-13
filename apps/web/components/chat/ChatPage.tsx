@@ -74,7 +74,7 @@ export function ChatPage() {
   }, [searchParams, router, handleSendMessageWrapper]);
 
   return (
-    <div className="flex h-screen bg-[#f7f7f8] py-4 pr-4 gap-4 overflow-hidden">
+    <div className="flex h-full gap-4 overflow-hidden">
       {/* 지도 영역 (왼쪽) */}
       <ChatMapSection ref={mapSectionRef} isOpen={isMapOpen} />
 

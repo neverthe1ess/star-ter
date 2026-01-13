@@ -1193,16 +1193,29 @@ export class ToolsRepository {
     const { areaCd, categoryCode, stdrYyquCd = '20253' } = params;
 
     // 1. 필요한 데이터 병렬 조회
+    // categoryCode가 없으면 업종 필터 없이 상권 전체 기준으로 조회
+    const storeWhereCondition: {
+      trdar_cd?: string;
+      svc_induty_cd?: string;
+      stdr_yyqu_cd?: { lte: string };
+    } = {
+      trdar_cd: areaCd,
+      stdr_yyqu_cd: { lte: stdrYyquCd },
+    };
+
+    // categoryCode가 있을 때만 업종 필터 추가
+    if (categoryCode) {
+      storeWhereCondition.svc_induty_cd = categoryCode;
+    }
+
     const [storeStat, changeStat] = await Promise.all([
-      this.prisma.storeCommercial.findFirst({
-        where: {
-          trdar_cd: areaCd,
-          svc_induty_cd: categoryCode,
-          stdr_yyqu_cd: { lte: stdrYyquCd },
-        },
-        orderBy: { stdr_yyqu_cd: 'desc' },
-        select: { clsbiz_rt: true, opbiz_rt: true },
-      }),
+      categoryCode
+        ? this.prisma.storeCommercial.findFirst({
+            where: storeWhereCondition,
+            orderBy: { stdr_yyqu_cd: 'desc' },
+            select: { clsbiz_rt: true, opbiz_rt: true },
+          })
+        : null, // categoryCode 없으면 업종별 데이터 조회 스킵
       this.prisma.commercialChangeCommercial.findFirst({
         where: { trdar_cd: areaCd, stdr_yyqu_cd: { lte: stdrYyquCd } },
         orderBy: { stdr_yyqu_cd: 'desc' },
@@ -1256,7 +1269,7 @@ export class ToolsRepository {
 
     // 해석 메시지 생성
     let interpretation = '보통 수준의 생존력이 예상됩니다.';
-    if (score >= 80) interpretation = '생존 가능성이 매우 높습니다! 🚀';
+    if (score >= 80) interpretation = '생존 가능성이 매우 높습니다!';
     else if (score >= 60)
       interpretation = '비교적 안정적인 궤도 진입이 예상됩니다.';
     else if (score <= 40)
@@ -1555,7 +1568,12 @@ export class ToolsRepository {
         // floor: ... (listing.floor is string like "1층", need parsing if needed)
       };
 
-      return this.calcBreakEven(newParams);
+      const result = await this.calcBreakEven(newParams);
+      // listingId를 결과에 포함시켜 AI가 액션을 생성할 때 참조할 수 있게 함
+      return {
+        ...result,
+        listingId: params.listingId,
+      };
     } catch (e) {
       console.error('BEP with Listing Error:', e);
       return {

@@ -1,10 +1,11 @@
 "use client";
 
 import React from "react";
+import { MapPin, Building2, Home } from "lucide-react";
 
 /**
  * ListingsCard - 매물 리스트 카드 컴포넌트
- * 
+ *
  * list.listings 액션 타입에 대응
  * recommend_real_estate 도구 결과를 시각화
  */
@@ -14,11 +15,11 @@ interface ListingItem {
   id: string;
   title: string;
   address: string;
-  deposit: number;      // 보증금 (원)
-  monthlyRent: number;  // 월세 (원)
-  size?: number;        // 면적 (평)
-  floor?: string;       // 층수
-  distance?: number;    // 거리 (m)
+  deposit: number; // 보증금 (원)
+  monthlyRent: number; // 월세 (원)
+  size?: number; // 면적 (평)
+  floor?: string; // 층수
+  distance?: number; // 거리 (m)
 }
 
 interface ListingsData {
@@ -62,7 +63,10 @@ export function ListingsCard({ data, isLoading, areaName }: ListingsCardProps) {
   if (!data || !data.listings || data.listings.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-slate-200 p-6 text-slate-500">
-        🏠 조건에 맞는 매물을 찾을 수 없습니다.
+        <div className="flex items-center gap-2">
+          <Home className="w-5 h-5" />
+          <span>조건에 맞는 매물을 찾을 수 없습니다.</span>
+        </div>
       </div>
     );
   }
@@ -72,13 +76,16 @@ export function ListingsCard({ data, isLoading, areaName }: ListingsCardProps) {
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-6 my-4">
       {/* 헤더 */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-slate-800">
-          🏠 추천 매물 {areaName && <span className="text-slate-500">- {areaName}</span>}
-        </h3>
-        <span className="text-sm text-slate-500">
-          총 {totalCount}건
-        </span>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <div className="p-2">
+            <Building2 className="w-5 h-5 text-blue-600" />
+          </div>
+          <h3 className="text-2xl font-semibold text-slate-800">
+            추천 매물 {areaName && <span className="text-slate-500">- {areaName}</span>}
+          </h3>
+        </div>
+        <span className="text-base text-slate-500">총 {totalCount}건</span>
       </div>
 
       {/* 매물 리스트 */}
@@ -91,29 +98,29 @@ export function ListingsCard({ data, isLoading, areaName }: ListingsCardProps) {
             <div className="flex justify-between items-start">
               {/* 왼쪽: 제목, 주소 */}
               <div className="flex-1">
-                <div className="font-medium text-slate-800 mb-1">
+                <div className="text-xl font-semibold text-slate-800 mb-1">
                   {listing.title || `매물 ${index + 1}`}
                 </div>
-                <div className="text-sm text-slate-500">
+                <div className="text-lg text-slate-500 mb-1">
                   {listing.address}
                 </div>
                 {listing.distance && (
-                  <div className="text-xs text-blue-600 mt-1">
-                    📍 {listing.distance}m
+                  <div className="flex items-center gap-1 text-md text-blue-600">
+                    <MapPin className="w-4 h-4" />
+                    <span>{listing.distance}m</span>
                   </div>
                 )}
               </div>
 
               {/* 오른쪽: 가격 정보 */}
               <div className="text-right">
-                <div className="text-lg font-bold text-blue-600">
-                  {formatCurrency(listing.deposit)} / {formatCurrency(listing.monthlyRent)}
+                <div className="text-xl font-bold text-blue-600">
+                  {formatCurrency(listing.deposit)} /{" "}
+                  {formatCurrency(listing.monthlyRent)}
                 </div>
-                <div className="text-xs text-slate-400">
-                  보증금 / 월세
-                </div>
+                <div className="text-sm text-slate-400">보증금 / 월세</div>
                 {listing.size && (
-                  <div className="text-sm text-slate-600 mt-1">
+                  <div className="text-base text-slate-600 mt-1">
                     {listing.size}평 {listing.floor && `· ${listing.floor}`}
                   </div>
                 )}
@@ -125,7 +132,7 @@ export function ListingsCard({ data, isLoading, areaName }: ListingsCardProps) {
 
       {/* 더보기 안내 */}
       {totalCount > listings.length && (
-        <div className="mt-4 text-center text-sm text-slate-500">
+        <div className="mt-4 text-center text-base text-slate-500">
           외 {totalCount - listings.length}건의 매물이 더 있습니다.
         </div>
       )}

@@ -75,6 +75,33 @@ export class AiService {
       });
     }
 
+    // [Fix] Track if break-even tool was called to ensure action generation
+    const breakEvenContext = toolCallResponse.output.reduce(
+      (acc, toolCall) => {
+        if (acc) return acc; // already found
+        if (toolCall.type !== 'function_call') return acc;
+
+        try {
+          if (toolCall.name === 'calc_break_even_with_listing') {
+            const args = JSON.parse(toolCall.arguments) as {
+              listingId?: string;
+            };
+            if (args.listingId) return { type: 'listing', id: args.listingId };
+          } else if (toolCall.name === 'calc_break_even') {
+            const args = JSON.parse(toolCall.arguments) as { areaCd?: string };
+            if (args.areaCd) return { type: 'area', id: args.areaCd };
+          }
+        } catch (e) {
+          console.warn(
+            '[AiService] Failed to parse tool arguments for BEP context:',
+            e,
+          );
+        }
+        return acc;
+      },
+      null as { type: 'listing' | 'area'; id: string } | null,
+    );
+
     console.log('[AiService] Calling analyzeResults...');
     const analyzeResult = await this.openAiService.analyzeResults(input);
 
@@ -83,6 +110,28 @@ export class AiService {
 
     // Use processor for parsing and patching
     const parsedResponse = this.aiResponseProcessor.parseResponse(responseText);
+
+    // [Fix] Force inject chart.breakeven action if missing
+    if (breakEvenContext) {
+      parsedResponse.actions = parsedResponse.actions || [];
+      const hasAction = parsedResponse.actions.some(
+        (a) => a.type === 'chart.breakeven',
+      );
+
+      if (!hasAction) {
+        console.log(
+          '[AiService] Force injecting missing chart.breakeven action for',
+          breakEvenContext,
+        );
+        parsedResponse.actions.push({
+          type: 'chart.breakeven',
+          payload:
+            breakEvenContext.type === 'listing'
+              ? { listingId: breakEvenContext.id }
+              : { areaCode: breakEvenContext.id },
+        });
+      }
+    }
     const finalJson = this.aiResponseProcessor.patchCoordinates(
       parsedResponse,
       areaList,

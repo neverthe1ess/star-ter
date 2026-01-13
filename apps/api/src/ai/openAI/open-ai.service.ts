@@ -53,6 +53,7 @@ export class OpenAiService {
     return this.client.responses.create({
       model: 'gpt-4.1-mini',
       temperature: 0,
+      service_tier: 'priority',
       input: input,
       tools: TOOLS as Array<Tool>,
       instructions: PROMPTS.TOOL_CALL_SYSTEM.replace(

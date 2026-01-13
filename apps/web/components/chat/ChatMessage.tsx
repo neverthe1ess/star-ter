@@ -52,13 +52,14 @@ export function ChatMessage({ message, chartActions }: ChatMessageProps) {
           </div>
         )}
 
-        {/* 메시지 내용 */}
+
+        {/* 메시지 내용 (숨겨진 markers 텍스트 제거하고 표시) */}
         <div
           className={`text-lg leading-relaxed whitespace-pre-wrap ${
             isUser ? "text-white font-semibold" : "text-slate-700"
           }`}
         >
-          {message.content}
+          {message.content.split('\n\n[매물 목록 참조용')[0]}
         </div>
 
         {/* 차트 렌더링 (AI 메시지만, 말풍선 안) */}
