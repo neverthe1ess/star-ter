@@ -285,7 +285,7 @@ export const TOOLS = [
     type: 'function',
     name: 'get_competition_analysis',
     description:
-      '상권 내 특정 업종의 경쟁 강도(점포 수)와 리스크(개폐업률)를 조회합니다.',
+      '특정 상권/업종의 경쟁 강도(점포 수, 프랜차이즈 비율, 폐업률)를 분석합니다. *주의: 단순 경쟁 현황이 아닌, 구체적인 생존 점수나 확률이 궁금하다면 predict_survival_rate를 사용하세요.*',
     parameters: {
       type: 'object',
       properties: {
@@ -307,7 +307,7 @@ export const TOOLS = [
     type: 'function',
     name: 'get_commercial_risk',
     description:
-      '상권의 장기적 리스크(상권 등급, 평균 생존 기간)를 조회합니다.',
+      '상권의 등급(활성화/침체 등)과 평균 영업 지속 기간을 조회합니다. 상권 전체의 리스크를 볼 때 사용합니다. *주의: 특정 업종의 구체적인 생존 확률(점수)을 물어볼 때는 predict_survival_rate를 사용하세요.*',
     parameters: {
       type: 'object',
       properties: {
@@ -352,6 +352,70 @@ export const TOOLS = [
         floor: {
           type: 'number',
           description: '매물의 층수. 기본값은 1층입니다.',
+        },
+      },
+      required: ['areaCd', 'categoryCode'],
+      additionalProperties: false,
+    },
+    strict: false,
+  },
+  {
+    type: 'function',
+    name: 'calc_break_even',
+    description:
+      '손익분기점(BEP: Break-Even Point)을 계산합니다. 업종별 평균 비용(재료비, 인건비 등)과 임대료를 고려하여, 적자를 면하기 위해 월 얼마를 벌어야 하는지 분석합니다. "얼마 팔아야 본전이야?", "손익분기 알려줘" 등의 질문에 사용하세요.',
+    parameters: {
+      type: 'object',
+      properties: {
+        areaCd: {
+          type: 'string',
+          description: '상권 코드 (예: "3120189")',
+        },
+        categoryCode: {
+          type: 'string',
+          description: '업종 코드 (예: "CS100010")',
+        },
+        monthlyRent: {
+          type: 'number',
+          description: '월세 (단위: 만원)',
+        },
+        deposit: {
+          type: 'number',
+          description: '보증금 (단위: 만원)',
+        },
+        size: {
+          type: 'number',
+          description: '매장 크기 (평)',
+        },
+        floor: {
+          type: 'number',
+          description: '층수',
+        },
+      },
+      required: ['areaCd'],
+      additionalProperties: false,
+    },
+    strict: false,
+  },
+  {
+    type: 'function',
+    name: 'predict_survival_rate',
+    description:
+      '***[강력 추천]*** "살아남을 수 있을까?", "망할 확률은?", "생존 가능성" 등의 질문에 사용하세요. 단순 경쟁 현황이 아니라, 폐업률과 영업지속기간을 종합 분석하여 생존 가능성을 **점수(Score)**로 예측해 줍니다.',
+    parameters: {
+      type: 'object',
+      properties: {
+        areaCd: {
+          type: 'string',
+          description: '상권 코드 (예: "3120189")',
+        },
+        categoryCode: {
+          type: 'string',
+          description: '업종 코드 (예: "CS100010")',
+        },
+        stdrYyquCd: {
+          type: 'string',
+          description: '기준 분기 코드 (기본값: "20243")',
         },
       },
       required: ['areaCd', 'categoryCode'],

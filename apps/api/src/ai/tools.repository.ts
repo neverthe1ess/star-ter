@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from 'generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { QueryParams } from './dto/query-dto';
+import { BUSINESS_COSTS } from '../market/constants/business-costs';
 
 @Injectable()
 export class ToolsRepository {
@@ -272,85 +273,151 @@ export class ToolsRepository {
     return rows;
   }
 
-  // 10) 상권 비교(2개 상권 예시): 유동인구/매출 합계 비교
+  // 10) 상권 비교(2개 상권 예시): 유동인구  // 9) 상권 비교 (Task 2.3 -> Task 4.3 고도화)
+  // 10) 상권 비교 (Task 4.3: 상권 비교 및 레이더 차트 데이터 제공)
   async compareCommercialAreas(params: QueryParams) {
-    const { stdrYyquCd, areaCdList } = params;
-    // areaCdList가 없거나 빈 배열이면 빈 결과 반환
-    if (!areaCdList || areaCdList.length === 0) {
-      return [];
+    console.log('[ToolsRepository] compareCommercialAreas called:', params);
+    const { areaCdList } = params;
+    if (!areaCdList || areaCdList.length === 0) return [];
+
+    // 1. 최신 분기 확인 (임시로 고정하거나 조회 필요. 여기선 DB 최신값 사용 권장하지만 편의상 20243 등 사용.
+    //    정확성을 위해 먼저 최신 분기를 조회하는 것이 좋으나, 성능상 파라미터나 하드코딩 고려. 일단 '20243' 가정 or orderBy로 하나만 가져오는 방식은 groupBy에서 복잡함.
+    //    User flow: stdrYyquCd defaults to '20243' in definitions but params might be empty.
+    const targetQuarter = params.stdrYyquCd || '20243';
+
+    // 2. 주요 지표 병렬 조회
+    // 주의: groupBy는 prisma client에서 지원.
+    const [salesStats, footTraffic, resident, working, storeStats] =
+      await Promise.all([
+        // 매출 (총 매출 Sum)
+        this.prisma.salesCommercial.groupBy({
+          by: ['trdar_cd'],
+          where: {
+            trdar_cd: { in: areaCdList },
+            stdr_yyqu_cd: targetQuarter,
+          },
+          _sum: {
+            thsmon_selng_amt: true,
+          },
+        }),
+        // 유동인구
+        this.prisma.footTrafficCommercial.findMany({
+          where: {
+            trdar_cd: { in: areaCdList },
+            stdr_yyqu_cd: targetQuarter,
+          },
+          select: { trdar_cd: true, tot_flpop_co: true },
+        }),
+        // 상주인구
+        this.prisma.residentPopulationCommercial.findMany({
+          where: {
+            trdar_cd: { in: areaCdList },
+            stdr_yyqu_cd: targetQuarter,
+          },
+          select: { trdar_cd: true, tot_repop_co: true },
+        }),
+        // 직장인구
+        this.prisma.workingPopulationCommercial.findMany({
+          where: {
+            trdar_cd: { in: areaCdList },
+            stdr_yyqu_cd: targetQuarter,
+          },
+          select: { trdar_cd: true, tot_wrc_popltn_co: true },
+        }),
+        // 안정성 (폐업률 Avg)
+        this.prisma.storeCommercial.groupBy({
+          by: ['trdar_cd'],
+          where: {
+            trdar_cd: { in: areaCdList },
+            stdr_yyqu_cd: targetQuarter,
+          },
+          _avg: {
+            clsbiz_rt: true,
+          },
+        }),
+      ]);
+
+    // Area Name 매핑을 위해 별도 조회 필요 (groupBy 결과엔 이름 없음)
+    const areaNames = await this.prisma.areaCommercial.findMany({
+      where: { trdar_cd: { in: areaCdList } },
+      select: { trdar_cd: true, trdar_cd_nm: true },
+    });
+
+    // 3. 데이터 병합
+    const mergedData = areaCdList.map((code) => {
+      const nameObj = areaNames.find((n) => n.trdar_cd === code);
+      const s = salesStats.find((item) => item.trdar_cd === code);
+      const f = footTraffic.find((item) => item.trdar_cd === code);
+      const r = resident.find((item) => item.trdar_cd === code);
+      const w = working.find((item) => item.trdar_cd === code);
+      const st = storeStats.find((item) => item.trdar_cd === code);
+
+      // 숫자 변환 (safely)
+      const toNum = (v: any) => Number(v || 0);
+
+      const revenue = toNum(s?._sum?.thsmon_selng_amt);
+      const pop = numberSafe(f?.tot_flpop_co);
+      const res = numberSafe(r?.tot_repop_co);
+      const work = numberSafe(w?.tot_wrc_popltn_co);
+      const closingRate = toNum(st?._avg?.clsbiz_rt);
+      const stability = 100 - closingRate;
+
+      return {
+        areaCode: code,
+        areaName: nameObj?.trdar_cd_nm || code,
+        metrics: { revenue, pop, res, work, stability },
+        raw: { closingRate },
+      };
+    });
+
+    // Helper for safe number conversion
+    function numberSafe(val: any) {
+      if (typeof val === 'bigint') return Number(val);
+      if (val?.toNumber) return val.toNumber();
+      return Number(val || 0);
     }
 
-    const rows = await this.prisma.$queryRaw<unknown[]>`
-      WITH
-      ft AS (
-        SELECT
-          stdr_yyqu_cd AS "기준 년분기 코드",
-          area_level AS "지역 수준",
-          area_cd AS "지역 코드",
-          area_nm AS "지역 이름",
-          trdar_se_cd AS "상권 구분 코드",
-          trdar_se_cd_nm AS "상권 구분 코드 명",
-          tot_flpop_co AS "총 유동인구",
-          (agrde_20_flpop_co + agrde_30_flpop_co) AS "2030 유동인구"
-        FROM v_foot_traffic
-        WHERE stdr_yyqu_cd = ${stdrYyquCd}
-          AND area_cd IN (${Prisma.join(areaCdList)})
-      ),
-      sales AS (
-        SELECT
-          stdr_yyqu_cd AS "기준 년분기 코드",
-          area_level AS "지역 수준",
-          area_cd AS "지역 코드",
-          area_nm AS "지역 이름",
-          trdar_se_cd AS "상권 구분 코드",
-          trdar_se_cd_nm AS "상권 구분 코드 명",
-          SUM(thsmon_selng_amt) AS "해당 분기 매출 금액",
-          SUM(mdwk_selng_amt) AS "주중 매출 금액",
-          SUM(wkend_selng_amt) AS "주말 매출 금액"
-        FROM v_sales
-        WHERE stdr_yyqu_cd = ${stdrYyquCd}
-          AND area_cd IN (${Prisma.join(areaCdList)})
-        GROUP BY 1, 2, 3, 4, 5, 6
-      ),
-      wp AS (
-        SELECT
-          stdr_yyqu_cd AS "기준 년분기 코드",
-          area_level AS "지역 수준",
-          area_cd AS "지역 코드",
-          area_nm AS "지역 이름",
-          trdar_se_cd AS "상권 구분 코드",
-          trdar_se_cd_nm AS "상권 구분 코드 명",
-          tot_wrc_popltn_co AS "총 직장인구"
-        FROM v_working_population
-        WHERE stdr_yyqu_cd = ${stdrYyquCd}
-          AND area_cd IN (${Prisma.join(areaCdList)})
-      )
-      SELECT
-        ft."지역 이름" AS "지역 이름",
-        ft."총 유동인구" AS "총 유동인구",
-        ft."2030 유동인구" AS "2030 유동인구",
-        wp."총 직장인구" AS "총 직장인구",
-        sales."해당 분기 매출 금액" AS "해당 분기 매출 금액",
-        sales."주중 매출 금액" AS "주중 매출 금액",
-        sales."주말 매출 금액" AS "주말 매출 금액"
-      FROM ft
-      LEFT JOIN sales
-        ON sales."기준 년분기 코드" = ft."기준 년분기 코드"
-      AND sales."지역 수준" = ft."지역 수준"
-      AND sales."지역 코드" = ft."지역 코드"
-      AND sales."지역 이름" = ft."지역 이름"
-      AND sales."상권 구분 코드" = ft."상권 구분 코드"
-      AND sales."상권 구분 코드 명" = ft."상권 구분 코드 명"
-      LEFT JOIN wp
-        ON wp."기준 년분기 코드" = ft."기준 년분기 코드"
-      AND wp."지역 수준" = ft."지역 수준"
-      AND wp."지역 코드" = ft."지역 코드"
-      AND wp."지역 이름" = ft."지역 이름"
-      AND wp."상권 구분 코드" = ft."상권 구분 코드"
-      AND wp."상권 구분 코드 명" = ft."상권 구분 코드 명"
-      ORDER BY sales."해당 분기 매출 금액" DESC NULLS LAST
-    `;
-    return rows;
+    // 3. 정규화 (Max값 기준 점수화, 0 div 방지)
+    const maxValues = {
+      revenue: Math.max(...mergedData.map((d) => d.metrics.revenue)) || 1,
+      pop: Math.max(...mergedData.map((d) => d.metrics.pop)) || 1,
+      res: Math.max(...mergedData.map((d) => d.metrics.res)) || 1,
+      work: Math.max(...mergedData.map((d) => d.metrics.work)) || 1,
+      stability: 100, // 안정성은 절대값(100점 만점) 사용
+    };
+
+    const radarData = mergedData.map((d) => ({
+      areaName: d.areaName,
+      scores: {
+        revenue: Math.min(
+          100,
+          Math.round((d.metrics.revenue / maxValues.revenue) * 100),
+        ),
+        pop: Math.min(100, Math.round((d.metrics.pop / maxValues.pop) * 100)),
+        res: Math.min(100, Math.round((d.metrics.res / maxValues.res) * 100)),
+        work: Math.min(
+          100,
+          Math.round((d.metrics.work / maxValues.work) * 100),
+        ),
+        stability: Math.round(d.metrics.stability),
+      },
+      rawMetrics: d.metrics,
+    }));
+
+    return {
+      summary: `${mergedData.map((d) => d.areaName).join(' vs ')} 비교 결과입니다.`,
+      data: radarData,
+      meta: {
+        unit: '점수(0~100)',
+        indicators: [
+          '매출',
+          '유동인구',
+          '주거인구',
+          '직장인구',
+          '안정성(100-폐업률)',
+        ],
+      },
+    };
   }
 
   // 12) 업종별 상권 분석(간단): 상권 1개 + 업종 1개
@@ -755,7 +822,6 @@ export class ToolsRepository {
       areaCd,
       categoryCode,
       stdrYyquCd = '20243',
-      deposit,
       monthlyRent,
       size = 15,
       floor = 1,
@@ -810,9 +876,7 @@ export class ToolsRepository {
 
     if (monthlyRent) {
       // Case A: 매물 정보 사용 (입력 단위가 만원이면 * 10000)
-      // *주의*: 보통 사용자 입력은 '300' (만원) 형태로 옴.
-      // Rent DB나 Sales DB 단위는 '원'.
-      finalMonthlyRent = monthlyRent * 100000;
+      finalMonthlyRent = monthlyRent * 10000;
       rentSource = '매물 정보';
     } else {
       // Case B: 통계 데이터 사용 (AreaCommercial -> Gu Name -> Rent Table)
@@ -823,6 +887,7 @@ export class ToolsRepository {
 
       if (areaInfo && areaInfo.signgu_cd_nm) {
         // 구 이름으로 임대료 테이블 조회 (여기서는 소형 점포 기준: rent_small_shop)
+        // *사용자 피드백*: DB 부동산 관련 단위는 '천원'이므로, 원 단위 변환 시 * 1000
         const rentStats = await this.prisma.rent_small_shop.findUnique({
           where: { gu_name: areaInfo.signgu_cd_nm },
         });
@@ -831,7 +896,7 @@ export class ToolsRepository {
           // 층별 임대료 선택 (없으면 1층 기준)
           // Prisma Decimal 타입 안전 변환
           const toNum = (val: any) =>
-            val?.toNumber ? val.toNumber() : Number(val || 0);
+            (val?.toNumber ? val.toNumber() : Number(val || 0)) * 1000; // 천원 -> 원
 
           const f1 = toNum(rentStats.f1);
           const f2 = toNum(rentStats.f2);
@@ -889,6 +954,190 @@ export class ToolsRepository {
         unit: '원',
         revenueType: storeCount > 1 ? '점포당 평균 매출' : '전체 매출',
         storeCount,
+      },
+    };
+    // ... (estimateRevenueAndCost 메서드 끝)
+  }
+
+  // 20) 손익분기점(BEP) 계산 (Task 4.1)
+  async calcBreakEven(params: QueryParams) {
+    const { areaCd, categoryCode, monthlyRent, size = 15, floor = 1 } = params;
+
+    // 1. 임대료 계산 (Rent) - estimateRevenueAndCost와 로직 유사하므로 간단히 처리
+    let finalMonthlyRent = 0;
+    let rentSource = '통계 추정';
+
+    if (monthlyRent) {
+      finalMonthlyRent = monthlyRent * 10000; // 만원 단위 -> 원 단위
+      rentSource = '매물 정보';
+    } else {
+      const areaInfo = await this.prisma.areaCommercial.findUnique({
+        where: { trdar_cd: areaCd },
+        select: { signgu_cd_nm: true },
+      });
+
+      if (areaInfo && areaInfo.signgu_cd_nm) {
+        const rentStats = await this.prisma.rent_small_shop.findUnique({
+          where: { gu_name: areaInfo.signgu_cd_nm },
+        });
+
+        if (rentStats) {
+          const toNum = (val: any) =>
+            (val?.toNumber ? val.toNumber() : Number(val || 0)) * 1000; // 천원 -> 원
+
+          const f1 = toNum(rentStats.f1);
+          const f2 = toNum(rentStats.f2);
+          const b1f = toNum(rentStats.b1f);
+
+          let rentPerPyung = 0;
+          if (floor === 1) rentPerPyung = f1;
+          else if (floor >= 2) rentPerPyung = f2 || f1;
+          else rentPerPyung = b1f || f1;
+
+          if (rentPerPyung === 0) rentPerPyung = 100000;
+          finalMonthlyRent = rentPerPyung * size;
+        }
+      }
+    }
+
+    if (finalMonthlyRent === 0) finalMonthlyRent = 1500000;
+
+    // 2. 비용 구조 가져오기
+    const safeCategoryCode = categoryCode || '';
+    const costStructure =
+      BUSINESS_COSTS[safeCategoryCode] || BUSINESS_COSTS['default'];
+
+    // 3. BEP 계산
+    // 고정비 = 임대료 + 인건비 + 기타 고정비
+    const totalFixedCost =
+      finalMonthlyRent + costStructure.laborCost + costStructure.otherFixedCost;
+
+    // 변동비율 = 원가율 + 기타 변동비율
+    const totalVariableRate =
+      costStructure.cogsRate + costStructure.variableRate;
+
+    // 공헌이익률 = 1 - 변동비율
+    const contributionMarginRate = 1 - totalVariableRate;
+
+    // 손익분기 매출액 = 고정비 / 공헌이익률
+    const bepRevenue =
+      contributionMarginRate > 0
+        ? Math.floor(totalFixedCost / contributionMarginRate)
+        : 0;
+
+    // 화폐 단위 포맷팅
+    const formatCurrency = (amount: number) => {
+      if (amount >= 100000000) {
+        const uk = Math.floor(amount / 100000000);
+        const man = Math.floor((amount % 100000000) / 10000);
+        return `${uk}억 ${man.toLocaleString()}만원`;
+      }
+      return `${Math.floor(amount / 10000).toLocaleString()}만원`;
+    };
+
+    return {
+      summary: `손익분기점(BEP)은 월 매출 약 ${formatCurrency(bepRevenue)}입니다. (고정비: ${formatCurrency(totalFixedCost)}, 변동비율: ${(totalVariableRate * 100).toFixed(0)}% 가정)`,
+      data: {
+        bepRevenue,
+        totalFixedCost,
+        rent: finalMonthlyRent,
+        laborCost: costStructure.laborCost,
+        otherFixedCost: costStructure.otherFixedCost,
+        variableRate: totalVariableRate,
+        rentSource,
+      },
+      meta: {
+        unit: '원',
+        categoryName: costStructure.categoryName,
+        note: '업종별 평균 비용 구조를 가정한 추정치입니다.',
+      },
+    };
+  }
+
+  // 21) 생존확률 예측 (Task 4.2)
+  async predictSurvivalRate(params: QueryParams) {
+    const { areaCd, categoryCode, stdrYyquCd = '20243' } = params;
+
+    // 1. 필요한 데이터 병렬 조회
+    const [storeStat, changeStat] = await Promise.all([
+      this.prisma.storeCommercial.findFirst({
+        where: {
+          trdar_cd: areaCd,
+          svc_induty_cd: categoryCode,
+          stdr_yyqu_cd: { lte: stdrYyquCd },
+        },
+        orderBy: { stdr_yyqu_cd: 'desc' },
+        select: { clsbiz_rt: true, opbiz_rt: true },
+      }),
+      this.prisma.commercialChangeCommercial.findFirst({
+        where: { trdar_cd: areaCd, stdr_yyqu_cd: { lte: stdrYyquCd } },
+        orderBy: { stdr_yyqu_cd: 'desc' },
+        select: {
+          trdar_chnge_ix_nm: true,
+          opr_sale_mt_avrg: true,
+          cls_sale_mt_avrg: true,
+        },
+      }),
+    ]);
+
+    if (!storeStat || !changeStat) {
+      return {
+        summary: '생존확률 분석을 위한 충분한 데이터가 없습니다.',
+        data: null,
+      };
+    }
+
+    // 2. 생존 점수 계산 로직 (0 ~ 100점)
+    let score = 60; // 기본 점수
+
+    const closingRate = storeStat.clsbiz_rt; // 폐업률 (%)
+    const avgOperationMonths = changeStat.opr_sale_mt_avrg; // 평균 영업 기간 (월)
+    const changeStatus = changeStat.trdar_chnge_ix_nm; // 상권 등급
+
+    // (1) 상권 등급 보정
+    if (changeStatus === '상권활성화' || changeStatus === '상권확장')
+      score += 15;
+    else if (changeStatus === '정체') score += 5;
+    else if (changeStatus === '상권축소') score -= 15;
+
+    // (2) 폐업률 보정 (낮을수록 좋음)
+    if (closingRate < 2.0)
+      score += 20; // 매우 안정
+    else if (closingRate < 5.0)
+      score += 10; // 양호
+    else if (closingRate > 10.0) score -= 20; // 위험
+
+    // (3) 평균 영업 기간 보정 (길수록 좋음)
+    if (avgOperationMonths > 60)
+      score += 15; // 5년 이상
+    else if (avgOperationMonths > 36)
+      score += 10; // 3년 이상
+    else if (avgOperationMonths < 12) score -= 10; // 1년 미만
+
+    // 점수 클램핑 (0 ~ 99)
+    score = Math.min(99, Math.max(1, score));
+
+    // 해석 메시지 생성
+    let interpretation = '보통 수준의 생존력이 예상됩니다.';
+    if (score >= 80) interpretation = '생존 가능성이 매우 높습니다! 🚀';
+    else if (score >= 60)
+      interpretation = '비교적 안정적인 궤도 진입이 예상됩니다.';
+    else if (score <= 40)
+      interpretation = '초기 생존에 주의가 필요한 지역입니다. ⚠️';
+
+    return {
+      summary: `예상 생존 점수는 ${score}점입니다. ${interpretation} (폐업률: ${closingRate}%, 평균 영업: ${avgOperationMonths}개월)`,
+      data: {
+        score,
+        interpretation,
+        closingRate,
+        avgOperationMonths,
+        changeStatus,
+      },
+      meta: {
+        unit: '점',
+        period: stdrYyquCd,
+        factors: ['폐업률', '평균영업개월', '상권변화지표'],
       },
     };
   }

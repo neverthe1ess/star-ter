@@ -46,6 +46,10 @@ export class AiToolsService {
         return this.toolsRepository.getCommercialRisk(args);
       case 'estimate_revenue_and_cost':
         return this.toolsRepository.estimateRevenueAndCost(args);
+      case 'calc_break_even':
+        return this.toolsRepository.calcBreakEven(args);
+      case 'predict_survival_rate':
+        return this.toolsRepository.predictSurvivalRate(args);
       default:
         return undefined;
     }
