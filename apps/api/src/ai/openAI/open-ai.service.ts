@@ -53,8 +53,8 @@ export class OpenAiService {
     return this.client.responses.create({
       model: 'gpt-4.1-mini',
       temperature: 0,
-      service_tier: 'priority',
       input: input,
+      service_tier: 'priority',
       tools: TOOLS as Array<Tool>,
       instructions: PROMPTS.TOOL_CALL_SYSTEM.replace(
         '${categoryVectors}',
@@ -68,7 +68,6 @@ export class OpenAiService {
       model: 'gpt-4.1-mini',
       input: input,
       service_tier: 'priority',
-      temperature: 0.1,
       text: {
         format: FINAL_RESPONSE_SCHEMA_FOR_ACTION,
       },

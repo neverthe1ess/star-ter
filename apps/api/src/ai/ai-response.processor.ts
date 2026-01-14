@@ -126,7 +126,7 @@ export class AiResponseProcessor {
       // ui.open_panel 또는 map 관련 액션일 때 zoom을 3으로 고정
       if (action.type === 'ui.open_panel' || action.type?.startsWith('map.')) {
         action.payload = action.payload || {};
-        action.payload.zoom = 3; // 카카오 지도 상권 레벨
+        action.payload.zoom = 4; // 카카오 지도 상권 레벨
       }
     });
 

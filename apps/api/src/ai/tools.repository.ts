@@ -1540,25 +1540,6 @@ export class ToolsRepository {
       const deposit = Number(listing.deposit || 0) / 10;
       const size = Number(listing.size || 0);
 
-      // 2. 기존 손익분기 계산 로직 재사용
-      // (기존 calcBreakEven은 areaCd 기반이나, 여기선 매물 임대료를 직접 쓰므로
-      //  areaCd가 없어도 작동하거나, areaCd가 필요하다면 매물 좌표 기반으로 역지오코딩/매칭 필요.
-      //  하지만 calcBreakEven 로직을 보면 areaCd는 업종 평균 등을 위해 필요할 수 있음.
-      //  여기서는 간단히 "이 매물 임대료"를 강제로 주입하여 계산.)
-
-      // *중요*: ToolsRepository.calcBreakEven 메서드는 (params)를 받아 처리함.
-      // params에 monthlyRent, deposit, size를 오버라이드해서 넘기면 됨.
-      // 단, areaCd가 필수일 수 있는데, Listing에는 areaCd가 없을 수 있음.
-      // -> 만약 areaCd가 필수라면, 여기서 어떻게든 구해야 함.
-      // -> 일단 areaCd가 없는 경우 calcBreakEven이 어떻게 동작하는지 봐야 함.
-      //    (calcBreakEven 구현을 보니 areaCd로 지역 테이블 조회하는 부분이 있음)
-
-      // Listing의 좌표로 areaCd를 찾으면 좋겠지만, 복잡하므로
-      // params에 사용자가 보고 있던 areaCd가 넘어온다고 가정하거나(컨텍스트 유지),
-      // 혹은 단순히 임대료 변수만 가지고 계산 가능한지 확인.
-      // (Task 4.1 구현 내용을 못 봤지만, 보통 임대료 + 업종평균비용 = BEP)
-
-      // 편의상, 호출 시 context의 areaCd가 함께 넘어오기를 기대하거나,
       // params를 그대로 전달하면서 rent 정보만 덮어씀.
       const newParams = {
         ...params,

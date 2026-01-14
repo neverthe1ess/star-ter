@@ -23,26 +23,20 @@ export const FINAL_RESPONSE_SCHEMA_FOR_ACTION = {
             type: {
               type: 'string',
               enum: [
-                // 지도 액션
+                // 지도 액션 (실제 사용 중)
                 'map.pan_to',
-                'map.highlight',
                 'map.setLayer',
                 'map.setMarkers',
                 // UI 액션
                 'ui.open_panel',
-                // 차트 액션 (신규)
-                'chart.revenue', // 매출 분석 차트
-                'chart.survival', // 생존 점수 게이지
-                'chart.competition', // 경쟁 분석 차트
-                'chart.breakeven', // 손익분기 분석
-                // 리스트 액션 (신규)
-                'list.listings', // 매물 리스트
-                'list.similar_areas', // 유사 상권 리스트
-                // 기존 액션
-                'ranking.show',
-                'compare.areas',
-                'rent.calculate',
-                'report.generate',
+                // 차트 액션 (실제 사용 중)
+                'chart.revenue',
+                'chart.survival',
+                'chart.breakeven',
+                // 리스트 액션 (실제 사용 중)
+                'list.listings',
+                'list.similar_areas',
+                // 매물 추천
                 'real_estate.recommend',
               ],
               description: '실행할 액션 유형',
@@ -51,18 +45,25 @@ export const FINAL_RESPONSE_SCHEMA_FOR_ACTION = {
               type: 'object',
               description: '액션에 필요한 파라미터 (사용하지 않는 값은 null)',
               properties: {
-                // 기존 필드
+                // 지도 관련 필드
                 lat: { type: ['number', 'null'] },
                 lng: { type: ['number', 'null'] },
                 zoom: { type: ['number', 'null'] },
-                panelType: { type: ['string', 'null'] },
+                // 상권 정보 필드
+                areaCode: { type: ['string', 'null'] },
+                areaName: { type: ['string', 'null'] },
                 level: {
                   type: ['string', 'null'],
                   enum: ['gu', 'dong', 'commercial', null],
                 },
-                areaCode: { type: ['string', 'null'] },
-                areaName: { type: ['string', 'null'] },
-                color: { type: ['string', 'null'] },
+                // UI 패널 필드
+                panelType: { type: ['string', 'null'] },
+                // 업종 필드
+                industryCode: { type: ['string', 'null'] },
+                // 매물 관련 필드
+                listingId: { type: ['string', 'null'] },
+                maxDeposit: { type: ['number', 'null'] },
+                maxMonthlyRent: { type: ['number', 'null'] },
                 // map.setLayer 전용
                 layer: {
                   type: ['string', 'null'],
@@ -88,68 +89,23 @@ export const FINAL_RESPONSE_SCHEMA_FOR_ACTION = {
                     additionalProperties: false,
                   },
                 },
-                // 업종/필터 필드
-                industryCode: { type: ['string', 'null'] },
-                genderFilter: {
-                  type: ['string', 'null'],
-                  enum: ['Male', 'Female', 'Total', null],
-                },
-                ageFilter: { type: ['string', 'null'] },
-                timeFilter: { type: ['string', 'null'] },
-                // 비교 필드
-                compareTargets: {
-                  type: ['object', 'null'],
-                  properties: {
-                    codeA: { type: 'string' },
-                    codeB: { type: 'string' },
-                    nameA: { type: ['string', 'null'] },
-                    nameB: { type: ['string', 'null'] },
-                  },
-                  required: ['codeA', 'codeB', 'nameA', 'nameB'],
-                  additionalProperties: false,
-                },
-                // 임대료 필드
-                rentParams: {
-                  type: ['object', 'null'],
-                  properties: {
-                    area: { type: 'number' },
-                    deposit: { type: 'number' },
-                    rent: { type: 'number' },
-                  },
-                  required: ['area', 'deposit', 'rent'],
-                  additionalProperties: false,
-                },
-                // 매물 추천 필드
-                maxDeposit: { type: ['number', 'null'] },
-                maxMonthlyRent: { type: ['number', 'null'] },
-                minSize: { type: ['number', 'null'] },
-                keywords: { type: ['string', 'null'] },
-                // 매물 ID (손익분기 계산용)
-                listingId: { type: ['string', 'null'] },
               },
+              // 필수 필드만 지정 (모든 필드를 required에서 제거하면 LLM 부담 감소)
               required: [
                 'lat',
                 'lng',
                 'zoom',
-                'panelType',
-                'level',
                 'areaCode',
                 'areaName',
-                'color',
+                'level',
+                'panelType',
                 'industryCode',
-                'genderFilter',
-                'ageFilter',
-                'timeFilter',
-                'compareTargets',
-                'rentParams',
+                'listingId',
                 'maxDeposit',
                 'maxMonthlyRent',
-                'minSize',
-                'keywords',
                 'layer',
                 'visible',
                 'markers',
-                'listingId',
               ],
               additionalProperties: false,
             },
