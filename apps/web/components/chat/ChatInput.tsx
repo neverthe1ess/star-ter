@@ -55,8 +55,8 @@ export function ChatInput({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask follow up question"
-          className="flex-1 bg-transparent text-lg text-slate-700 placeholder-slate-400 resize-none focus:outline-none max-h-52 py-3"
+          placeholder="무엇이든 물어보세요..."
+          className="flex-1 bg-transparent text-xl text-slate-700 placeholder-slate-400 resize-none focus:outline-none max-h-52 py-3"
           rows={1}
           disabled={isLoading}
         />
@@ -66,7 +66,7 @@ export function ChatInput({
           type="button"
           onClick={onSend}
           disabled={isLoading || !value.trim()}
-          className="p-3 bg-gray-500 text-white rounded-xl hover:bg-violet-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+          className="p-3 bg-gray-600 text-white rounded-xl hover:bg-black disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors shrink-0"
           aria-label="Send message"
         >
           <Send className="w-6 h-6" />

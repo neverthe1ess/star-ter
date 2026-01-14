@@ -74,7 +74,7 @@ export function ChatPage() {
   }, [searchParams, router, handleSendMessageWrapper]);
 
   return (
-    <div className="flex h-screen bg-[#f7f7f8] py-4 pr-4 gap-4 overflow-hidden">
+    <div className="flex h-full gap-4 overflow-hidden">
       {/* 지도 영역 (왼쪽) */}
       <ChatMapSection ref={mapSectionRef} isOpen={isMapOpen} />
 
@@ -124,7 +124,7 @@ export function ChatPage() {
                         </div>
                       </div>
                     )}
-                    <ChatMessage message={message} />
+                    <ChatMessage message={message} chartActions={message.chartActions} />
                   </div>
                 ))
               )}
@@ -159,6 +159,9 @@ export function ChatPage() {
                 onSend={handleSendMessageWrapper}
                 isLoading={isLoading}
               />
+              <p className="mt-2 text-center text-md text-slate-400">
+                AI는 실수를 할 수 있습니다. 중요한 정보는 확인해 주세요.
+              </p>
             </div>
           </div>
         </div>

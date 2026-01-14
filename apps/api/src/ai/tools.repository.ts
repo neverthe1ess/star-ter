@@ -1193,16 +1193,29 @@ export class ToolsRepository {
     const { areaCd, categoryCode, stdrYyquCd = '20253' } = params;
 
     // 1. 필요한 데이터 병렬 조회
+    // categoryCode가 없으면 업종 필터 없이 상권 전체 기준으로 조회
+    const storeWhereCondition: {
+      trdar_cd?: string;
+      svc_induty_cd?: string;
+      stdr_yyqu_cd?: { lte: string };
+    } = {
+      trdar_cd: areaCd,
+      stdr_yyqu_cd: { lte: stdrYyquCd },
+    };
+
+    // categoryCode가 있을 때만 업종 필터 추가
+    if (categoryCode) {
+      storeWhereCondition.svc_induty_cd = categoryCode;
+    }
+
     const [storeStat, changeStat] = await Promise.all([
-      this.prisma.storeCommercial.findFirst({
-        where: {
-          trdar_cd: areaCd,
-          svc_induty_cd: categoryCode,
-          stdr_yyqu_cd: { lte: stdrYyquCd },
-        },
-        orderBy: { stdr_yyqu_cd: 'desc' },
-        select: { clsbiz_rt: true, opbiz_rt: true },
-      }),
+      categoryCode
+        ? this.prisma.storeCommercial.findFirst({
+            where: storeWhereCondition,
+            orderBy: { stdr_yyqu_cd: 'desc' },
+            select: { clsbiz_rt: true, opbiz_rt: true },
+          })
+        : null, // categoryCode 없으면 업종별 데이터 조회 스킵
       this.prisma.commercialChangeCommercial.findFirst({
         where: { trdar_cd: areaCd, stdr_yyqu_cd: { lte: stdrYyquCd } },
         orderBy: { stdr_yyqu_cd: 'desc' },
@@ -1214,7 +1227,8 @@ export class ToolsRepository {
       }),
     ]);
 
-    if (!storeStat || !changeStat) {
+    // changeStat도 없으면 분석 불가
+    if (!changeStat) {
       return {
         summary: '생존확률 분석을 위한 충분한 데이터가 없습니다.',
         data: null,
@@ -1224,9 +1238,11 @@ export class ToolsRepository {
     // 2. 생존 점수 계산 로직 (0 ~ 100점)
     let score = 60; // 기본 점수
 
-    const closingRate = storeStat.clsbiz_rt; // 폐업률 (%)
-    const avgOperationMonths = changeStat.opr_sale_mt_avrg; // 평균 영업 기간 (월)
+    // storeStat이 없으면 폐업률을 상권 평균으로 가정 (5%)
+    const closingRate = storeStat ? Number(storeStat.clsbiz_rt || 5) : 5;
+    const avgOperationMonths = Number(changeStat.opr_sale_mt_avrg || 36); // 평균 영업 기간 (월)
     const changeStatus = changeStat.trdar_chnge_ix_nm; // 상권 등급
+    const dataSource = storeStat ? '업종별 데이터' : '상권 전체 평균';
 
     // (1) 상권 등급 보정
     if (changeStatus === '상권활성화' || changeStatus === '상권확장')
@@ -1253,20 +1269,21 @@ export class ToolsRepository {
 
     // 해석 메시지 생성
     let interpretation = '보통 수준의 생존력이 예상됩니다.';
-    if (score >= 80) interpretation = '생존 가능성이 매우 높습니다! 🚀';
+    if (score >= 80) interpretation = '생존 가능성이 매우 높습니다!';
     else if (score >= 60)
       interpretation = '비교적 안정적인 궤도 진입이 예상됩니다.';
     else if (score <= 40)
       interpretation = '초기 생존에 주의가 필요한 지역입니다. ⚠️';
 
     return {
-      summary: `예상 생존 점수는 ${score}점입니다. ${interpretation} (폐업률: ${closingRate}%, 평균 영업: ${avgOperationMonths}개월)`,
+      summary: `예상 생존 점수는 ${score}점입니다(${dataSource}). ${interpretation} (폐업률: ${closingRate}%, 평균 영업: ${avgOperationMonths}개월, 상권 상태: ${changeStatus || '정보없음'})`,
       data: {
         score,
         interpretation,
         closingRate,
         avgOperationMonths,
         changeStatus,
+        dataSource,
       },
       meta: {
         unit: '점',
@@ -1523,25 +1540,6 @@ export class ToolsRepository {
       const deposit = Number(listing.deposit || 0) / 10;
       const size = Number(listing.size || 0);
 
-      // 2. 기존 손익분기 계산 로직 재사용
-      // (기존 calcBreakEven은 areaCd 기반이나, 여기선 매물 임대료를 직접 쓰므로
-      //  areaCd가 없어도 작동하거나, areaCd가 필요하다면 매물 좌표 기반으로 역지오코딩/매칭 필요.
-      //  하지만 calcBreakEven 로직을 보면 areaCd는 업종 평균 등을 위해 필요할 수 있음.
-      //  여기서는 간단히 "이 매물 임대료"를 강제로 주입하여 계산.)
-
-      // *중요*: ToolsRepository.calcBreakEven 메서드는 (params)를 받아 처리함.
-      // params에 monthlyRent, deposit, size를 오버라이드해서 넘기면 됨.
-      // 단, areaCd가 필수일 수 있는데, Listing에는 areaCd가 없을 수 있음.
-      // -> 만약 areaCd가 필수라면, 여기서 어떻게든 구해야 함.
-      // -> 일단 areaCd가 없는 경우 calcBreakEven이 어떻게 동작하는지 봐야 함.
-      //    (calcBreakEven 구현을 보니 areaCd로 지역 테이블 조회하는 부분이 있음)
-
-      // Listing의 좌표로 areaCd를 찾으면 좋겠지만, 복잡하므로
-      // params에 사용자가 보고 있던 areaCd가 넘어온다고 가정하거나(컨텍스트 유지),
-      // 혹은 단순히 임대료 변수만 가지고 계산 가능한지 확인.
-      // (Task 4.1 구현 내용을 못 봤지만, 보통 임대료 + 업종평균비용 = BEP)
-
-      // 편의상, 호출 시 context의 areaCd가 함께 넘어오기를 기대하거나,
       // params를 그대로 전달하면서 rent 정보만 덮어씀.
       const newParams = {
         ...params,
@@ -1551,7 +1549,12 @@ export class ToolsRepository {
         // floor: ... (listing.floor is string like "1층", need parsing if needed)
       };
 
-      return this.calcBreakEven(newParams);
+      const result = await this.calcBreakEven(newParams);
+      // listingId를 결과에 포함시켜 AI가 액션을 생성할 때 참조할 수 있게 함
+      return {
+        ...result,
+        listingId: params.listingId,
+      };
     } catch (e) {
       console.error('BEP with Listing Error:', e);
       return {

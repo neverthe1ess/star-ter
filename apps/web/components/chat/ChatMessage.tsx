@@ -1,18 +1,18 @@
 "use client";
 
 import { Share, Edit3, Copy, MoreHorizontal, Bot } from "lucide-react";
+import { ChartRenderer, type ChartAction } from "./charts";
 
 /**
  * ChatMessage 컴포넌트 - 개별 메시지 렌더링
  *
  * 조건부 렌더링:
  * - message.role에 따라 다른 스타일 적용
- * - "user": 사용자 메시지 (오른쪽 정렬, 보라색 배경)
+ * - "user": 사용자 메시지 (오른쪽 정렬, 파란색 배경)
  * - "assistant": AI 메시지 (왼쪽 정렬, 흰색 배경)
- *
- * 삼항 연산자:
- * - condition ? trueValue : falseValue
- * - JSX 내에서 조건부 스타일링에 자주 사용
+ * 
+ * 차트 렌더링:
+ * - AI 메시지에서 chartActions가 있으면 말풍선 안에 차트 표시
  */
 
 interface Message {
@@ -24,10 +24,16 @@ interface Message {
 
 interface ChatMessageProps {
   message: Message;
+  chartActions?: ChartAction[]; // 차트 액션 (AI 메시지용)
 }
 
-export function ChatMessage({ message }: ChatMessageProps) {
+export function ChatMessage({ message, chartActions }: ChatMessageProps) {
   const isUser = message.role === "user";
+
+  // 차트 액션만 필터링
+  const chartOnlyActions = chartActions?.filter(
+    (a) => a.type.startsWith("chart.") || a.type.startsWith("list.")
+  );
 
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
@@ -46,14 +52,20 @@ export function ChatMessage({ message }: ChatMessageProps) {
           </div>
         )}
 
-        {/* 메시지 내용 */}
+
+        {/* 메시지 내용 (숨겨진 markers 텍스트 제거하고 표시) */}
         <div
           className={`text-lg leading-relaxed whitespace-pre-wrap ${
             isUser ? "text-white font-semibold" : "text-slate-700"
           }`}
         >
-          {message.content}
+          {message.content.split('\n\n[매물 목록 참조용')[0]}
         </div>
+
+        {/* 차트 렌더링 (AI 메시지만, 말풍선 안) */}
+        {!isUser && chartOnlyActions && chartOnlyActions.length > 0 && (
+          <ChartRenderer actions={chartOnlyActions} className="mt-4 -mx-2" />
+        )}
 
         {/* AI 메시지에 액션 버튼 추가 */}
         {!isUser && (
@@ -80,3 +92,4 @@ export function ChatMessage({ message }: ChatMessageProps) {
     </div>
   );
 }
+
