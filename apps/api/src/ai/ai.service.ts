@@ -17,6 +17,8 @@ export class AiService {
 
   // 대화 히스토리 포함 메시지 처리 함수 (꼬리 질문 지원)
   private readonly MAX_HISTORY_LENGTH = 10;
+  // [DEBUG] 히스토리 기능 on/off 플래그 - 시연용으로 끌 수 있음
+  private readonly ENABLE_HISTORY = true; // true로 변경하면 히스토리 활성화
 
   async getAIMessageWithHistory(
     message: string,
@@ -30,8 +32,8 @@ export class AiService {
     // 입력 배열 구성 (히스토리 포함)
     const input: ResponseInputItem[] = [];
 
-    // 이전 대화 히스토리 추가 (최대 10개, 너무 길면 토큰 초과 방지)
-    if (history && history.length > 0) {
+    // 이전 대화 히스토리 추가 (ENABLE_HISTORY가 true일 때만)
+    if (this.ENABLE_HISTORY && history && history.length > 0) {
       const recentHistory = history.slice(-this.MAX_HISTORY_LENGTH);
       for (const msg of recentHistory) {
         input.push({
@@ -39,6 +41,11 @@ export class AiService {
           content: msg.content,
         });
       }
+      console.log(
+        `[AiService] History enabled: ${recentHistory.length} messages added`,
+      );
+    } else if (!this.ENABLE_HISTORY) {
+      console.log('[AiService] History disabled - using single message mode');
     }
 
     // 현재 사용자 메시지 추가
