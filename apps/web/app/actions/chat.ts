@@ -15,7 +15,7 @@ export async function sendMessage(
   console.log('[Server Action] Sending message to AI:', message);
 
   try {
-    const response = await fetch(`${API_BASE_URL}/ai/message`, {
+    const response = await fetch(`${API_BASE_URL}/assistant/message`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
