@@ -13,10 +13,7 @@ interface OnboardingStepAgeProps {
   onChange: (value: string) => void;
 }
 
-export function OnboardingStepAge({
-  value,
-  onChange,
-}: OnboardingStepAgeProps) {
+export function OnboardingStepAge({ value, onChange }: OnboardingStepAgeProps) {
   return (
     <div className="space-y-[4vh]">
       <h1 className="text-[clamp(1.875rem,4vw,2.5rem)] font-bold text-gray-900">
@@ -27,19 +24,21 @@ export function OnboardingStepAge({
         {AGE_OPTIONS.map((option) => (
           <button
             key={option.value}
-            onClick={() => onChange(option.value)}
+            onClick={() => onChange(value === option.value ? '' : option.value)}
             className={`w-full px-[3%] py-[2%] border-2 rounded-2xl text-left transition-all hover:border-gray-900 hover:shadow-lg ${
               value === option.value
                 ? 'border-gray-900 bg-gray-50 shadow-lg'
                 : 'border-gray-300'
-            }`}
+            } ${value && value !== option.value ? 'opacity-40 grayscale-[0.5]' : 'opacity-100'}`}
           >
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-[clamp(1.125rem,2vw,1.25rem)] font-bold text-gray-900 mb-[0.5vh]">
                   {option.label}
                 </div>
-                <div className="text-[clamp(0.875rem,1.5vw,1rem)] text-gray-500">{option.desc}</div>
+                <div className="text-[clamp(0.875rem,1.5vw,1rem)] text-gray-500">
+                  {option.desc}
+                </div>
               </div>
             </div>
           </button>
