@@ -40,7 +40,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       />
       <div
         className={`flex-1 h-screen overflow-hidden transition-all duration-300 ease-in-out py-4 pr-4 bg-[#f7f7f8] ${
-          isSidebarOpen ? 'ml-87.5' : 'ml-20'
+          isSidebarOpen ? 'ml-80' : 'ml-20'
         }`}
       >
         {children}
