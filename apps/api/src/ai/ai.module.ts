@@ -7,6 +7,7 @@ import { AiToolsService } from './ai-tools.service';
 import { AiResponseProcessor } from './ai-response.processor';
 import { OpenAiService } from './openAI/open-ai.service';
 import { LocationRecommendModule } from '../location-recommend/location-recommend.module';
+import { ChatRepository } from './chat.repository';
 
 @Module({
   imports: [LocationRecommendModule],
@@ -18,6 +19,7 @@ import { LocationRecommendModule } from '../location-recommend/location-recommen
     AiToolsService,
     AiResponseProcessor,
     OpenAiService,
+    ChatRepository,
   ],
   exports: [AiService, AiRepository],
 })

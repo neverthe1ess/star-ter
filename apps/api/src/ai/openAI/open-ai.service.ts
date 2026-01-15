@@ -49,21 +49,24 @@ export class OpenAiService {
     input: ResponseInput,
     categories: BusinessCategoryVectorDto[],
     areaList: AreaVectorDto[],
+    previousResponseId: string | null,
   ) {
     return this.client.responses.create({
       model: 'gpt-4.1-mini',
       temperature: 0,
       input: input,
       service_tier: 'priority',
+      parallel_tool_calls: true,
       tools: TOOLS as Array<Tool>,
       instructions: PROMPTS.TOOL_CALL_SYSTEM.replace(
         '${categoryVectors}',
         this.formatCategoryVectors(categories),
       ).replace('${areaVectors}', this.formatAreaVectors(areaList)),
+      previous_response_id: previousResponseId,
     });
   }
 
-  analyzeResults(input: ResponseInput) {
+  analyzeResults(input: ResponseInput, previousResponseId: string | null) {
     return this.client.responses.create({
       model: 'gpt-4.1-mini',
       input: input,
@@ -73,6 +76,7 @@ export class OpenAiService {
         format: FINAL_RESPONSE_SCHEMA_FOR_ACTION,
       },
       instructions: PROMPTS.ANALYZE_RESULTS_SYSTEM,
+      previous_response_id: previousResponseId,
     });
   }
 
