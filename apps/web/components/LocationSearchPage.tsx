@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, ChevronDown, X } from 'lucide-react';
-import { motion } from 'motion/react';
+
 import {
   fetchLocationRanking,
   fetchPopulationRanking,
@@ -45,7 +45,6 @@ export function LocationSearchPage({
 }: LocationSearchPageProps) {
   const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState('실시간 상권 차트');
   const [subTab, setSubTab] = useState(initialTab);
   const [selectedMajor, setSelectedMajor] = useState<string | null>(null);
   const [industryCode, setIndustryCode] = useState('');
@@ -89,7 +88,6 @@ export function LocationSearchPage({
     };
   }, [searchQuery]);
 
-  const tabs = ['실시간 상권 차트'];
   const subTabs = [
     '맞춤 추천',
     '평균 매출 순',
@@ -262,28 +260,12 @@ export function LocationSearchPage({
   return (
     <div className="flex flex-1 flex-col h-full overflow-hidden">
       <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-10 border-b border-gray-100 shrink-0">
-          <div className="flex justify-between items-center gap-8">
+        <div className="px-8 pt-6 pb-4 border-b border-gray-100 shrink-0">
+          <div className="flex justify-between items-center">
             <div className="flex gap-8">
-              {tabs.map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`relative py-5 text-lg font-bold transition-all ${
-                    activeTab === tab
-                      ? 'text-slate-900'
-                      : 'text-slate-400 hover:text-slate-600'
-                  }`}
-                >
-                  {tab}
-                  {activeTab === tab && (
-                    <motion.div
-                      layoutId="activeTabUnderline"
-                      className="absolute bottom-0 left-0 right-0 h-3px bg-slate-900 rounded-full"
-                    />
-                  )}
-                </button>
-              ))}
+              <h1 className="text-h1 font-heading text-slate-900">
+                실시간 상권 차트
+              </h1>
             </div>
 
             {/* 검색 입력창 */}
@@ -307,24 +289,22 @@ export function LocationSearchPage({
           </div>
         </div>
 
-        <div className="px-10 py-4 flex flex-col gap-3 shrink-0 border-b border-gray-50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex bg-gray-100 p-1 rounded-xl gap-1">
-                {subTabs.map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setSubTab(tab)}
-                    className={`px-4 py-2 text-sm font-bold rounded-lg transition-all ${
-                      subTab === tab
-                        ? 'bg-white text-slate-900 shadow-sm'
-                        : 'text-slate-500 hover:text-slate-700'
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </div>
+        <div className="px-8 py-4 flex flex-col gap-3 shrink-0 border-b border-gray-50">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex bg-gray-100 p-1 rounded-xl gap-1">
+              {subTabs.map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setSubTab(tab)}
+                  className={`px-4 py-2 text-caption rounded-lg transition-all ${
+                    subTab === tab
+                      ? 'bg-white text-slate-900 font-bold shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
 
             {/* 필터 영역 - 오른쪽에 고정 */}
@@ -338,9 +318,9 @@ export function LocationSearchPage({
                       <button
                         key={opt.value}
                         onClick={() => setAgeGroup(opt.value)}
-                        className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
+                        className={`px-3 py-1.5 text-tiny rounded-md transition-all ${
                           ageGroup === opt.value
-                            ? 'bg-white text-slate-900 shadow-sm'
+                            ? 'bg-white text-slate-900 font-bold shadow-sm'
                             : 'text-slate-500 hover:text-slate-700'
                         }`}
                       >
@@ -354,9 +334,9 @@ export function LocationSearchPage({
                       <button
                         key={opt.value}
                         onClick={() => setTimeSlot(opt.value)}
-                        className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
+                        className={`px-3 py-1.5 text-tiny rounded-md transition-all ${
                           timeSlot === opt.value
-                            ? 'bg-white text-slate-900 shadow-sm'
+                            ? 'bg-white text-slate-900 font-bold shadow-sm'
                             : 'text-slate-500 hover:text-slate-700'
                         }`}
                       >
@@ -376,7 +356,7 @@ export function LocationSearchPage({
                       setIsIndustryOpen(!isIndustryOpen);
                       setSelectedMajor(null);
                     }}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-colors ${
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-tiny font-bold transition-colors ${
                       industryCode
                         ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
                         : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
@@ -402,7 +382,7 @@ export function LocationSearchPage({
                     <div className="absolute top-full right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
                       {!selectedMajor ? (
                         <div className="p-2">
-                          <div className="px-3 py-2 text-xs font-bold text-slate-400 uppercase">
+                          <div className="px-3 py-2 text-caption font-bold text-slate-400 uppercase">
                             대분류 선택
                           </div>
                           <div className="grid grid-cols-2 gap-1">
@@ -410,10 +390,10 @@ export function LocationSearchPage({
                               <button
                                 key={category.major}
                                 onClick={() => setSelectedMajor(category.major)}
-                                className="px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                                className="px-3 py-2.5 text-left text-caption font-strong text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
                               >
                                 {category.major}
-                                <span className="text-slate-400 ml-1 text-xs">
+                                <span className="text-slate-400 ml-1 text-caption">
                                   ({category.items.length})
                                 </span>
                               </button>
@@ -425,11 +405,11 @@ export function LocationSearchPage({
                           <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 bg-slate-50">
                             <button
                               onClick={() => setSelectedMajor(null)}
-                              className="text-xs font-medium text-slate-500 hover:text-slate-700"
+                              className="text-tiny font-strong text-slate-500 hover:text-slate-700"
                             >
                               ← 뒤로
                             </button>
-                            <span className="text-sm font-bold text-slate-900">
+                            <span className="text-caption font-bold text-slate-900">
                               {selectedMajor}
                             </span>
                           </div>
@@ -442,7 +422,7 @@ export function LocationSearchPage({
                                   setIsIndustryOpen(false);
                                   setSelectedMajor(null);
                                 }}
-                                className={`w-full px-3 py-2 text-left text-sm rounded-lg transition-colors ${
+                                className={`w-full px-2 py-2 text-left text-caption rounded-lg transition-colors ${
                                   industryCode === item.code
                                     ? 'text-blue-600 font-bold bg-blue-50'
                                     : 'text-slate-700 hover:bg-slate-100'
@@ -464,7 +444,7 @@ export function LocationSearchPage({
 
         {/* 테이블 헤더 - 탭에 따라 다르게 표시 */}
         <div
-          className="px-6 py-3 grid items-center text-base font-bold text-slate-400 shrink-0 border-b border-gray-50 bg-slate-50/30 gap-4"
+          className="px-6 py-3 grid items-center text-body font-strong text-slate-400 shrink-0 border-b border-gray-50 bg-slate-50/30 gap-4"
           style={{
             gridTemplateColumns: isRecommendTab(subTab)
               ? '3fr 1fr 2fr'
@@ -538,8 +518,8 @@ export function LocationSearchPage({
                   />
                 </svg>
               </div>
-              <p className="text-lg font-bold text-slate-700">{error}</p>
-              <p className="text-sm text-slate-500">
+              <p className="text-h4 font-strong text-slate-700">{error}</p>
+              <p className="text-body text-slate-500">
                 맞춤 추천을 받으려면 로그인이 필요합니다.
               </p>
               <button
@@ -563,11 +543,11 @@ export function LocationSearchPage({
                 style={{ gridTemplateColumns: '3fr 1fr 2fr' }}
               >
                 <div className="flex items-center gap-4">
-                  <span className="w-6 text-lg font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
+                  <span className="w-6 text-h5 font-strong text-slate-400 group-hover:text-slate-900 transition-colors">
                     {index + 1}
                   </span>
                   <div className="text-left">
-                    <div className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <div className="text-h5 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                       {item.name}
                     </div>
                   </div>
@@ -576,7 +556,7 @@ export function LocationSearchPage({
                 {/* 점수 뱃지 - 기본 표시 */}
                 <div className="text-center">
                   <span
-                    className={`px-3 py-1 rounded-full text-sm font-bold ${
+                    className={`px-3 py-1 rounded-full text-caption font-strong ${
                       item.totalScore >= 90
                         ? 'bg-emerald-50 text-emerald-600'
                         : item.totalScore >= 70
@@ -592,7 +572,7 @@ export function LocationSearchPage({
 
                 {/* 호버 시 점수 그래프 - 플로팅 툴팁 */}
                 <div className="flex items-center justify-center">
-                  <div className="text-xs text-slate-400">
+                  <div className="text-caption text-slate-400">
                     마우스를 올려 상세 점수 보기
                   </div>
 
@@ -708,7 +688,7 @@ export function LocationSearchPage({
                                     y={getY(level)}
                                     textAnchor="end"
                                     dominantBaseline="middle"
-                                    className="text-[11px] fill-slate-400"
+                                    className="text-tiny fill-slate-400"
                                   >
                                     {Math.round(level * 100)}
                                   </text>
@@ -781,7 +761,7 @@ export function LocationSearchPage({
                                   x={getX(i)}
                                   y={chartHeight - 20}
                                   textAnchor="middle"
-                                  className="text-[11px] fill-slate-600 font-medium"
+                                  className="text-tiny fill-slate-600 font-medium"
                                 >
                                   {s.label}
                                 </text>
@@ -794,7 +774,7 @@ export function LocationSearchPage({
                                   x={getX(i)}
                                   y={chartHeight - 5}
                                   textAnchor="middle"
-                                  className="text-[12px] fill-blue-600 font-bold"
+                                  className="text-tiny fill-blue-600 font-bold"
                                 >
                                   {Math.round(s.value * 100)}%
                                 </text>
@@ -818,23 +798,23 @@ export function LocationSearchPage({
                 style={{ gridTemplateColumns: '3fr 1.2fr 0.8fr 1fr' }}
               >
                 <div className="flex items-center gap-4">
-                  <span className="w-6 text-lg font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
+                  <span className="w-6 text-h5 font-strong text-slate-400 group-hover:text-slate-900 transition-colors">
                     {item.rank}
                   </span>
                   <div className="text-left">
-                    <div className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <div className="text-h5 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                       {item.name}
                     </div>
                   </div>
                 </div>
 
-                <div className="text-center text-lg font-bold text-slate-900">
+                <div className="text-center text-h5 font-strong text-slate-900">
                   {item.population}
                 </div>
 
                 <div className="flex justify-center">
                   <div
-                    className={`px-2 py-1 rounded-lg text-base font-black min-w-15 ${
+                    className={`px-2 py-1 rounded-lg text-caption font-strong min-w-15 ${
                       item.growthRate > 0
                         ? 'bg-red-50 text-red-500'
                         : 'bg-blue-50 text-blue-500'
@@ -847,7 +827,7 @@ export function LocationSearchPage({
 
                 <div className="flex justify-center">
                   <span
-                    className={`px-3 py-1 rounded-lg text-xs font-bold ${
+                    className={`px-3 py-1 rounded-lg text-caption font-strong ${
                       item.statusType === 'hot'
                         ? 'bg-red-50 text-red-600'
                         : item.statusType === 'stable'
@@ -872,22 +852,22 @@ export function LocationSearchPage({
                 style={{ gridTemplateColumns: '3fr 1.2fr 0.8fr 1fr' }}
               >
                 <div className="flex items-center gap-4">
-                  <span className="w-6 text-lg font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
+                  <span className="w-6 text-h5 font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
                     {item.rank}
                   </span>
                   <div className="text-left">
-                    <div className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <div className="text-h5 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                       {item.name}
                     </div>
                   </div>
                 </div>
 
-                <div className="text-center text-lg font-bold text-slate-900">
+                <div className="text-center text-h5 font-strong text-slate-900">
                   {item.population}
                 </div>
 
                 <div className="flex justify-center">
-                  <div className="px-2 py-1 rounded-lg text-base font-black min-w-15 bg-violet-50 text-violet-600">
+                  <div className="px-2 py-1 rounded-lg text-caption font-strong min-w-15 bg-violet-50 text-violet-600">
                     {item.growthRate.toFixed(1)}%
                   </div>
                 </div>
@@ -919,31 +899,31 @@ export function LocationSearchPage({
                 style={{ gridTemplateColumns: '3fr 0.6fr 1fr 1.2fr 1fr' }}
               >
                 <div className="flex items-center gap-4">
-                  <span className="w-6 text-lg font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
+                  <span className="w-6 text-h5 font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
                     {item.rank}
                   </span>
                   <div className="text-left">
-                    <div className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <div className="text-h5 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                       {item.name}
                     </div>
                   </div>
                 </div>
 
-                <div className="text-center text-base font-bold text-slate-900">
+                <div className="text-center text-h5 font-strong text-slate-900">
                   {item.closureRate}%
                 </div>
 
-                <div className="text-center text-lg font-medium text-slate-600">
-                  <span className="text-red-500 font-bold">
+                <div className="text-center text-h5 font-strong text-slate-600">
+                  <span className="text-red-500 font-heading">
                     {item.closedStoreCount}
                   </span>
                   개 폐업
                 </div>
 
-                <div className="flex justify-center items-center gap-2 text-sm text-slate-500">
+                <div className="flex justify-center items-center gap-2 text-caption text-slate-500">
                   <span>{item.previousStoreCount}개</span>
                   <span className="text-slate-300">→</span>
-                  <span className="font-bold text-slate-900">
+                  <span className="font-strong text-slate-900">
                     {item.currentStoreCount}개
                   </span>
                 </div>
@@ -975,27 +955,27 @@ export function LocationSearchPage({
                 style={{ gridTemplateColumns: '3fr 1fr 1.2fr 1fr 1.2fr' }}
               >
                 <div className="flex items-center gap-4">
-                  <span className="w-6 text-lg font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
+                  <span className="w-6 text-h5 font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
                     {item.rank}
                   </span>
 
                   <div className="text-left">
-                    <div className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <div className="text-h5 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                       {item.name}
                     </div>
-                    <div className="text-sm font-medium text-slate-400">
+                    <div className="text-caption font-strong text-slate-400">
                       점포 수: {item.storeCount}개
                     </div>
                   </div>
                 </div>
 
-                <div className="text-center text-lg font-bold text-slate-900">
+                <div className="text-center text-h5 font-strong text-slate-900">
                   {item.avgRevenue}
                 </div>
 
                 <div className="w-full flex justify-center items-center">
                   <div
-                    className={`px-2 py-1 rounded-lg text-base font-black min-w-20 ${
+                    className={`px-2 py-1 rounded-lg text-caption font-strong ${
                       item.growthRate > 0
                         ? 'bg-red-50 text-red-500'
                         : 'bg-blue-50 text-blue-500'
@@ -1006,7 +986,7 @@ export function LocationSearchPage({
                   </div>
                 </div>
 
-                <div className="text-center text-base font-bold text-slate-900">
+                <div className="text-center text-h5 font-strong text-slate-900">
                   {item.totalRevenue}
                 </div>
 
@@ -1021,7 +1001,7 @@ export function LocationSearchPage({
                       style={{ width: `${item.ratio.female}%` }}
                     />
                   </div>
-                  <div className="flex justify-between w-32 text-sm font-black text-slate-400">
+                  <div className="flex justify-between w-32 text-caption font-strong text-slate-400">
                     <span className="text-blue-500">{item.ratio.male}</span>
                     <span className="text-red-500">{item.ratio.female}</span>
                   </div>
@@ -1034,7 +1014,7 @@ export function LocationSearchPage({
             <div className="mt-8 mb-10 flex justify-center">
               <button
                 onClick={handleLoadMore}
-                className="px-8 py-3 bg-gray-50 text-slate-500 rounded-xl text-sm font-bold hover:bg-gray-100 transition-all"
+                className="px-8 py-3 bg-gray-50 text-slate-500 rounded-xl text-caption font-strong hover:bg-gray-100 transition-all"
               >
                 더 보기 ({displayCount} / {currentData.length})
               </button>

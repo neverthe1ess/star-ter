@@ -130,12 +130,12 @@ export function RecommendSection() {
     return (
       <section className="px-8 py-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-slate-900">
+          <h2 className="text-h3 font-heading text-slate-900">
             사장님께 추천하는 상권
           </h2>
           <Link
             href="/locations/search?tab=맞춤 추천"
-            className="text-sm font-medium text-slate-400 hover:text-slate-600 transition-colors"
+            className="text-body font-strong text-slate-400 hover:text-slate-600 transition-colors"
           >
             더보기 &gt;
           </Link>
@@ -152,13 +152,13 @@ export function RecommendSection() {
   return (
     <section className="px-8 py-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-slate-900">
+        <h2 className="text-h3 font-heading text-slate-900">
           {authUser?.nickname ? `${authUser.nickname}님` : '사장님'}께 추천하는
           상권
         </h2>
         <Link
           href="/locations/search?tab=맞춤 추천"
-          className="text-sm font-medium text-slate-400 hover:text-slate-600 transition-colors"
+          className="text-body font-strong text-slate-400 hover:text-slate-600 transition-colors"
         >
           더보기 &gt;
         </Link>
@@ -199,31 +199,31 @@ export function RecommendSection() {
                   >
                     <div className="space-y-1.5">
                       <div
-                        className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-bold text-white ${badge.badgeColor}`}
+                        className={`inline-flex items-center rounded-full px-3 py-1 text-tiny font-heading text-white ${badge.badgeColor}`}
                       >
                         {badge.text}
                       </div>
-                      <h3 className="mt-2 text-xl font-bold text-slate-900">
+                      <h3 className="mt-2 text-h4 font-heading text-slate-900">
                         {location.name}
                       </h3>
-                      <p className="text-sm font-semibold text-slate-400">
+                      <p className="text-h5 font-strong text-slate-400">
                         {location.region}
                       </p>
                     </div>
 
                     <div className="flex items-end justify-between gap-6">
                       <div>
-                        <p className="text-sm font-semibold text-slate-400 mb-2">
+                        <p className="text-caption font-strong text-slate-400 mb-1">
                           매칭 점수
                         </p>
                         <div className="flex items-end gap-1">
                           <span
-                            className={`text-4xl font-black ${badge.textColor}`}
+                            className={`text-h1 font-heading ${badge.textColor}`}
                           >
                             {formatScore(location.score)}
                           </span>
                           <span
-                            className={`text-sm font-bold ${badge.textColor}`}
+                            className={`text-h5 font-heading ${badge.textColor}`}
                           >
                             점
                           </span>
