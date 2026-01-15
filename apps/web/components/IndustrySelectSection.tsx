@@ -39,10 +39,10 @@ export function IndustrySelectSection({
           <button
             key={macro.code}
             onClick={() => onSelectMacro(macro.code)}
-            className={`min-w-[140px] whitespace-nowrap rounded-2xl border-2 px-[1.5vw] py-[1.2vh] text-[clamp(1rem,1.5vw,1.125rem)] font-bold transition-all lg:w-full ${
+            className={`min-w-35 whitespace-nowrap rounded-2xl border-2 px-[1.5vw] py-[1.2vh] text-[clamp(1rem,1.5vw,1.125rem)] font-bold transition-all lg:w-full ${
               selectedMacro === macro.code
                 ? 'border-gray-900 bg-gray-50 text-gray-900 shadow-lg'
-                : 'border-gray-300 bg-white text-gray-700 hover:border-gray-900 hover:shadow-lg'
+                : 'border-gray-300 bg-white text-gray-700 hover:border-gray-900 hover:shadow-lg opacity-40 grayscale-[0.5]'
             }`}
           >
             {macro.name}
@@ -56,7 +56,9 @@ export function IndustrySelectSection({
             <h2 className="text-[clamp(1.25rem,2.5vw,1.75rem)] font-bold text-gray-900">
               {selectedMacroName} 소분류
             </h2>
-            <p className="text-[clamp(0.875rem,1.8vw,1.125rem)] text-gray-600">원하는 업종을 선택하세요</p>
+            <p className="text-[clamp(0.875rem,1.8vw,1.125rem)] text-gray-600">
+              원하는 업종을 선택하세요
+            </p>
           </div>
           <span className="text-[clamp(0.75rem,1.2vw,0.875rem)] text-gray-500">
             {selectedIndustries.length}개
@@ -65,19 +67,21 @@ export function IndustrySelectSection({
 
         <div className="relative mt-8 flex-1 min-h-0">
           <div className="grid h-full content-start items-start gap-5 overflow-y-auto pr-2 pb-6 pt-2 sm:grid-cols-2 xl:grid-cols-3">
-          {selectedIndustries.map((industry) => (
-            <button
-              key={industry.code}
-              onClick={() =>
-                onSelectIndustryCode(
-                  selectedIndustryCode === industry.code ? null : industry.code,
-                )
-              }
-              className={`group rounded-2xl border-2 px-6 py-5 text-left transition-all hover:border-gray-900 hover:shadow-lg ${
-                selectedIndustryCode === industry.code
-                  ? 'border-gray-900 bg-gray-50 shadow-lg'
+            {selectedIndustries.map((industry) => (
+              <button
+                key={industry.code}
+                onClick={() =>
+                  onSelectIndustryCode(
+                    selectedIndustryCode === industry.code
+                      ? null
+                      : industry.code,
+                  )
+                }
+                className={`group rounded-2xl border-2 px-6 py-5 text-left transition-all hover:border-gray-900 hover:shadow-lg ${
+                  selectedIndustryCode === industry.code
+                    ? 'border-gray-900 bg-gray-50 shadow-lg'
                     : 'border-gray-300 bg-white'
-                }`}
+                } ${selectedIndustryCode && selectedIndustryCode !== industry.code ? 'opacity-40 grayscale-[0.5]' : 'opacity-100'}`}
               >
                 <div className="text-xl font-bold text-gray-900">
                   {industry.name}
@@ -85,8 +89,8 @@ export function IndustrySelectSection({
               </button>
             ))}
           </div>
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-white to-transparent" />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-white to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-6 bg-linear-to-b from-white to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-linear-to-t from-white to-transparent" />
         </div>
       </section>
     </div>
