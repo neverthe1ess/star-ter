@@ -3,7 +3,7 @@ enum MessageRole {
   assistant
 }
 
-model Conversation {
+model conversation {
   id        String    @id @default(cuid())
   previousResponseId String?
   userId    String    @db.Uuid
@@ -12,19 +12,20 @@ model Conversation {
   updatedAt DateTime  @updatedAt
 
   user      user_info @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages  Message[]
+  messages  message[]
 
   @@index([userId, createdAt])
 }
 
-model Message {
+model message {
   id             String       @id @default(cuid())
   conversationId String
   content        String
   role           MessageRole
   createdAt      DateTime     @default(now())
 
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversation   conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId, createdAt])
+
 }

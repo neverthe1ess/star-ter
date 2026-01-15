@@ -18,9 +18,11 @@ import { AnimatePresence } from "motion/react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { logout } from "@/services/auth/auth.api";
 import { useUserStore } from "@/store/use-user-store";
+import { useChatStore } from "@/store/use-chat-store";
 import { ProfilePopup } from "./ProfilePopup";
 import { StartupPreferencesPopup } from "./StartupPreferencesPopup";
 import { getPersonalization, updateOnboarding, updateProfile } from "@/services/user/user.api";
+import { getChatConversations } from "@/services/chat/chat.api";
 import type { OnboardingData } from "./onboarding/onboarding-options";
 
 interface SidebarProps {
@@ -37,10 +39,10 @@ const MENU_ITEMS = [
   { id: "chat", icon: MessageSquare, label: "AI 채팅" },
 ] as const;
 
-const COLLECTIONS = [
-  { id: "hot", label: "여기서 치킨집 차리는거 어때?", color: "bg-gray-500" },
-  { id: "stable", label: "손익분기 넘길라면 몇 년 걸려?", color: "bg-gray-500" },
-] as const;
+type ChatHistoryItem = {
+  id: string;
+  title?: string | null;
+};
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
 const DEFAULT_PROFILE_IMAGE =
@@ -54,8 +56,11 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
   const router = useRouter();
   const pathname = usePathname();
   const authUser = useUserStore((state) => state.authUser);
+  const authUserId = authUser?.id;
   const clearAuthUser = useUserStore((state) => state.clearAuthUser);
   const setAuthUser = useUserStore((state) => state.setAuthUser);
+  const setConversationId = useChatStore((state) => state.setConversationId);
+  const clearConversationId = useChatStore((state) => state.clearConversationId);
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [showPreferencesPopup, setShowPreferencesPopup] = useState(false);
   const [nickname, setNickname] = useState(authUser?.nickname ?? "사용자");
@@ -67,6 +72,10 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
   const [preferencesError, setPreferencesError] = useState<string | null>(null);
   const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
   const [initialPreferences, setInitialPreferences] = useState<OnboardingData | undefined>();
+  const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
   const layoutTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [useCompactLayout, setUseCompactLayout] = useState(!isOpen);
@@ -100,6 +109,56 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
   }, [isOpen]);
 
   useEffect(() => {
+    if (!authUserId) {
+      setChatHistory([]);
+      return;
+    }
+
+    let isCancelled = false;
+    setIsLoadingHistory(true);
+    setHistoryError(null);
+
+    getChatConversations()
+      .then((conversations) => {
+        if (!isCancelled) {
+          setChatHistory(conversations);
+        }
+      })
+      .catch((err) => {
+        if (!isCancelled) {
+          const message =
+            err instanceof Error ? err.message : "대화 목록 조회에 실패했습니다.";
+          setHistoryError(message);
+          setChatHistory([]);
+        }
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setIsLoadingHistory(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [authUserId, historyRefreshToken]);
+
+  useEffect(() => {
+    if (!authUserId) {
+      return;
+    }
+
+    const handleRefresh = () => {
+      setHistoryRefreshToken((prev) => prev + 1);
+    };
+
+    window.addEventListener("chat:updated", handleRefresh);
+    return () => {
+      window.removeEventListener("chat:updated", handleRefresh);
+    };
+  }, [authUserId]);
+
+  useEffect(() => {
     if (layoutTimeoutRef.current) {
       clearTimeout(layoutTimeoutRef.current);
       layoutTimeoutRef.current = null;
@@ -122,6 +181,8 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
     try {
       await logout();
       clearAuthUser();
+      clearConversationId();
+      setChatHistory([]);
       setShowProfilePopup(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : "로그아웃에 실패했습니다.";
@@ -265,7 +326,10 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
                 <div className="mb-3">
                   <p className="px-4 text-xs font-medium text-gray-400 mb-2">AI 분석</p>
                   <button
-                    onClick={() => onMenuClick("chat")}
+                    onClick={() => {
+                      clearConversationId();
+                      onMenuClick("chat");
+                    }}
                     className="w-full min-w-0 flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-600 bg-white border border-indigo-100 shadow-sm hover:bg-indigo-50 hover:border-indigo-200 hover:shadow-md transition-all group"
                   >
                     <MessageSquarePlus className="w-4 h-4 text-slate-500 group-hover:text-slate-700 transition-colors" />
@@ -276,15 +340,32 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
                 {/* 채팅 히스토리 */}
                 <div className="space-y-1">
                   <p className="px-4 text-xs font-medium text-gray-400 mb-2">History</p>
-                  {COLLECTIONS.map(({ id, label }) => (
-                    <button
-                      key={id}
-                      className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors text-left"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-                      <span className="truncate">{label}</span>
-                    </button>
-                  ))}
+                  {isLoadingHistory ? (
+                    <div className="px-4 py-2 text-xs text-slate-400">불러오는 중...</div>
+                  ) : historyError ? (
+                    <div className="px-4 py-2 text-xs text-rose-400">{historyError}</div>
+                  ) : chatHistory.length === 0 ? (
+                    <div className="px-4 py-2 text-xs text-slate-400">
+                      대화 내역이 없습니다.
+                    </div>
+                  ) : (
+                    chatHistory.map((item) => {
+                      const label = item.title?.trim() ? item.title : "새 대화";
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => {
+                            setConversationId(item.id);
+                            router.push("/chat");
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors text-left"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                          <span className="truncate">{label}</span>
+                        </button>
+                      );
+                    })
+                  )}
                 </div>
               </nav>
 

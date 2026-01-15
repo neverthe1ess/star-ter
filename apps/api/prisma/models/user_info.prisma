@@ -16,7 +16,7 @@ model user_info {
   bookmark             bookmark[]
   real_estate_bookmark real_estate_bookmark[]
   real_estate_info     real_estate_info[]
-  conversations        Conversation[]
+  conversations        conversation[]
 }
 
 model bookmark {

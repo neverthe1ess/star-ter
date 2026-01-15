@@ -5,7 +5,7 @@ import {
   Body,
   UseGuards,
   Get,
-  Query,
+  Param,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 import { User } from 'src/auth/decorators/user.decorator';
@@ -49,14 +49,11 @@ export class ChatController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('/conversation/history')
+  @Get('/conversation/history/:id')
   async getConversationHistory(
     @User() user: AuthenticatedUser,
-    @Query() body: { conversationId: string },
+    @Param('id') conversationId: string,
   ) {
-    return this.chatService.getConversationHistory(
-      user.id,
-      body.conversationId,
-    );
+    return this.chatService.getConversationHistory(user.id, conversationId);
   }
 }
