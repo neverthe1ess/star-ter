@@ -10,19 +10,23 @@ import {
   Settings,
   Menu,
   LogIn,
-} from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
-import { createPortal } from "react-dom";
-import { AnimatePresence } from "motion/react";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { logout } from "@/services/auth/auth.api";
-import { useUserStore } from "@/store/use-user-store";
-import { useChatStore } from "@/store/use-chat-store";
-import { ProfilePopup } from "./ProfilePopup";
-import { StartupPreferencesPopup } from "./StartupPreferencesPopup";
-import { getPersonalization, updateOnboarding, updateProfile } from "@/services/user/user.api";
-import { getChatConversations } from "@/services/chat/chat.api";
-import type { OnboardingData } from "./onboarding/onboarding-options";
+} from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { createPortal } from 'react-dom';
+import { AnimatePresence } from 'motion/react';
+import { ImageWithFallback } from './figma/ImageWithFallback';
+import { logout } from '@/services/auth/auth.api';
+import { useUserStore } from '@/store/use-user-store';
+import { useChatStore } from '@/store/use-chat-store';
+import { ProfilePopup } from './ProfilePopup';
+import { StartupPreferencesPopup } from './StartupPreferencesPopup';
+import {
+  getPersonalization,
+  updateOnboarding,
+  updateProfile,
+} from '@/services/user/user.api';
+import { getChatConversations } from '@/services/chat/chat.api';
+import type { OnboardingData } from './onboarding/onboarding-options';
 import { Logo } from './landing/header/Logo';
 
 interface SidebarProps {
@@ -67,7 +71,9 @@ export function Sidebar({
   const clearAuthUser = useUserStore((state) => state.clearAuthUser);
   const setAuthUser = useUserStore((state) => state.setAuthUser);
   const setConversationId = useChatStore((state) => state.setConversationId);
-  const clearConversationId = useChatStore((state) => state.clearConversationId);
+  const clearConversationId = useChatStore(
+    (state) => state.clearConversationId,
+  );
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [showPreferencesPopup, setShowPreferencesPopup] = useState(false);
   const [nickname, setNickname] = useState(authUser?.nickname ?? '사용자');
@@ -78,14 +84,14 @@ export function Sidebar({
   const [isSavingPreferences, setIsSavingPreferences] = useState(false);
   const [preferencesError, setPreferencesError] = useState<string | null>(null);
   const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
-  const [initialPreferences, setInitialPreferences] = useState<OnboardingData | undefined>();
+  const [initialPreferences, setInitialPreferences] = useState<
+    OnboardingData | undefined
+  >();
   const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
-  const [initialPreferences, setInitialPreferences] = useState<
-    OnboardingData | undefined
-  >();
+
   const [isMounted, setIsMounted] = useState(false);
   const layoutTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [useCompactLayout, setUseCompactLayout] = useState(!isOpen);
@@ -137,7 +143,9 @@ export function Sidebar({
       .catch((err) => {
         if (!isCancelled) {
           const message =
-            err instanceof Error ? err.message : "대화 목록 조회에 실패했습니다.";
+            err instanceof Error
+              ? err.message
+              : '대화 목록 조회에 실패했습니다.';
           setHistoryError(message);
           setChatHistory([]);
         }
@@ -162,9 +170,9 @@ export function Sidebar({
       setHistoryRefreshToken((prev) => prev + 1);
     };
 
-    window.addEventListener("chat:updated", handleRefresh);
+    window.addEventListener('chat:updated', handleRefresh);
     return () => {
-      window.removeEventListener("chat:updated", handleRefresh);
+      window.removeEventListener('chat:updated', handleRefresh);
     };
   }, [authUserId]);
 
@@ -359,7 +367,7 @@ export function Sidebar({
                   <button
                     onClick={() => {
                       clearConversationId();
-                      onMenuClick("chat");
+                      onMenuClick('chat');
                     }}
                     className="w-full min-w-0 flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-600 bg-white border border-indigo-100 shadow-sm hover:bg-indigo-50 hover:border-indigo-200 hover:shadow-md transition-all group"
                   >
@@ -372,24 +380,30 @@ export function Sidebar({
 
                 {/* 채팅 히스토리 */}
                 <div className="space-y-1">
-                  <p className="px-4 text-tiny font-strong text-gray-400 mb-2">History</p>
+                  <p className="px-4 text-tiny font-strong text-gray-400 mb-2">
+                    History
+                  </p>
                   {isLoadingHistory ? (
-                    <div className="px-4 py-2 text-xs text-slate-400">불러오는 중...</div>
+                    <div className="px-4 py-2 text-xs text-slate-400">
+                      불러오는 중...
+                    </div>
                   ) : historyError ? (
-                    <div className="px-4 py-2 text-xs text-rose-400">{historyError}</div>
+                    <div className="px-4 py-2 text-xs text-rose-400">
+                      {historyError}
+                    </div>
                   ) : chatHistory.length === 0 ? (
                     <div className="px-4 py-2 text-xs text-slate-400">
                       대화 내역이 없습니다.
                     </div>
                   ) : (
                     chatHistory.map((item) => {
-                      const label = item.title?.trim() ? item.title : "새 대화";
+                      const label = item.title?.trim() ? item.title : '새 대화';
                       return (
                         <button
                           key={item.id}
                           onClick={() => {
                             setConversationId(item.id);
-                            router.push("/chat");
+                            router.push('/chat');
                           }}
                           className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors text-left"
                         >
