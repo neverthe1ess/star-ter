@@ -70,14 +70,14 @@ export function TimeScoreSection({
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <h4 className="font-bold text-slate-900">운영 시간</h4>
+          <h4 className="text-h4 font-heading text-slate-900">운영 시간</h4>
         </div>
         <div className="text-right">
-          <p className="text-xs text-slate-400">적합도</p>
-          <p className={`text-xl font-black ${text}`}>{percentage}%</p>
+          <p className="text-caption text-slate-400">적합도</p>
+          <p className={`text-h4 font-heading ${text}`}>{percentage}%</p>
         </div>
       </div>
-      <p className="text-sm text-slate-400 mb-6">시간대별 매출 추이</p>
+      <p className="text-caption text-slate-400 mb-6">시간대별 매출 추이</p>
 
       {/* 막대 그래프 */}
       <div className="flex items-end justify-between gap-4 mb-6">
@@ -90,7 +90,7 @@ export function TimeScoreSection({
             <div key={slot.key} className="flex-1 flex flex-col items-center">
               {/* 값 표시 */}
               <span
-                className={`text-sm font-bold mb-2 ${selected ? 'text-emerald-600' : 'text-slate-400'}`}
+                className={`text-body font-strong mb-2 ${selected ? 'text-emerald-600' : 'text-slate-400'}`}
               >
                 {value.toFixed(1)}%
               </span>
@@ -107,13 +107,13 @@ export function TimeScoreSection({
               </div>
 
               {/* 라벨 */}
-              <div className="text-center mt-2">
+              <div className="text-center mt-3">
                 <p
-                  className={`text-sm font-bold ${selected ? 'text-emerald-600' : 'text-slate-600'}`}
+                  className={`text-body font-strong ${selected ? 'text-emerald-600' : 'text-slate-600'}`}
                 >
                   {slot.label}
                 </p>
-                <p className="text-xs text-slate-400">{slot.range}</p>
+                <p className="text-caption text-slate-400">{slot.range}</p>
               </div>
             </div>
           );
@@ -123,14 +123,14 @@ export function TimeScoreSection({
       {/* 하단 정보 */}
       <div className="flex items-center justify-between pt-4 border-t border-slate-100">
         <div>
-          <p className="text-xs text-slate-400">사장님 선택 운영 시간</p>
-          <p className="font-bold text-slate-900">
+          <p className="text-caption text-slate-400">사장님 선택 운영 시간</p>
+          <p className="text-h4 font-bold text-slate-900">
             {selectedRange} ({selectedLabel})
           </p>
         </div>
         <div className="text-right">
-          <p className="text-xs text-slate-400">선택 시간대 매출 비중</p>
-          <p className={`text-xl font-black ${text}`}>
+          <p className="text-caption text-slate-400">선택 시간대 매출 비중</p>
+          <p className={`text-h4 font-bold ${text}`}>
             {selectedRatio.toFixed(1)}%
           </p>
         </div>

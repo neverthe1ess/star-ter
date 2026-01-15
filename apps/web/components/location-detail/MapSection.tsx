@@ -566,7 +566,7 @@ export function MapSection({
       <div
         id="traffic-map-container"
         ref={mapRef}
-        className="w-full h-full rounded-[32px] overflow-hidden"
+        className="w-full h-full rounded-[32px] shadow-md overflow-hidden"
       />
 
       {/* 가격 필터 슬라이더 (realestate 모드일 때만 표시) */}

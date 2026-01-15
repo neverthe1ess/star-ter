@@ -63,9 +63,6 @@ export function MatchingContent({
     return (
       <div className="space-y-10">
         <div className="space-y-6">
-          <h2 className="text-2xl font-black text-slate-900">
-            업종 정밀 매칭 결과
-          </h2>
           <MatchingContentSkeleton />
         </div>
       </div>
@@ -74,8 +71,8 @@ export function MatchingContent({
 
   return (
     <div className="space-y-10">
-      <div className="space-y-6">
-        <h2 className="text-2xl font-black text-slate-900">
+      <div className="space-y-4">
+        <h2 className="text-h2 font-bold text-slate-900">
           업종 정밀 매칭 결과
         </h2>
 
@@ -162,20 +159,20 @@ export function MatchingContent({
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center">
                         <span
-                          className={`text-3xl font-black ${content.color}`}
+                          className={`text-h3 font-heading ${content.color}`}
                         >
-                          {scoreData.totalScore}
+                          {scoreData.totalScore}%
                         </span>
                       </div>
                     </div>
 
                     <div className="space-y-3 text-center lg:text-left">
                       <h3
-                        className={`text-2xl font-bold leading-tight ${content.color}`}
+                        className={`text-h3 font-heading leading-tight ${content.color}`}
                       >
                         {content.title}
                       </h3>
-                      <p className="text-slate-500 text-lg leading-relaxed break-keep">
+                      <p className="text-slate-500 text-body leading-relaxed break-keep">
                         {content.desc}
                       </p>
                     </div>
@@ -195,10 +192,10 @@ export function MatchingContent({
 
       {/* 점수 설명 섹션 - 시각화된 비교 */}
       {scoreData && (
-        <div className="space-y-6">
-          <h3 className="text-xl font-bold text-slate-900">
+        <div className="space-y-4">
+          <h2 className="text-h2 font-bold text-slate-900">
             사장님 맞춤 분석 결과
-          </h3>
+          </h2>
           <div className="space-y-4">
             {/* 타깃 연령 + 상권 테마 (같은 row) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -244,7 +241,7 @@ export function MatchingContent({
         <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <p className="text-slate-400 font-bold mb-1 text-xs uppercase tracking-wider">
+              <p className="text-slate-400 font-bold text-caption uppercase tracking-wider">
                 상권 내 {metrics?.appliedIndustryName || '선택 업종'} 월 매출
                 규모
               </p>
@@ -252,7 +249,7 @@ export function MatchingContent({
                 {loading ? (
                   <div className="h-9 w-32 bg-slate-200 animate-pulse rounded" />
                 ) : (
-                  <span className="text-2xl font-black text-blue-950">
+                  <span className="text-h3 font-black text-blue-950">
                     {metrics
                       ? metrics.industryRevenue === 0
                         ? '데이터 없음'
@@ -264,10 +261,10 @@ export function MatchingContent({
             </div>
 
             <div className="bg-slate-50 px-4 py-3 rounded-xl border border-slate-100 flex items-center gap-2">
-              <span className="text-sm font-bold text-slate-600">
+              <span className="text-caption font-bold text-slate-600">
                 상권 전체 매출의
               </span>
-              <span className="text-lg font-black text-blue-600">
+              <span className="text-h5 font-heading text-blue-600">
                 {metrics && metrics.totalRevenue > 0
                   ? (
                       (metrics.industryRevenue / metrics.totalRevenue) *
@@ -276,7 +273,7 @@ export function MatchingContent({
                   : 0}
                 %
               </span>
-              <span className="text-sm font-bold text-slate-600">차지</span>
+              <span className="text-caption font-bold text-slate-600">차지</span>
             </div>
           </div>
         </div>

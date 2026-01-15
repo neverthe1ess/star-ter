@@ -203,24 +203,24 @@ export function LocationDetailPage({
   return (
     <div className="h-screen bg-[#f7f7f8]">
       {/* 사이드바와 맞춤: 상하좌 p-4, 오른쪽만 pr-8 추가 */}
-      <div className="py-6 pl-4 pr-16 h-full flex flex-col">
+      <div className="pb-7 h-full flex flex-col">
         {/* 헤더: 고정 높이 (shrink 방지) */}
-        <div className="mb-4 shrink-0">
+        <div className="mb-2 shrink-0">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-2">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center">
               <Link
                 href="/locations"
                 className="flex items-center justify-center w-12 h-12 rounded-full hover:bg-gray-100 transition-colors shrink-0"
               >
                 <ArrowLeft className="w-6 h-6 text-gray-900" />
               </Link>
-              <h1 className="text-5xl font-bold text-gray-900">
+              <h1 className="text-h1 font-bold text-gray-900">
                 {basicInfo.name}
               </h1>
             </div>
           </div>
-          <div className="flex items-center gap-4 ml-16">
-            <p className="text-2xl text-gray-500">
+          <div className="flex items-center gap-4 ">
+            <p className="text-h3 text-gray-500">
               서울시 {basicInfo.guName} {basicInfo.dongName}
             </p>
           </div>
@@ -229,7 +229,7 @@ export function LocationDetailPage({
         {/* 메인 콘텐츠: 남은 공간 모두 채움 */}
         <div className="flex gap-4 flex-1 items-stretch overflow-hidden">
           <Resizable
-            size={{ width: mapWidth, height: '100%' }}
+            size={{ width: mapWidth, height: 'h-full' }}
             onResizeStop={(e, direction, ref) => {
               const parent = ref.parentElement;
               if (parent) {
@@ -289,15 +289,15 @@ export function LocationDetailPage({
           </Resizable>
 
           <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-6 shrink-0">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4 shrink-0">
               <div className="flex gap-1 bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                    className={`px-6 py-2.5 rounded-xl text-lg font-bold transition-all ${
+                    className={`px-5 py-2 rounded-xl text-h5 font-strong transition-all ${
                       activeTab === tab.id
-                        ? 'bg-blue-950 text-white shadow-md'
+                        ? 'bg-blue-950 font-bold text-white shadow-md'
                         : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
                     }`}
                   >
@@ -308,9 +308,9 @@ export function LocationDetailPage({
             </div>
 
             <div className="flex-1 min-h-0">
-              <div className="h-full bg-white rounded-[32px] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+              <div className="h-full bg-white rounded-4xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
                 <div className="flex-1 overflow-y-auto no-scrollbar">
-                  <div className="p-10">
+                  <div className="p-8">
                     {activeTab === 'matching' && (
                       <MatchingContent
                         locationName={basicInfo.name}
