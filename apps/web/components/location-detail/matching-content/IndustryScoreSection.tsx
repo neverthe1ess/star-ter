@@ -74,18 +74,15 @@ export function IndustryScoreSection({
     <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-2">
-        <h4 className="font-bold text-slate-900">업종 적합도</h4>
+        <h4 className="text-h4 font-heading text-slate-900">업종 적합도</h4>
         <div className="text-right">
-          <p className="text-xs text-slate-400">적합도</p>
-          <p className={`text-xl font-black ${text}`}>{percentage}%</p>
+          <p className="text-caption text-slate-400">적합도</p>
+          <p className={`text-h4 font-heading ${text}`}>{percentage}%</p>
         </div>
       </div>
 
       {/* 선택 업종 */}
-      <p className="text-sm text-slate-400 mb-8">
-        선택 업종:{' '}
-        <span className="font-medium text-slate-600">{industryName}</span>
-      </p>
+      <p className="text-caption text-slate-400 mb-8">선택 업종에 대한 분석</p>
 
       {/* 카드 그리드 */}
       <div className="grid grid-cols-2 gap-4 mb-6 mt-8">
@@ -93,11 +90,11 @@ export function IndustryScoreSection({
         <div
           className={`rounded-xl p-6 border border-slate-100 ${density.bgColor}`}
         >
-          <p className="text-sm text-slate-500 mb-2">경쟁 업체</p>
-          <p className={`text-3xl font-black text-slate-900`}>
+          <p className="text-caption text-slate-500 mb-2">경쟁 업체</p>
+          <p className={`text-h2 font-heading text-slate-900`}>
             {competitorCount}개
           </p>
-          <p className={`text-sm font-medium mt-2 text-slate-400`}>
+          <p className={`text-caption mt-2 text-blue-600 font-medium`}>
             {density.status}
           </p>
         </div>
@@ -106,20 +103,28 @@ export function IndustryScoreSection({
         <div
           className={`rounded-xl p-6 border border-slate-100 ${density.bgColor}`}
         >
-          <p className="text-sm text-slate-500 mb-2">점포 밀도</p>
-          <p className={`text-3xl font-black text-slate-900`}>
+          <p className="text-caption text-slate-500 mb-2">점포 밀도</p>
+          <p className={`text-h2 font-heading text-slate-900`}>
             {density.label}
           </p>
-          <p className="text-sm text-slate-400 mt-2">동일 업종 기준</p>
+          <p className="text-caption text-blue-600 font-medium mt-2">
+            동일 업종 기준
+          </p>
         </div>
       </div>
 
       {/* 요약 메시지 */}
-      <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-        <p className="text-sm text-slate-600">
-          <span className="font-bold text-slate-700">💡 </span>
+      <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 mb-8">
+        <p className="text-caption font-strong text-slate-600">
+          <span className="font-strong text-slate-700">💡</span>
           {getSummaryMessage()}
         </p>
+      </div>
+
+      {/* 하단 정보 */}
+      <div className="pt-4 border-t border-slate-100">
+        <p className="text-caption text-slate-400">사장님 선택</p>
+        <p className="text-h4 font-bold text-slate-900">{industryName}</p>
       </div>
     </div>
   );
