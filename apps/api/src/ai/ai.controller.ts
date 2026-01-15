@@ -195,4 +195,46 @@ export class AiController {
       },
     };
   }
+
+  /**
+   * 상권 요약 정보 (MapInfoPanel용)
+   * GET /ai/area/summary?areaCd=xxx
+   */
+  @Get('/area/summary')
+  async getAreaSummary(@Query('areaCd') areaCd: string) {
+    const stdrYyquCd = '20253'; // 최신 분기
+
+    try {
+      const result = await this.toolsRepository.getCommercialSummary({
+        areaCd,
+        stdrYyquCd,
+      });
+
+      if (!result || !Array.isArray(result) || result.length === 0) {
+        return {
+          success: false,
+          message: '상권 정보를 찾을 수 없습니다.',
+          data: null,
+        };
+      }
+
+      const row = result[0] as Record<string, unknown>;
+      return {
+        success: true,
+        data: {
+          areaName: row['지역 이름'] as string,
+          revenue: Number(row['해당 분기 매출 금액'] || 0),
+          floatingPopulation: Number(row['총 유동인구'] || 0),
+          storeCount: Number(row['점포 수'] || 0),
+        },
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get area summary: ${error}`);
+      return {
+        success: false,
+        message: '상권 정보 조회 중 오류가 발생했습니다.',
+        data: null,
+      };
+    }
+  }
 }

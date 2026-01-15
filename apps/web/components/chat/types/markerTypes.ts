@@ -3,8 +3,8 @@ export interface MarkerData {
   lat: number;
   lng: number;
   label?: string; // 예: "치킨", "2000/150"
-  type?: 'competitor' | 'listing' | 'default';
+  type?: 'competitor' | 'default';
   onClick?: () => void;
-  // 추가적인 메타데이터 (가격 등)
-  meta?: Record<string, any>;
+  // 추가적인 메타데이터
+  meta?: Record<string, unknown>;
 }

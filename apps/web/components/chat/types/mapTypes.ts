@@ -18,6 +18,7 @@ export interface AreaInfo {
   code: string;
   name: string;
   type: 'commercial' | 'dong' | 'gu';
-  revenue?: number;
-  population?: number;
+  revenue?: number;               // 분기 매출
+  floatingPopulation?: number;    // 유동인구
+  storeCount?: number;            // 점포 수
 }

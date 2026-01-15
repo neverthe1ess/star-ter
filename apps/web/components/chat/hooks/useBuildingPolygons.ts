@@ -48,12 +48,18 @@ export function useBuildingPolygons({
   const polygonsRef = useRef<KakaoPolygon[]>([]);
   const isLoadingRef = useRef(false);
   const selectedPolygonRef = useRef<KakaoPolygon | null>(null);
+  const selectedPathRef = useRef<KakaoLatLng[] | null>(null); // 선택된 폴리곤의 path 저장
+  const selectedBuildingRef = useRef<BuildingPolygonResponse | null>(null); // 선택된 건물 정보
+  const selectedOuterRingRef = useRef<number[][] | null>(null); // 선택된 outerRing
 
   // 폴리곤 클리어
   const clearPolygons = useCallback(() => {
     polygonsRef.current.forEach((polygon) => polygon.setMap(null));
     polygonsRef.current = [];
     selectedPolygonRef.current = null;
+    selectedPathRef.current = null;
+    selectedBuildingRef.current = null;
+    selectedOuterRingRef.current = null;
   }, []);
 
   // 좌표 배열을 WKT 형식으로 변환 (outerRing 직접 사용)
@@ -251,15 +257,38 @@ export function useBuildingPolygons({
           building.buld_nm,
         );
 
-        // 이전 선택된 폴리곤이 있으면 지도에서 제거 (다시 로드 시 기본 색상으로)
-        if (selectedPolygonRef.current) {
-          selectedPolygonRef.current.setMap(null);
-          // polygonsRef에서도 제거 (다음 idle 이벤트에서 다시 로드됨)
-          const prevIdx = polygonsRef.current.indexOf(
-            selectedPolygonRef.current,
-          );
+        // 이전 선택된 폴리곤이 있으면 기본 스타일로 복원 (삭제 X)
+        if (selectedPolygonRef.current && selectedPathRef.current) {
+          const prevPolygon = selectedPolygonRef.current;
+          const prevPath = selectedPathRef.current;
+          const prevBuilding = selectedBuildingRef.current;
+          const prevOuterRing = selectedOuterRingRef.current;
+          prevPolygon.setMap(null);
+          
+          // 기본 스타일의 폴리곤으로 교체
+          const restoredPolygon = new window.kakao.maps.Polygon({
+            path: prevPath,
+            strokeWeight: 2,
+            strokeColor: '#3B82F6',
+            strokeOpacity: 0.8,
+            fillColor: '#3B82F6',
+            fillOpacity: 0.2,
+          });
+          restoredPolygon.setMap(map);
+          
+          // 복원된 폴리곤에 클릭 이벤트 다시 등록
+          if (prevBuilding && prevOuterRing) {
+            window.kakao.maps.event.addListener(restoredPolygon, 'click', () => {
+              handlePolygonClick(restoredPolygon, prevBuilding, prevPath, prevOuterRing);
+            });
+          }
+          
+          // polygonsRef에서 이전 선택 폴리곤을 복원된 폴리곤으로 교체
+          const prevIdx = polygonsRef.current.indexOf(prevPolygon);
           if (prevIdx !== -1) {
-            polygonsRef.current.splice(prevIdx, 1);
+            polygonsRef.current[prevIdx] = restoredPolygon;
+          } else {
+            polygonsRef.current.push(restoredPolygon);
           }
         }
 
@@ -277,7 +306,17 @@ export function useBuildingPolygons({
 
         const idx = polygonsRef.current.indexOf(polygon);
         if (idx !== -1) polygonsRef.current[idx] = selectedPolygon;
+        
+        // 선택 상태 저장
         selectedPolygonRef.current = selectedPolygon;
+        selectedPathRef.current = path;
+        selectedBuildingRef.current = building;
+        selectedOuterRingRef.current = outerRing;
+
+        // 선택된 폴리곤에도 클릭 이벤트 등록 (다시 클릭 가능하도록)
+        window.kakao.maps.event.addListener(selectedPolygon, 'click', () => {
+          handlePolygonClick(selectedPolygon, building, path, outerRing);
+        });
 
         // outerRing을 직접 사용하여 WKT 생성
         const wkt = ringToWkt(outerRing);
@@ -288,7 +327,7 @@ export function useBuildingPolygons({
         );
 
         onBuildingClick?.({
-          id: building.buld_nm, // 건물명을 ID로 사용
+          id: building.buld_nm,
           name: building.buld_nm || '건물',
           polygonWkt: wkt,
         });
