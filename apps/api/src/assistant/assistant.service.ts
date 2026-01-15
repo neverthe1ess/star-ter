@@ -69,17 +69,45 @@ export class AssistantService {
     // 현재 사용자 메시지
     messages.push({ role: 'user', content: message });
 
-    // 3. Tool Calling (1차 호출)
-    const systemPrompt = CLAUDE_PROMPTS.TOOL_CALL_SYSTEM.replace(
-      '${categoryVectors}',
-      this.claudeService.formatCategoryVectors(categories),
-    ).replace('${areaVectors}', this.claudeService.formatAreaVectors(areaList));
+    // 3. Tool Calling (1차 호출) - OpenAI로 빠른 Tool 선택(tlqkf claude 개느려)
+    const toolCallStart = Date.now();
 
-    const claudeTools = this.convertToolsForClaude();
+    // OpenAI Responses API용 input 구성
+    const openAiInput = messages.map((m) => ({
+      role: m.role as 'user' | 'assistant',
+      content:
+        typeof m.content === 'string' ? m.content : JSON.stringify(m.content),
+    }));
 
-    // 원본 content와 toolCalls 함께 받기
-    const { content: assistantContent, toolCalls } =
-      await this.claudeService.toolCall(messages, systemPrompt, claudeTools);
+    const openAiResponse = await this.openAiService.toolCallAi(
+      openAiInput,
+      categories,
+      areaList,
+    );
+
+    const toolCallTime = Date.now() - toolCallStart;
+    console.log(
+      `[AssistantService] 🕐 OpenAI Tool Selection Time: ${toolCallTime}ms`,
+    );
+
+    // OpenAI 응답에서 Tool Calls 추출
+    const toolCalls: Array<{
+      id: string;
+      name: string;
+      arguments: Record<string, unknown>;
+    }> = [];
+
+    if (openAiResponse.output) {
+      for (const item of openAiResponse.output) {
+        if (item.type === 'function_call') {
+          toolCalls.push({
+            id: item.call_id,
+            name: item.name,
+            arguments: JSON.parse(item.arguments),
+          });
+        }
+      }
+    }
 
     console.log(`[AssistantService] Tool calls: ${toolCalls.length}`);
 
@@ -121,17 +149,26 @@ export class AssistantService {
       });
     }
 
-    // Claude 원본 응답을 그대로 assistant 메시지로 추가
+    // OpenAI Tool Call 결과를 텍스트로 변환하여 Claude에 전달
     if (toolCalls.length > 0) {
+      // Tool Call을 텍스트로 변환
+      const toolCallText = toolCalls
+        .map((tc) => `[Tool Call] ${tc.name}(${JSON.stringify(tc.arguments)})`)
+        .join('\n');
+
+      // Tool Result를 텍스트로 변환
+      const toolResultText = toolResultBlocks
+        .map((tr) => `[Tool Result] ${tr.content}`)
+        .join('\n');
+
       messages.push({
         role: 'assistant',
-        content: assistantContent, // 원본 그대로!
+        content: toolCallText,
       });
 
-      // 모든 tool_result를 하나의 user 메시지로
       messages.push({
         role: 'user',
-        content: toolResultBlocks,
+        content: toolResultText,
       });
     }
 
