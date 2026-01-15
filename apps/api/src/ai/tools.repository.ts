@@ -1368,14 +1368,17 @@ export class ToolsRepository {
         LIMIT ${limit}
       `;
 
-      // BigInt 처리 및 포맷팅
-      const formattedItems = items.map((item) => {
+      // BigInt 처리 및 포맷팅 (번호 매핑 포함)
+      const formattedItems = items.map((item, index) => {
         // BigInt -> Number (천원 -> 만원 변환)
         const dep = Number(item.deposit || 0) / 10;
         const rent = Number(item.monthlyrent || 0) / 10;
         const dist = Number(item.distance || 0).toFixed(2); // km
 
         return {
+          // 번호-UUID 매핑: AI가 "N번 매물"을 참조할 때 사용
+          listingNumber: index + 1, // 1번, 2번, 3번...
+          listingId: item.id, // UUID (calc_break_even_with_listing에 사용)
           id: item.id,
           title: item.title || '상세 정보 없음',
           deposit: dep, // 만원

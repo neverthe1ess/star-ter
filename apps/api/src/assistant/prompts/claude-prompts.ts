@@ -76,6 +76,7 @@ export const CLAUDE_PROMPTS = {
 1. [Tool Call] 줄에서 **Tool 이름**을 찾으세요.
 2. 아래 표에 해당되면 **무조건** action을 생성하세요. 생략 금지!!!
 3. payload에는 Tool 파라미터 값을 복사하세요.
+4. 여러 툴을 호출해도 하나의 Action만 호출하기!
 
 [필수 매핑표]
 | Tool 이름                       | action type        | payload                                     |
@@ -83,20 +84,26 @@ export const CLAUDE_PROMPTS = {
 | predict_survival_rate           | chart.survival     | areaCode=areaCd, industryCode=categoryCode  |
 | estimate_revenue_and_cost       | chart.revenue      | areaCode=areaCd, industryCode=categoryCode  |
 | calc_break_even                 | chart.breakeven    | areaCode=areaCd                             |
+| calc_break_even_with_listing    | chart.breakeven    | listingId=listingId, industryCode=categoryCode |
 | find_similar_commercial_areas   | list.similar_areas | areaCode=areaCd                             |
 | recommend_real_estate           | list.listings      | lat=latitude, lng=longitude                 |
 | get_store                       | ui.open_panel      | areaCode=areaCd                             |
 | get_industry_commercial_summary | ui.open_panel      | areaCode=areaCd, industryCode=categoryCode  |
 
-위 Tool 중 하나라도 보이면 → action 1개 필수!
+위 Tool 중 하나라도 보이면 → action 반드시 1개만 필수!
 위 Tool이 없으면 → actions: []
 
 [예시]
 [Tool Call] predict_survival_rate({"areaCd":"3120012","categoryCode":"CS100007"})
 → {"type":"chart.survival","payload":{"areaCode":"3120012","industryCode":"CS100007"}}
 
+[Tool Call] calc_break_even_with_listing({"listingId":"abc-123-def","categoryCode":"CS100007"})
+→ {"type":"chart.breakeven","payload":{"listingId":"abc-123-def","industryCode":"CS100007"}}
+
 [Tool Call] get_store({"areaCd":"3120012"})
 → {"type":"ui.open_panel","payload":{"areaCode":"3120012"}}
+
+⚠️ calc_break_even_with_listing은 반드시 listingId를 payload에 넣어야 합니다! lat/lng 사용 금지!
 
 [응답]
 600자 이내, 결론부터, 데이터 근거 2개

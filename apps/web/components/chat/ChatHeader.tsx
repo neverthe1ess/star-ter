@@ -82,7 +82,7 @@ export function ChatHeader({
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="flex items-center gap-2.5 px-4 py-2 rounded-xl hover:bg-slate-100 transition-colors shrink-0"
               >
-                <div className={`w-6 h-6 ${currentProvider.color}`}>
+                <div className="w-5 h-5 flex items-center justify-center">
                   <CurrentIcon />
                 </div>
                 <span className="text-base font-medium text-slate-700 hidden sm:inline">
@@ -109,8 +109,10 @@ export function ChatHeader({
                       aiProvider === provider.id ? 'bg-slate-100' : ''
                     }`}
                   >
-                    <span className={provider.color}><IconComponent /></span>
-                    <span className="text-sm font-medium text-slate-700">{provider.name}</span>
+                    <div className="w-5 h-5 flex items-center justify-center">
+                      <IconComponent />
+                    </div>
+                    <span className="text-md font-medium text-slate-700">{provider.name}</span>
                     {aiProvider === provider.id && (
                       <span className="ml-auto text-blue-500 text-sm">✓</span>
                     )}

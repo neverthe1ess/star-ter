@@ -112,8 +112,23 @@ export class AssistantService {
     console.log(`[AssistantService] Tool calls: ${toolCalls.length}`);
 
     // 4. Tool 실행 및 결과 수집
-    let breakEvenContext: { type: 'listing' | 'area'; id: string } | null =
-      null;
+    let breakEvenContext: {
+      type: 'listing' | 'area';
+      id: string;
+      categoryCode?: string;
+    } | null = null;
+    // 매물 추천 결과 저장 (list.listings 액션에 markers 주입용)
+    interface ListingItem {
+      listingNumber: number;
+      listingId: string;
+      title: string;
+      latitude?: number;
+      longitude?: number;
+    }
+    interface RecommendRealEstateResult {
+      data?: ListingItem[];
+    }
+    let recommendRealEstateResult: RecommendRealEstateResult | null = null;
 
     const toolResultBlocks: Array<{
       type: 'tool_result';
@@ -122,13 +137,21 @@ export class AssistantService {
     }> = [];
 
     for (const toolCall of toolCalls) {
-      // 손익분기 컨텍스트 추적
+      // 손익분기 컨텍스트 추적 (categoryCode 포함)
       if (toolCall.name === 'calc_break_even_with_listing') {
         const listingId = toolCall.arguments.listingId as string | undefined;
-        if (listingId) breakEvenContext = { type: 'listing', id: listingId };
+        const categoryCode = toolCall.arguments.categoryCode as
+          | string
+          | undefined;
+        if (listingId)
+          breakEvenContext = { type: 'listing', id: listingId, categoryCode };
       } else if (toolCall.name === 'calc_break_even') {
         const areaCd = toolCall.arguments.areaCd as string | undefined;
-        if (areaCd) breakEvenContext = { type: 'area', id: areaCd };
+        const categoryCode = toolCall.arguments.categoryCode as
+          | string
+          | undefined;
+        if (areaCd)
+          breakEvenContext = { type: 'area', id: areaCd, categoryCode };
       }
 
       // Tool 실행
@@ -138,6 +161,11 @@ export class AssistantService {
       );
 
       if (toolResult === undefined) continue;
+
+      // recommend_real_estate 결과 저장 (나중에 markers로 주입)
+      if (toolCall.name === 'recommend_real_estate' && toolResult) {
+        recommendRealEstateResult = toolResult as RecommendRealEstateResult;
+      }
 
       // tool_result 블록 수집
       toolResultBlocks.push({
@@ -230,21 +258,66 @@ export class AssistantService {
     console.log('  reply:', parsedResponse.reply?.substring(0, 100) + '...');
     console.log('  actions:', JSON.stringify(parsedResponse.actions, null, 2));
 
-    // breakeven 액션 강제 추가 (필요시)
+    // chart.breakeven 액션 패치/추가 (listingId 또는 areaCode + industryCode 보장)
     if (breakEvenContext) {
       parsedResponse.actions = parsedResponse.actions || [];
-      const hasAction = parsedResponse.actions.some(
+      const existingAction = parsedResponse.actions.find(
         (a) => a.type === 'chart.breakeven',
       );
-      if (!hasAction) {
+
+      // listingId 또는 areaCode + industryCode(categoryCode) 포함
+      const correctPayload =
+        breakEvenContext.type === 'listing'
+          ? {
+              listingId: breakEvenContext.id,
+              ...(breakEvenContext.categoryCode && {
+                industryCode: breakEvenContext.categoryCode,
+              }),
+            }
+          : {
+              areaCode: breakEvenContext.id,
+              ...(breakEvenContext.categoryCode && {
+                industryCode: breakEvenContext.categoryCode,
+              }),
+            };
+
+      if (existingAction) {
+        // Claude가 잘못된 payload를 생성했을 수 있으므로 덮어쓰기
+        console.log(
+          '[AssistantService] Patching chart.breakeven payload with correct value',
+          correctPayload,
+        );
+        existingAction.payload = correctPayload;
+      } else {
         console.log('[AssistantService] Injecting chart.breakeven action');
         parsedResponse.actions.push({
           type: 'chart.breakeven',
-          payload:
-            breakEvenContext.type === 'listing'
-              ? { listingId: breakEvenContext.id }
-              : { areaCode: breakEvenContext.id },
+          payload: correctPayload,
         });
+      }
+    }
+
+    // list.listings 액션에 markers 주입 (프론트엔드 히스토리에 UUID 저장용)
+    if (recommendRealEstateResult?.data && parsedResponse.actions) {
+      const listingsAction = parsedResponse.actions.find(
+        (a) => a.type === 'list.listings',
+      );
+      if (listingsAction) {
+        listingsAction.payload = listingsAction.payload || {};
+        listingsAction.payload.markers = recommendRealEstateResult.data.map(
+          (item) => ({
+            id: item.listingId,
+            listingNumber: item.listingNumber,
+            title: item.title,
+            lat: item.latitude || 0,
+            lng: item.longitude || 0,
+            label: String(item.listingNumber),
+            type: 'listing',
+          }),
+        );
+        console.log(
+          `[AssistantService] Injected ${recommendRealEstateResult.data.length} markers into list.listings action`,
+        );
       }
     }
 
