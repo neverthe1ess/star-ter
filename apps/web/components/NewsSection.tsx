@@ -80,15 +80,9 @@ export default function NewsSection({
   // 타임아웃 또는 에러 시 표시할 UI
   if (isTimeout || (!loading && news.length === 0)) {
     return (
-      <div className="w-full max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-xl">
-            {locationName || region ? `${locationName || region} ` : ''}상권
-            뉴스
-          </h2>
-        </div>
+      <div className="w-full max-w-7xl mx-auto">
         <div className="py-12 text-center bg-slate-50 rounded-xl">
-          <p className="text-slate-400 text-sm mb-3">
+          <p className="text-slate-400 text-caption mb-3">
             {isTimeout
               ? '뉴스를 불러오는 데 시간이 너무 오래 걸립니다.'
               : '관련 뉴스가 없습니다.'}
@@ -96,7 +90,7 @@ export default function NewsSection({
           {isTimeout && (
             <button
               onClick={handleRetry}
-              className="text-sm text-blue-500 hover:underline font-medium"
+              className="text-caption text-blue-500 hover:underline font-medium"
             >
               다시 시도
             </button>
@@ -108,7 +102,7 @@ export default function NewsSection({
 
   if (loading) {
     return (
-      <div className="w-full max-w-7xl mx-auto px-4">
+      <div className="w-full max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <div className="h-7 w-32 bg-slate-200 animate-pulse rounded" />
         </div>
@@ -140,38 +134,38 @@ export default function NewsSection({
   const displayTitle = locationName || region;
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4">
+    <div className="w-full">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-bold text-xl">
+        <h2 className="font-bold text-h2">
           {displayTitle ? `${displayTitle} ` : ''}상권 뉴스
         </h2>
       </div>
-      <div className="flex flex-col justify-between mb-8">
+      <div className="flex flex-col justify-between">
         {news.map((item, index) => (
           <a
             key={index}
             href={item.link}
             target="_blank"
             rel="nooper noreferrer"
-            className="block h-full group pb-4"
+            className="block h-full group pb-2.5"
           >
-            <div className="group cursor-pointer flex gap-4">
+            <div className="group cursor-pointer flex gap-2">
               <div className="flex-1 min-w-0 flex flex-col">
                 <h3
-                  className="text-base font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-1"
+                  className="text-body font-strong text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1"
                   dangerouslySetInnerHTML={{ __html: item.title }}
                 />
                 <p
-                  className="text-gray-600 text-sm mb-3 line-clamp-1 leading-relaxed"
+                  className="text-gray-600 text-caption mb-2 line-clamp-1 leading-relaxed"
                   dangerouslySetInnerHTML={{ __html: item.description }}
                 />
-                <div className="mt-auto text-xs text-gray-400">
+                <div className="mt-auto text-caption text-gray-400">
                   {new Date(item.pubDate).toLocaleDateString()}
                 </div>
               </div>
 
               {showImages && item.image && (
-                <div className="shrink-0 w-24 h-24 rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
+                <div className="shrink-0 w-16 h-16 rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
                   <img
                     src={item.image}
                     alt="뉴스 썸네일"
@@ -188,7 +182,7 @@ export default function NewsSection({
       </div>
 
       {showPagination && (
-        <div className="flex justify-center items-center gap-4 mt-4">
+        <div className="flex justify-center items-center gap-4 mt-1">
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import Link from 'next/link';
 import {
   getRecommendations,
@@ -8,6 +8,7 @@ import {
 } from '@/services/location/locationRecommend.service';
 import { getOnboarding } from '@/services/user/user.api';
 import { useUserStore } from '@/store/use-user-store';
+import { useRecommendStore } from '@/store/use-recommend-store';
 import { PentagonChart } from '@/components/charts/PentagonChart';
 
 type DisplayLocation = {
@@ -50,16 +51,33 @@ const getScoreBadge = (score: number) => {
 
 export function RecommendSection() {
   const authUser = useUserStore((state) => state.authUser);
+  const { recommendResult, isLoaded, clearRecommendResult } =
+    useRecommendStore();
   const [recommendedLocations, setRecommendedLocations] = useState<
     ScoredLocation[]
   >([]);
   const [isLoading, setIsLoading] = useState(true);
+  const prefetchConsumed = useRef(false);
 
   useEffect(() => {
     if (!authUser) {
       setRecommendedLocations([]);
       setIsLoading(false);
       return;
+    }
+
+    // 스토어에 pre-fetched 데이터가 있고, 아직 사용하지 않은 경우
+    if (isLoaded && recommendResult && !prefetchConsumed.current) {
+      prefetchConsumed.current = true;
+      setRecommendedLocations(recommendResult.locations.slice(0, 5));
+      setIsLoading(false);
+      clearRecommendResult(); // 스토어 클리어
+      return;
+    }
+
+    // 이미 pre-fetch 데이터를 사용했거나, 스토어에 데이터가 없는 경우 fetch
+    if (prefetchConsumed.current) {
+      return; // 이미 데이터 있음
     }
 
     async function fetchRecommendations() {
@@ -93,7 +111,7 @@ export function RecommendSection() {
       }
     }
     fetchRecommendations();
-  }, [authUser]);
+  }, [authUser, isLoaded, recommendResult, clearRecommendResult]);
 
   const displayLocations: DisplayLocation[] = useMemo(() => {
     if (recommendedLocations.length > 0) {

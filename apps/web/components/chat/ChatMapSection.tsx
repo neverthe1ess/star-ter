@@ -8,7 +8,7 @@ import { type MarkerData } from "./types/markerTypes";
 import { type BuildingInfo, type AreaInfo } from "./types/mapTypes";
 import { MapInfoPanel } from "./MapInfoPanel";
 import { useBuildingPolygons } from "./hooks/useBuildingPolygons";
-
+import { PolygonData, Coordinate } from "./types";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
 
 /**
@@ -126,11 +126,6 @@ export const ChatMapSection = forwardRef<ChatMapSectionRef, ChatMapSectionProps>
       markers.forEach((item) => {
         const position = new window.kakao.maps.LatLng(item.lat, item.lng);
 
-        // 마커 스타일 결정
-        const isCompetitor = item.type === 'competitor';
-        const bgColor = isCompetitor ? '#EF4444' : '#2563EB'; // 경쟁: 빨강, 매물/기본: 파랑
-        const textColor = '#FFFFFF';
-
         // 클릭 핸들러 등록
         const funcName = `__chatMarkerClick_${item.id.replace(/[^a-zA-Z0-9]/g, '_')}`;
         globalFunctionNames.push(funcName);
@@ -139,23 +134,28 @@ export const ChatMapSection = forwardRef<ChatMapSectionRef, ChatMapSectionProps>
              item.onClick?.();
         };
 
+        // 마커 스타일 결정
+        const isCompetitor = item.type === 'competitor';
+        const bgColor = isCompetitor ? '#EF4444' : '#2563EB';
+        const markerLabel = item.label || (isCompetitor ? '경쟁점' : '마커');
+
         const content = `
           <div 
             onclick="window.${funcName}()" 
             style="
               padding: 4px 8px; 
               background: ${bgColor}; 
-              color: ${textColor}; 
+              color: #FFFFFF; 
               font-size: 14px; 
               font-weight: bold; 
-              border: 1px solid white; 
+              border: 1px solid #FFFFFF; 
               border-radius: 6px; 
               white-space: nowrap; 
-              box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+              box-shadow: 0 2px 8px rgba(0,0,0,0.2);
               cursor: pointer;
             "
           >
-            ${item.label || (isCompetitor ? '경쟁점' : '매물')}
+            ${markerLabel}
           </div>
         `;
 
@@ -218,7 +218,7 @@ export const ChatMapSection = forwardRef<ChatMapSectionRef, ChatMapSectionProps>
                // payload.markers 배열 사용
                const markersPayload = action.payload.markers;
                if (Array.isArray(markersPayload)) {
-                   const newMarkers: MarkerData[] = markersPayload.map((m: any) => ({
+                   const newMarkers: MarkerData[] = markersPayload.map((m: { id?: string; lat: number; lng: number; label?: string; type?: 'default' | 'competitor' }) => ({
                        id: m.id || Math.random().toString(36).substr(2, 9),
                        lat: m.lat,
                        lng: m.lng,
@@ -236,15 +236,18 @@ export const ChatMapSection = forwardRef<ChatMapSectionRef, ChatMapSectionProps>
                    }
                }
            }
-
            // 4. ui.open_panel 시 상권 폴리곤 표시
            if (action.type === 'ui.open_panel' && action.payload?.areaCode) {
                const areaCode = action.payload.areaCode;
                console.log('[ChatMapSection] Loading commercial polygon for:', areaCode);
                
-               // 기존 상권 폴리곤 제거
+               // 기존 상권 폴리곤 제거 (배열로 관리)
                if (commercialPolygonRef.current) {
-                   commercialPolygonRef.current.setMap(null);
+                   if (Array.isArray(commercialPolygonRef.current)) {
+                       commercialPolygonRef.current.forEach((p: KakaoPolygon) => p.setMap(null));
+                   } else {
+                       commercialPolygonRef.current.setMap(null);
+                   }
                    commercialPolygonRef.current = null;
                }
 
@@ -254,42 +257,84 @@ export const ChatMapSection = forwardRef<ChatMapSectionRef, ChatMapSectionProps>
                    .then((data) => {
                        if (!data || !data.polygons) return;
                        
-                       // 폴리곤 좌표 추출
+                       const polygonStyle = {
+                           strokeWeight: 3,
+                           strokeColor: '#3B82F6',
+                           strokeOpacity: 1,
+                           strokeStyle: 'solid',
+                           fillColor: '#ffffff',
+                           fillOpacity: 0.3,
+                       };
+                       
+                       const polygons: KakaoPolygon[] = [];
                        const coords = data.polygons.coordinates;
-                       let pathCoords: number[][];
                        
                        // MultiPolygon vs Polygon 처리
                        if (data.polygons.type === 'MultiPolygon') {
-                           pathCoords = coords[0][0]; // 첫 번째 폴리곤의 외곽선
+                           // MultiPolygon: 모든 폴리곤을 순회
+                           (coords as Coordinate[][][]).forEach((polygonCoords) => {
+                               const outerRing = polygonCoords[0]; // 외곽선
+                               const path = outerRing.map((coord: Coordinate) => 
+                                   new window.kakao.maps.LatLng(coord[1], coord[0])
+                               );
+                               
+                               const polygon = new window.kakao.maps.Polygon({
+                                   path,
+                                   ...polygonStyle,
+                               });
+                               polygon.setMap(map);
+                               polygons.push(polygon);
+                           });
                        } else {
-                           pathCoords = coords[0]; // Polygon의 외곽선
+                           // Polygon: 단일 폴리곤
+                           const pathCoords = (coords as Coordinate[][])[0]; // 외곽선
+                           const path = pathCoords.map((coord: Coordinate) => 
+                               new window.kakao.maps.LatLng(coord[1], coord[0])
+                           );
+                           
+                           const polygon = new window.kakao.maps.Polygon({
+                               path,
+                               ...polygonStyle,
+                           });
+                           polygon.setMap(map);
+                           polygons.push(polygon);
                        }
+                       
+                       // 배열로 저장 (나중에 제거할 때 사용)
+                       commercialPolygonRef.current = polygons as unknown as KakaoPolygon;
 
-                       const path = pathCoords.map(
-                           ([lng, lat]) => new window.kakao.maps.LatLng(lat, lng)
-                       );
-
-                       const polygon = new window.kakao.maps.Polygon({
-                           path: path,
-                           strokeWeight: 3,
-                           strokeColor: '#8B5CF6',
-                           strokeOpacity: 0.9,
-                           fillColor: '#8B5CF6',
-                           fillOpacity: 0.15,
-                       });
-
-                       polygon.setMap(map);
-                       commercialPolygonRef.current = polygon;
-
-                       // 상권 정보 패널에 표시
-                       setSelectedBuilding(null);
-                       setSelectedArea({
-                           code: areaCode,
-                           name: data.properties?.commercialName || areaCode,
-                           type: 'commercial',
-                           revenue: data.revenue,
-                           population: data.residentPopulation,
-                       });
+                       // 상권 요약 API 호출하여 실제 데이터 가져오기
+                       fetch(`${API_BASE_URL}/ai/area/summary?areaCd=${areaCode}`)
+                           .then(res => res.json())
+                           .then(summaryData => {
+                               setSelectedBuilding(null);
+                               if (summaryData.success && summaryData.data) {
+                                   setSelectedArea({
+                                       code: areaCode,
+                                       name: summaryData.data.areaName || data.properties?.commercialName || areaCode,
+                                       type: 'commercial',
+                                       revenue: summaryData.data.revenue,
+                                       floatingPopulation: summaryData.data.floatingPopulation,
+                                       storeCount: summaryData.data.storeCount,
+                                   });
+                               } else {
+                                   // API 실패 시 기본 정보만 표시
+                                   setSelectedArea({
+                                       code: areaCode,
+                                       name: data.properties?.commercialName || areaCode,
+                                       type: 'commercial',
+                                   });
+                               }
+                           })
+                           .catch(() => {
+                               // 에러 시 기본 정보만
+                               setSelectedBuilding(null);
+                               setSelectedArea({
+                                   code: areaCode,
+                                   name: data.properties?.commercialName || areaCode,
+                                   type: 'commercial',
+                               });
+                           });
                    })
                    .catch(err => {
                        console.error('[ChatMapSection] Failed to load commercial polygon:', err);

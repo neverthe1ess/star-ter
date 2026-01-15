@@ -89,11 +89,25 @@ export class AiService {
           if (toolCall.name === 'calc_break_even_with_listing') {
             const args = JSON.parse(toolCall.arguments) as {
               listingId?: string;
+              categoryCode?: string;
             };
-            if (args.listingId) return { type: 'listing', id: args.listingId };
+            if (args.listingId)
+              return {
+                type: 'listing' as const,
+                id: args.listingId,
+                categoryCode: args.categoryCode,
+              };
           } else if (toolCall.name === 'calc_break_even') {
-            const args = JSON.parse(toolCall.arguments) as { areaCd?: string };
-            if (args.areaCd) return { type: 'area', id: args.areaCd };
+            const args = JSON.parse(toolCall.arguments) as {
+              areaCd?: string;
+              categoryCode?: string;
+            };
+            if (args.areaCd)
+              return {
+                type: 'area' as const,
+                id: args.areaCd,
+                categoryCode: args.categoryCode,
+              };
           }
         } catch (e) {
           console.warn(
@@ -103,7 +117,11 @@ export class AiService {
         }
         return acc;
       },
-      null as { type: 'listing' | 'area'; id: string } | null,
+      null as {
+        type: 'listing' | 'area';
+        id: string;
+        categoryCode?: string;
+      } | null,
     );
 
     console.log('[AiService] Calling analyzeResults...');
@@ -131,8 +149,14 @@ export class AiService {
           type: 'chart.breakeven',
           payload:
             breakEvenContext.type === 'listing'
-              ? { listingId: breakEvenContext.id }
-              : { areaCode: breakEvenContext.id },
+              ? {
+                  listingId: breakEvenContext.id,
+                  industryCode: breakEvenContext.categoryCode,
+                }
+              : {
+                  areaCode: breakEvenContext.id,
+                  industryCode: breakEvenContext.categoryCode,
+                },
         });
       }
     }

@@ -184,7 +184,7 @@ export function ChatPage() {
           </div>
 
           {/* 입력창 영역 */}
-          <div className="px-8 pb-8 pt-6">
+          <div className="px-8 pb-4 pt-6">
             <div className="max-w-5xl mx-auto">
               <ChatInput
                 value={inputValue}
