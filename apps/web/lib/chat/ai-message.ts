@@ -18,9 +18,6 @@ export function parseAiResponseText(text: string): AiResponse | null {
   }
 }
 
-export function normalizeAiResponseText(text: string): AiResponse {
-  return parseAiResponseText(text) ?? { reply: text, actions: [] };
-}
 
 export function splitActions(actions?: AiAction[]) {
   const chartActions: ChartAction[] = [];

@@ -15,10 +15,13 @@ export class AiService {
     private readonly openAiService: OpenAiService,
   ) {}
 
+  // [DEBUG] 히스토리 기능 on/off 플래그 - 시연용으로 끌 수 있음
+  private readonly ENABLE_HISTORY = true; // true로 변경하면 히스토리 활성화
+
   async getAIMessageWithHistory(
     message: string,
-    previousResponseId: string | null,
-  ) {
+    history: { role: 'user' | 'assistant'; content: string }[],
+  ): Promise<string> {
     const [categories, areaList] = await Promise.all([
       this.getCategories(message),
       this.getAreaInfo(message),
@@ -27,6 +30,21 @@ export class AiService {
     // 입력 배열 구성 (히스토리 포함)
     const input: ResponseInputItem[] = [];
 
+    // 이전 대화 히스토리 추가 (ENABLE_HISTORY가 true일 때만)
+    if (this.ENABLE_HISTORY && history && history.length > 0) {
+      history.forEach((msg) => {
+        input.push({
+          role: msg.role,
+          content: msg.content,
+        });
+      });
+      console.log(
+        `[AiService] History enabled: ${history.length} messages added`,
+      );
+    } else if (!this.ENABLE_HISTORY) {
+      console.log('[AiService] History disabled - using single message mode');
+    }
+
     // 현재 사용자 메시지 추가
     input.push({ role: 'user', content: message });
 
@@ -34,7 +52,6 @@ export class AiService {
       input,
       categories,
       areaList,
-      previousResponseId,
     );
     console.log(
       '[AiService] Tool call response:',
@@ -90,10 +107,7 @@ export class AiService {
     );
 
     console.log('[AiService] Calling analyzeResults...');
-    const analyzeResult = await this.openAiService.analyzeResults(
-      input,
-      previousResponseId,
-    );
+    const analyzeResult = await this.openAiService.analyzeResults(input);
 
     const responseText = this.openAiService.getText(analyzeResult);
     console.log('[AI Response]', responseText);
@@ -127,10 +141,7 @@ export class AiService {
       areaList,
     );
 
-    return {
-      result: finalJson,
-      previousResponseId: previousResponseId || analyzeResult.id,
-    };
+    return finalJson;
   }
 
   async getAreaInfo(message: string) {

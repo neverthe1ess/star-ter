@@ -2,8 +2,6 @@
 
 import { cookies } from 'next/headers';
 import { type AiChatResponse } from '@/lib/api/ai';
-import { normalizeAiResponseText } from '@/lib/chat/ai-message';
-
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
@@ -44,12 +42,10 @@ export async function sendMessage(
       throw new Error(`AI API responded with status: ${response.status}`);
     }
 
-    const resJson = await response.json();
-    console.log('[Server Action] AI Response:', resJson);
-    const normalized = normalizeAiResponseText(resJson.result);
+    const result = await response.json();
     return {
-      reply: normalized.reply || '',
-      actions: normalized.actions || [],
+      reply: result.reply || '',
+      actions: result.actions || [],
     };
   } catch (error) {
     console.error('[Server Action] Failed:', error);

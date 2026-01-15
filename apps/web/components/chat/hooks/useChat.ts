@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { sendMessage as apiSendMessage } from '../../../app/actions/chat';
 import { type AiAction } from '../../../lib/api/ai';
 import { Message, Thread } from '../types';

@@ -27,7 +27,6 @@ export class ChatRepository {
     conversationId: string,
     data: {
       title?: string;
-      previousResponseId?: string | null;
     },
   ) {
     return this.prisma.conversation.update({
@@ -68,9 +67,9 @@ export class ChatRepository {
     return this.prisma.$transaction(async (tx) => {
       const message = await tx.message.create({
         data: {
-          conversationId,
-          role,
-          content,
+          conversationId: conversationId,
+          role: role,
+          content: content,
         },
       });
 

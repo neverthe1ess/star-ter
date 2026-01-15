@@ -40,24 +40,32 @@ export class ChatService {
       content: message,
     });
 
+    const historyMessages = await this.getHistoryMessages(conversationId);
     const aiResponse = await this.aiService.getAIMessageWithHistory(
       message,
-      conversation?.previousResponseId || null,
+      historyMessages,
     );
-
-    if (!conversation.previousResponseId) {
-      await this.chatRepository.updateConversation(conversationId, {
-        previousResponseId: aiResponse.previousResponseId,
-      });
-    }
 
     await this.chatRepository.addMessage({
       conversationId: conversationId,
       role: 'assistant',
-      content: aiResponse.result,
+      content: aiResponse,
     });
 
     return aiResponse;
+  }
+
+  private async getHistoryMessages(
+    conversationId: string,
+  ): Promise<{ role: 'user' | 'assistant'; content: string }[]> {
+    const messages = await this.chatRepository.listMessagesByConversation(
+      conversationId,
+      { take: 50, skip: 0, cursorId: undefined, order: 'asc' },
+    );
+    return messages.map((msg) => ({
+      role: msg.role,
+      content: msg.content,
+    }));
   }
 
   async getUserConversations(userId: string) {
