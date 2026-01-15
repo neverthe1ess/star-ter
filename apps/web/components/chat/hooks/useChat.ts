@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { sendMessage as apiSendMessage } from '../../../app/actions/chat';
 import { type AiAction } from '../../../lib/api/ai';
 import { Message, Thread } from '../types';
+import type { AiProvider } from '../ChatHeader';
 
-// userId를 받아서 개인화 추천에 활용
-export function useChat(userId?: string) {
+// userId와 aiProvider를 받아서 API 호출에 활용
+export function useChat(userId?: string, aiProvider: AiProvider = 'openai') {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -77,8 +78,13 @@ export function useChat(userId?: string) {
           content: msg.content,
         }));
 
-        // userId를 전달하여 개인화 추천 지원
-        const response = await apiSendMessage(text, history, userId);
+        // userId와 aiProvider를 전달
+        const response = await apiSendMessage(
+          text,
+          history,
+          userId,
+          aiProvider,
+        );
 
         // 차트/리스트 액션과 지도 액션 분리
         const chartActions =
@@ -135,7 +141,7 @@ export function useChat(userId?: string) {
         setIsLoading(false);
       }
     },
-    [messages, userId],
+    [messages, userId, aiProvider],
   );
 
   return {

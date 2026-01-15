@@ -5,17 +5,25 @@ import { type AiResponse } from '@/lib/api/ai';
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
+// AI 프로바이더 타입
+type AiProvider = 'claude' | 'openai';
+
 // Server Action 함수
 // 클라이언트에서 await sendMessage(...) 형태로 호출 가능
 export async function sendMessage(
   message: string,
   history: Array<{ role: 'user' | 'assistant'; content: string }>,
   userId?: string, // 로그인된 사용자 ID (개인화 추천에 사용)
+  aiProvider: AiProvider = 'claude', // 런타임에 프로바이더 선택
 ): Promise<AiResponse> {
-  console.log('[Server Action] Sending message to AI:', message);
+  // 프로바이더에 따른 API 엔드포인트 결정
+  const endpoint =
+    aiProvider === 'claude' ? '/assistant/message' : '/ai/message';
+
+  console.log(`[Server Action] Sending message to ${aiProvider}:`, message);
 
   try {
-    const response = await fetch(`${API_BASE_URL}/assistant/message`, {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

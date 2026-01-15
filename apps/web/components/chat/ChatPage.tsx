@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { ChatHeader } from "./ChatHeader";
+import { ChatHeader, type AiProvider } from "./ChatHeader";
 import { SourceCard } from "./SourceCard";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
@@ -20,7 +20,10 @@ export function ChatPage() {
   // 로그인된 사용자 ID 가져오기 (개인화 추천에 사용)
   const authUser = useUserStore((state) => state.authUser);
 
-  // 커스텀 훅으로 로직 분리 (userId 전달)
+  // AI 프로바이더 상태 (claude | openai)
+  const [aiProvider, setAiProvider] = useState<AiProvider>('openai');
+
+  // 커스텀 훅으로 로직 분리 (userId, aiProvider 전달)
   const {
     messages,
     inputValue,
@@ -29,7 +32,7 @@ export function ChatPage() {
     currentThread,
     sendMessage,
     handleNewThread,
-  } = useChat(authUser?.id);
+  } = useChat(authUser?.id, aiProvider);
 
   const [isMapOpen, setIsMapOpen] = useState(false);
 
@@ -85,6 +88,8 @@ export function ChatPage() {
           onNewThread={handleNewThread}
           isMapOpen={isMapOpen}
           onMapToggle={() => setIsMapOpen(!isMapOpen)}
+          aiProvider={aiProvider}
+          onAiProviderChange={setAiProvider}
         />
 
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
