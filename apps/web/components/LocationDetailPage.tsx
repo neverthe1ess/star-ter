@@ -201,9 +201,9 @@ export function LocationDetailPage({
   }, [basicInfo?.code]);
 
   return (
-    <div className="h-screen bg-[#f7f7f8]">
+    <div className="h-full bg-[#f7f7f8]">
       {/* 사이드바와 맞춤: 상하좌 p-4, 오른쪽만 pr-8 추가 */}
-      <div className="pb-7 h-full flex flex-col">
+      <div className="h-full flex flex-col">
         {/* 헤더: 고정 높이 (shrink 방지) */}
         <div className="mb-2 shrink-0">
           <div className="flex flex-wrap items-center justify-between gap-4">
