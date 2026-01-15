@@ -392,9 +392,9 @@ export function AnalysisContent({
                 return (
                   <div
                     key={item.name}
-                    className="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
+                    className="flex items-center justify-between p-2 bg-gray-50 rounded-xl"
                   >
-                    <span className="text-h3 font-bold text-blue-950 p-4">
+                    <span className="text-h4 font-bold text-blue-950 p-4">
                       {item.name}
                     </span>
                     <span
