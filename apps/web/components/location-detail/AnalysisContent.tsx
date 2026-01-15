@@ -58,22 +58,20 @@ export function AnalysisContent({
     : 0;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* 업종별 개업/폐업 현황 섹션 */}
-      <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-200">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">
+      <div className="grid gap-4">
+        <h2 className="text-h2 font-bold text-slate-900">
           업종별 개업 / 폐업 현황
         </h2>
-
-        {/* 대분류 탭 */}
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className="flex flex-wrap gap-2">
           {MAJOR_CATEGORIES.map((cat) => (
             <button
               key={cat.code}
               onClick={() => setSelectedCategory(cat.code)}
-              className={`px-4 py-2 rounded-xl text-lg font-bold transition-all duration-200 ${
+              className={`px-4 py-2 mb-2 rounded-xl text-body font-strong transition-all duration-200 ${
                 selectedCategory === cat.code
-                  ? 'bg-blue-950 text-white shadow-md'
+                  ? 'bg-blue-950 text-white font-bold shadow-md'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -81,334 +79,333 @@ export function AnalysisContent({
               {cat.name}
             </button>
           ))}
-        </div>
-
-        {/* 두 카드 레이아웃 */}
-        {vitalityLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-pulse">
-            {/* 시장 활성도 카드 스켈레톤 */}
-            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-              {/* 헤더 */}
-              <div className="flex items-center gap-2 mb-6">
-                <div className="w-8 h-8 rounded-full bg-slate-100" />
-                <div className="h-6 w-24 rounded bg-slate-100" />
-                <div className="h-5 w-20 rounded-full bg-slate-100" />
-              </div>
-              {/* 개업/폐업 숫자 영역 */}
-              <div className="flex justify-between items-end mb-5 px-1">
-                <div className="space-y-2">
-                  <div className="h-8 w-20 rounded bg-slate-100" />
-                  <div className="h-5 w-16 rounded bg-slate-100" />
-                </div>
-                <div className="space-y-2 text-right">
-                  <div className="h-8 w-20 rounded bg-slate-100 ml-auto" />
-                  <div className="h-5 w-16 rounded bg-slate-100 ml-auto" />
-                </div>
-              </div>
-              {/* 비교 바 */}
-              <div className="h-3 bg-slate-100 rounded-full mb-5" />
-              {/* 결론 메시지 */}
-              <div className="py-4 px-4 bg-gray-50 rounded-lg">
-                <div className="h-5 w-48 rounded bg-slate-100 mx-auto" />
-              </div>
-            </div>
-
-            {/* 경쟁 밀집도 카드 스켈레톤 */}
-            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col justify-between">
-              <div>
+          {/* 두 카드 레이아웃 */}
+          {vitalityLoading ? (
+            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 animate-pulse">
+              {/* 시장 활성도 카드 스켈레톤 */}
+              <div className="w-full bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
                 {/* 헤더 */}
                 <div className="flex items-center gap-2 mb-6">
                   <div className="w-8 h-8 rounded-full bg-slate-100" />
                   <div className="h-6 w-24 rounded bg-slate-100" />
                   <div className="h-5 w-20 rounded-full bg-slate-100" />
                 </div>
-                {/* 아이콘 + 숫자 영역 */}
-                <div className="flex items-center gap-5 mb-6">
-                  <div className="w-16 h-16 rounded-2xl bg-slate-100" />
+                {/* 개업/폐업 숫자 영역 */}
+                <div className="flex justify-between items-end mb-5 px-1">
                   <div className="space-y-2">
-                    <div className="h-4 w-28 rounded bg-slate-100" />
-                    <div className="h-10 w-24 rounded bg-slate-100" />
+                    <div className="h-8 w-20 rounded bg-slate-100" />
+                    <div className="h-5 w-16 rounded bg-slate-100" />
+                  </div>
+                  <div className="space-y-2 text-right">
+                    <div className="h-8 w-20 rounded bg-slate-100 ml-auto" />
+                    <div className="h-5 w-16 rounded bg-slate-100 ml-auto" />
                   </div>
                 </div>
-              </div>
-              {/* 하단 정보 박스 */}
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <div className="h-5 w-full rounded bg-slate-100 mb-2" />
-                <div className="h-5 w-3/4 rounded bg-slate-100" />
-              </div>
-            </div>
-          </div>
-        ) : vitality ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* 시장 활성도 카드 (개업 VS 폐업) */}
-            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-2 mb-6">
-                <div className="w-8 h-8 rounded-full border-blue-950 flex items-center justify-center">
-                  <Activity className="w-6 h-6 text-blue-950" />
+                {/* 비교 바 */}
+                <div className="h-3 bg-slate-100 rounded-full mb-5" />
+                {/* 결론 메시지 */}
+                <div className="py-4 px-4 bg-gray-50 rounded-lg">
+                  <div className="h-5 w-48 rounded bg-slate-100 mx-auto" />
                 </div>
-                <h3 className="font-bold text-gray-900 text-xl">시장 활성도</h3>
-                <span className="text-sm font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded-full">
-                  개업 VS 폐업
-                </span>
               </div>
 
-              <div className="flex justify-between items-end mb-5 px-1">
-                {/* 개업 */}
+              {/* 경쟁 밀집도 카드 스켈레톤 */}
+              <div className="w-full bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col justify-between">
                 <div>
-                  <div className="flex items-baseline gap-1 mb-1">
-                    <span className="text-3xl font-extrabold text-emerald-600 tracking-tight">
-                      {vitality.opbizStoreCount.toLocaleString()}
-                    </span>
-                    <span className="text-gray-500 font-medium text-sm">
-                      개소
-                    </span>
+                  {/* 헤더 */}
+                  <div className="flex items-center gap-2 mb-6">
+                    <div className="w-8 h-8 rounded-full bg-slate-100" />
+                    <div className="h-6 w-24 rounded bg-slate-100" />
+                    <div className="h-5 w-20 rounded-full bg-slate-100" />
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-md font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
-                      개업
-                    </span>
-                    <span className="text-gray-600 text-md">
-                      {vitality.opbizRt.toFixed(1)}%
-                    </span>
+                  {/* 아이콘 + 숫자 영역 */}
+                  <div className="flex items-center gap-5 mb-6">
+                    <div className="w-16 h-16 rounded-2xl bg-slate-100" />
+                    <div className="space-y-2">
+                      <div className="h-4 w-28 rounded bg-slate-100" />
+                      <div className="h-10 w-24 rounded bg-slate-100" />
+                    </div>
                   </div>
                 </div>
-
-                {/* 폐업 */}
-                <div className="text-right">
-                  <div className="flex items-baseline gap-1 justify-end mb-1">
-                    <span className="text-3xl font-extrabold text-red-500 tracking-tight">
-                      {vitality.clsbizStoreCount.toLocaleString()}
-                    </span>
-                    <span className="text-gray-500 font-medium text-sm">
-                      개소
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 justify-end">
-                    <span className="text-md font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-md">
-                      폐업
-                    </span>
-                    <span className="text-gray-600 text-md">
-                      {vitality.clsbizRt.toFixed(1)}%
-                    </span>
-                  </div>
+                {/* 하단 정보 박스 */}
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                  <div className="h-5 w-full rounded bg-slate-100 mb-2" />
+                  <div className="h-5 w-3/4 rounded bg-slate-100" />
                 </div>
-              </div>
-
-              {/* 비교 바 */}
-              <div className="h-3 bg-gray-100 rounded-full overflow-hidden flex mb-5 ring-1 ring-gray-100">
-                <div
-                  className="h-full bg-emerald-500 transition-all duration-700 ease-out relative group"
-                  style={{
-                    width: `${(vitality.opbizStoreCount / (vitality.opbizStoreCount + vitality.clsbizStoreCount + 0.001)) * 100}%`,
-                  }}
-                >
-                  <div className="absolute inset-0 bg-white/20 group-hover:bg-transparent transition-colors" />
-                </div>
-                <div
-                  className="h-full bg-red-400 transition-all duration-700 ease-out relative group"
-                  style={{
-                    width: `${(vitality.clsbizStoreCount / (vitality.opbizStoreCount + vitality.clsbizStoreCount + 0.001)) * 100}%`,
-                  }}
-                >
-                  <div className="absolute inset-0 bg-white/20 group-hover:bg-transparent transition-colors" />
-                </div>
-              </div>
-
-              {/* 결론 메시지 */}
-              <div className="py-4 px-4 bg-gray-50 rounded-lg text-center">
-                {netChange >= 0 ? (
-                  <p className="flex items-center justify-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-emerald-500" />
-                    <span className="font-bold text-gray-900 text-lg">
-                      성장하는 시장입니다
-                    </span>
-                    <span className="text-gray-400 text-sm font-medium">
-                      (진입 추천)
-                    </span>
-                  </p>
-                ) : (
-                  <p className="flex items-center justify-center gap-2">
-                    <TrendingDown className="w-5 h-5 text-red-400" />
-                    <span className="font-bold text-gray-900 text-lg">
-                      위축되는 시장입니다
-                    </span>
-                    <span className="text-gray-400 text-sm font-medium">
-                      (주의 필요)
-                    </span>
-                  </p>
-                )}
               </div>
             </div>
-
-            {/* 경쟁 밀집도 카드 (점포수 증감) */}
-            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition-shadow flex flex-col justify-between">
-              <div>
+          ) : vitality ? (
+            <div className="w-full flex justify-between md:grid-cols-2 gap-4">
+              {/* 시장 활성도 카드 (개업 VS 폐업) */}
+              <div className="w-full bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
                 <div className="flex items-center gap-2 mb-6">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center">
-                    <Store className="w-6 h-6 text-blue-950" />
+                  <div className="w-8 h-8 rounded-full border-blue-950 flex items-center justify-center">
+                    <Activity className="w-6 h-6 text-blue-950" />
                   </div>
-                  <h3 className="font-bold text-gray-900 text-xl">
-                    경쟁 밀집도
+                  <h3 className="text-h3 font-bold text-gray-900">
+                    시장 활성도
                   </h3>
-                  <span className="text-sm font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded-full">
-                    점포수 증감
+                  <span className="text-caption font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded-full">
+                    개업 VS 폐업
                   </span>
                 </div>
 
-                <div className="flex items-center gap-5 mb-6">
-                  <div
-                    className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm border ${
-                      netChange >= 0
-                        ? 'bg-emerald-50 border-emerald-100'
-                        : 'bg-red-50 border-red-100'
-                    }`}
-                  >
-                    {netChange >= 0 ? (
-                      <TrendingUp className="w-8 h-8 text-emerald-600" />
-                    ) : (
-                      <TrendingDown className="w-8 h-8 text-red-500" />
-                    )}
-                  </div>
+                <div className="flex justify-between items-end mb-5 px-1">
+                  {/* 개업 */}
                   <div>
-                    <p className="text-md font-bold text-gray-500 mb-1">
-                      신규 - 폐업 (순증감)
-                    </p>
-                    <div className="flex items-baseline gap-1">
-                      <p
-                        className={`text-4xl font-extrabold tracking-tight ${
-                          netChange >= 0 ? 'text-emerald-600' : 'text-red-500'
-                        }`}
-                      >
-                        {netChange > 0 ? '+' : ''}
-                        {netChange.toLocaleString()}
-                      </p>
-                      <span className="text-lg font-bold text-gray-400">
-                        개
+                    <div className="flex items-baseline gap-1 mb-1">
+                      <span className="text-h2 font-heading text-emerald-500 tracking-tight">
+                        {vitality.opbizStoreCount.toLocaleString()}
+                      </span>
+                      <span className="text-gray-500 font-medium text-caption">
+                        개소
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-body font-strong text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
+                        개업
+                      </span>
+                      <span className="text-gray-600 text-body">
+                        {vitality.opbizRt.toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 폐업 */}
+                  <div className="text-right">
+                    <div className="flex items-baseline gap-1 justify-end mb-1">
+                      <span className="text-h2 font-heading text-red-400 tracking-tight">
+                        {vitality.clsbizStoreCount.toLocaleString()}
+                      </span>
+                      <span className="text-gray-500 font-medium text-caption">
+                        개소
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 justify-end">
+                      <span className="text-body font-strong text-red-500 bg-red-50 px-2 py-0.5 rounded-md">
+                        폐업
+                      </span>
+                      <span className="text-gray-600 text-body">
+                        {vitality.clsbizRt.toFixed(1)}%
                       </span>
                     </div>
                   </div>
                 </div>
+
+                {/* 비교 바 */}
+                <div className="h-4 bg-gray-100 rounded-full overflow-hidden flex mb-5 ring-1 ring-gray-100">
+                  <div
+                    className="h-full bg-emerald-500"
+                    style={{
+                      width: `${(vitality.opbizStoreCount / (vitality.opbizStoreCount + vitality.clsbizStoreCount + 0.001)) * 100}%`,
+                    }}
+                  ></div>
+                  <div
+                    className="h-full bg-red-400"
+                    style={{
+                      width: `${(vitality.clsbizStoreCount / (vitality.opbizStoreCount + vitality.clsbizStoreCount + 0.001)) * 100}%`,
+                    }}
+                  ></div>
+                </div>
+
+                {/* 결론 메시지 */}
+                <div className="py-4 px-4 bg-gray-50 rounded-lg text-center">
+                  {netChange >= 0 ? (
+                    <p className="flex items-center justify-center gap-2">
+                      <TrendingUp className="w-5 h-5 text-emerald-500" />
+                      <span className="text-h5 font-strong text-gray-900">
+                        성장하는 시장입니다
+                      </span>
+                      <span className="text-gray-400 text-body font-medium">
+                        (진입 추천)
+                      </span>
+                    </p>
+                  ) : (
+                    <p className="flex items-center justify-center gap-2">
+                      <TrendingDown className="w-5 h-5 text-red-400" />
+                      <span className="text-h5 font-strong text-gray-900">
+                        위축되는 시장입니다
+                      </span>
+                      <span className="text-gray-400 text-body font-medium">
+                        (주의 필요)
+                      </span>
+                    </p>
+                  )}
+                </div>
               </div>
 
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <p className="text-gray-800 font-bold text-lg leading-relaxed">
-                  지난 분기 동안{' '}
-                  <span className="font-bold text-emerald-600">
-                    {vitality.opbizStoreCount.toLocaleString()}개
-                  </span>
-                  가 새로 생기고,
-                  <br />
-                  <span className="font-bold text-red-500">
-                    {vitality.clsbizStoreCount.toLocaleString()}개
-                  </span>
-                  가 문을 닫았습니다.
-                </p>
+              {/* 경쟁 밀집도 카드 (점포수 증감) */}
+              <div className="w-full bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-6">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center">
+                      <Store className="w-6 h-6 text-blue-950" />
+                    </div>
+                    <h3 className="font-bold text-h3 text-gray-900">
+                      경쟁 밀집도
+                    </h3>
+                    <span className="text-caption font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded-full">
+                      점포수 증감
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-5 mb-6">
+                    <div
+                      className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm border ${
+                        netChange >= 0
+                          ? 'bg-emerald-50 border-emerald-100'
+                          : 'bg-red-50 border-red-100'
+                      }`}
+                    >
+                      {netChange >= 0 ? (
+                        <TrendingUp className="w-8 h-8 text-emerald-500" />
+                      ) : (
+                        <TrendingDown className="w-8 h-8 text-red-400" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-body font-strong text-gray-500 mb-1">
+                        신규 - 폐업 (순증감)
+                      </p>
+                      <div className="flex items-baseline gap-1">
+                        <p
+                          className={`text-h2 font-heading tracking-tight ${
+                            netChange >= 0 ? 'text-emerald-500' : 'text-red-400'
+                          }`}
+                        >
+                          {netChange > 0 ? '+' : ''}
+                          {netChange.toLocaleString()}
+                        </p>
+                        <span className="text-caption font-strong text-gray-400">
+                          개
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                  <p className="text-gray-800 font-strong text-body leading-relaxed">
+                    지난 분기 동안{' '}
+                    <span className="font-bold text-emerald-600">
+                      {vitality.opbizStoreCount.toLocaleString()}개
+                    </span>
+                    가 새로 생기고,
+                    <br />
+                    <span className="font-bold text-red-500">
+                      {vitality.clsbizStoreCount.toLocaleString()}개
+                    </span>
+                    가 문을 닫았습니다.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        ) : (
-          <div className="text-center py-12 text-gray-400 bg-gray-50 rounded-2xl border border-gray-100 border-dashed">
-            <Store className="w-8 h-8 mx-auto mb-2 opacity-20" />
-            <p className="text-sm">개폐업 데이터가 없습니다</p>
-          </div>
-        )}
+          ) : (
+            <div className="text-center py-12 text-gray-400 bg-gray-50 rounded-2xl border border-gray-100 border-dashed">
+              <Store className="w-8 h-8 mx-auto mb-2 opacity-20" />
+              <p className="text-body">개폐업 데이터가 없습니다</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 업종별 매출 분석 섹션 */}
-      <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-200">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          업종별 매출 분석
-        </h2>
-        <p className="text-gray-500 text-sm mb-6"></p>
 
-        {sortedSectors.length > 0 ? (
-          <div className="space-y-4">
-            {sortedSectors.map((item, index) => {
-              const share =
-                totalRevenue > 0
-                  ? Math.round((item.value / totalRevenue) * 100)
-                  : 0;
-              // 1등은 Orange, 나머지는 Blue
-              const colorClass = index === 0 ? 'bg-orange-500' : 'bg-blue-900';
+      <div className="grid gap-4">
+        <h2 className="text-h2 font-bold text-slate-900">업종별 매출 분석</h2>
+        <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-200">
+          {sortedSectors.length > 0 ? (
+            <div className="space-y-4">
+              {sortedSectors.map((item, index) => {
+                const share =
+                  totalRevenue > 0
+                    ? Math.round((item.value / totalRevenue) * 100)
+                    : 0;
+                // 1등은 Orange, 나머지는 Blue
+                const colorClass =
+                  index === 0 ? 'bg-orange-500' : 'bg-blue-900';
 
-              return (
-                <div key={item.name} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-3 h-3 rounded-full ${colorClass}`} />
-                      <span className="font-semibold text-gray-900">
-                        {item.name}
-                      </span>
+                return (
+                  <div key={item.name} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`w-3 h-3 rounded-full ${colorClass}`}
+                        />
+                        <span className="font-strong text-gray-900">
+                          {item.name}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-strong text-gray-900">
+                          {formatRevenue(item.value)}
+                        </span>
+                        <span className="text-caption font-bold text-gray-500 ml-2">
+                          ({share}%)
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className="font-bold text-gray-900">
-                        {formatRevenue(item.value)}
-                      </span>
-                      <span className="text-sm text-gray-500 ml-2">
-                        ({share}%)
-                      </span>
+                    <div className="bg-gray-200 rounded-full h-2.5">
+                      <div
+                        className={`h-2.5 rounded-full transition-all duration-500 ${colorClass}`}
+                        style={{ width: `${Math.min(share, 100)}%` }}
+                      />
                     </div>
                   </div>
-                  <div className="bg-gray-200 rounded-full h-2.5">
-                    <div
-                      className={`h-2.5 rounded-full transition-all duration-500 ${colorClass}`}
-                      style={{ width: `${Math.min(share, 100)}%` }}
-                    />
-                  </div>
+                );
+              })}
+
+              {/* 총 매출 표시 */}
+              <div className="pt-4 mt-4 border-t border-gray-100">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 text-body font-medium">
+                    총 매출
+                  </span>
+                  <span className="text-h5 font-heading text-gray-900">
+                    {formatRevenue(totalRevenue)}
+                  </span>
                 </div>
-              );
-            })}
-
-            {/* 총 매출 표시 */}
-            <div className="pt-4 mt-4 border-t border-gray-100">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 font-medium">총 매출</span>
-                <span className="text-xl font-bold text-gray-900">
-                  {formatRevenue(totalRevenue)}
-                </span>
               </div>
             </div>
-          </div>
-        ) : (
-          <div className="text-center py-12 text-gray-400">
-            매출 데이터가 없습니다
-          </div>
-        )}
+          ) : (
+            <div className="text-center py-12 text-gray-400">
+              매출 데이터가 없습니다
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 업종별 포화도 섹션 (있을 경우) */}
       {analytics?.saturation && analytics.saturation.length > 0 && (
-        <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            업종별 경쟁 강도
-          </h2>
-          <p className="text-gray-500 text-sm mb-6"></p>
+        <div className="grid gap-4">
+          <h2 className="text-h2 font-bold text-gray-900">업종별 경쟁 강도</h2>
+          <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-200">
+            <div className="grid grid-cols-2 gap-3">
+              {analytics.saturation.slice(0, 4).map((item) => {
+                const statusColor =
+                  {
+                    위험: 'bg-red-500 text-white',
+                    경계: 'bg-yellow-500 text-white',
+                    추천: 'bg-green-500 text-white',
+                  }[item.status] || 'bg-gray-500 text-white';
 
-          <div className="grid grid-cols-2 gap-3">
-            {analytics.saturation.slice(0, 4).map((item) => {
-              const statusColor =
-                {
-                  위험: 'bg-red-500 text-white',
-                  경계: 'bg-yellow-500 text-white',
-                  추천: 'bg-green-500 text-white',
-                }[item.status] || 'bg-gray-500 text-white';
-
-              return (
-                <div
-                  key={item.name}
-                  className="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
-                >
-                  <span className="text-2xl font-bold text-blue-950 p-4">
-                    {item.name}
-                  </span>
-                  <span
-                    className={`px-3 py-1 rounded-full text-md font-bold ${statusColor}`}
+                return (
+                  <div
+                    key={item.name}
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
                   >
-                    {item.status}
-                  </span>
-                </div>
-              );
-            })}
+                    <span className="text-h3 font-bold text-blue-950 p-4">
+                      {item.name}
+                    </span>
+                    <span
+                      className={`px-3 py-1 rounded-full text-caption font-bold ${statusColor}`}
+                    >
+                      {item.status}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}

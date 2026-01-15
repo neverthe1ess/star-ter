@@ -206,7 +206,7 @@ export function LocationDetailPage({
       <div className="pb-7 h-full flex flex-col">
         {/* 헤더: 고정 높이 (shrink 방지) */}
         <div className="mb-2 shrink-0">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-2">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center">
               <Link
                 href="/locations"
@@ -214,13 +214,13 @@ export function LocationDetailPage({
               >
                 <ArrowLeft className="w-6 h-6 text-gray-900" />
               </Link>
-              <h1 className="text-h1 font-bold text-gray-900">
+              <h1 className="text-display font-bold text-gray-900">
                 {basicInfo.name}
               </h1>
             </div>
           </div>
-          <div className="flex items-center gap-4 ">
-            <p className="text-h3 text-gray-500">
+          <div className="flex items-center gap-4 ml-12">
+            <p className="text-h2 text-gray-500">
               서울시 {basicInfo.guName} {basicInfo.dongName}
             </p>
           </div>
