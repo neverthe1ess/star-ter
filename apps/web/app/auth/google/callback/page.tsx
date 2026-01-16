@@ -1,72 +1,19 @@
-'use client';
+import { normalizeNextPath } from '@/lib/auth/auth-flow';
+import { GoogleCallbackClient } from './GoogleCallbackClient';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+type CallbackSearchParams = {
+  next?: string | string[];
+};
 
-import { AuthLayout } from '@/components/AuthLayout';
-import { getProfile } from '@/services/auth/auth.api';
-import { completeClientLogin, normalizeNextPath } from '@/lib/auth/auth-flow';
-import { useUserStore } from '@/store/use-user-store';
+export default function GoogleCallbackPage({
+  searchParams,
+}: {
+  searchParams?: CallbackSearchParams;
+}) {
+  const nextParam = Array.isArray(searchParams?.next)
+    ? searchParams?.next[0]
+    : searchParams?.next;
+  const nextPath = normalizeNextPath(nextParam);
 
-export default function GoogleCallbackPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const setAuthUser = useUserStore((state) => state.setAuthUser);
-  const [error, setError] = useState<string | null>(null);
-  const nextPath = normalizeNextPath(searchParams.get('next'));
-
-  useEffect(() => {
-    let cancelled = false;
-    getProfile()
-      .then((profile) => {
-        if (!cancelled) {
-          completeClientLogin({
-            result: profile,
-            setAuthUser,
-            router,
-            nextPath,
-            replace: true,
-          });
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          const message =
-            err instanceof Error ? err.message : '로그인에 실패했습니다.';
-          setError(message);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [setAuthUser, router, nextPath]);
-
-  return (
-    <AuthLayout>
-      <div className="flex flex-col items-center gap-4 text-center">
-        <h1 className="text-h2 font-heading text-slate-900">
-          로그인 처리 중...
-        </h1>
-        {error ? (
-          <>
-            <p className="text-caption text-red-500 font-medium bg-red-50 py-2 px-4 rounded-lg">
-              {error}
-            </p>
-            <Link
-              href={`/login?next=${encodeURIComponent(nextPath)}`}
-              className="text-slate-900 font-bold hover:underline"
-            >
-              로그인 페이지로 돌아가기
-            </Link>
-          </>
-        ) : (
-          <p className="text-caption text-slate-500 font-medium">
-            잠시만 기다려주세요.
-          </p>
-        )}
-      </div>
-    </AuthLayout>
-  );
+  return <GoogleCallbackClient nextPath={nextPath} />;
 }
