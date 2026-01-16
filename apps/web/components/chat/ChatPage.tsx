@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { ChatHeader, type AiProvider } from './ChatHeader';
-import { SourceCard } from './SourceCard';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { ChatMapSection, type ChatMapSectionRef } from './ChatMapSection';
@@ -134,40 +133,12 @@ export function ChatPage() {
                 <ChatWelcome onSuggestionClick={handleSendMessageWrapper} />
               ) : (
                 messages.map((message) => (
-                  <div key={message.id}>
-                    {message.role === 'assistant' && message.sources && (
-                      <div className="mb-6">
-                        <div className="flex items-center gap-2 mb-4">
-                          {/* SVG Icon omitted for brevity, logic preserved */}
-                          <svg
-                            className="w-6 h-6 text-muted-foreground"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                            />
-                          </svg>
-                          <span className="text-body font-medium text-muted-foreground">
-                            Sources
-                          </span>
-                        </div>
-                        <div className="flex gap-4 flex-wrap">
-                          {message.sources.map((source) => (
-                            <SourceCard key={source.id} source={source} />
-                          ))}
-                        </div>
-                      </div>
-                    )}
                     <ChatMessage
+                    key={message.id}
                       message={message}
                       chartActions={message.chartActions}
+                    sources={message.sources}
                     />
-                  </div>
                 ))
               )}
 

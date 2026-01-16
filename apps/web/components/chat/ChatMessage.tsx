@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Copy, MoreHorizontal, Bot } from 'lucide-react';
+import { Copy, MoreHorizontal, Bot, Database } from 'lucide-react';
 import { ChartRenderer, type ChartAction } from './charts';
+import type { Source } from './types';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -28,9 +29,10 @@ interface Message {
 interface ChatMessageProps {
   message: Message;
   chartActions?: ChartAction[]; // 차트 액션 (AI 메시지용)
+  sources?: Source[]; // 데이터 출처 정보
 }
 
-export function ChatMessage({ message, chartActions }: ChatMessageProps) {
+export function ChatMessage({ message, chartActions, sources }: ChatMessageProps) {
   const isUser = message.role === 'user';
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -186,6 +188,37 @@ export function ChatMessage({ message, chartActions }: ChatMessageProps) {
         {/* 차트 렌더링 (AI 메시지만, 말풍선 안) */}
         {!isUser && chartOnlyActions && chartOnlyActions.length > 0 && (
           <ChartRenderer actions={chartOnlyActions} className="mt-4 -mx-2" />
+        )}
+
+        {/* 데이터 출처 (AI 메시지만, 말풍선 안) */}
+        {!isUser && sources && sources.length > 0 && (
+          <div className="mt-6 pt-4 border-t border-border">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-sm font-medium text-muted-foreground">
+                데이터 출처
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {sources.map((source) => (
+                <div
+                  key={source.tool}
+                  className="flex items-center gap-4 px-5 py-4 bg-muted/50 rounded-xl border border-border"
+                >
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
+                    <Database className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">
+                      {source.displayName}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {source.source}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </div>
