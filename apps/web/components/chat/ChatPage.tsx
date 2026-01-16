@@ -111,12 +111,12 @@ export function ChatPage() {
   }, [conversationId, loadConversation, handleNewThread]);
 
   return (
-    <div className="flex h-full gap-4 overflow-hidden">
+    <div className="flex h-full overflow-hidden">
       {/* 지도 영역 (왼쪽) */}
       <ChatMapSection ref={mapSectionRef} isOpen={isMapOpen} />
 
       {/* 메인 채팅 영역 */}
-      <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden">
+      <div className="flex-1 flex flex-col bg-background rounded-2xl shadow-lg overflow-hidden">
         <ChatHeader
           threadTitle={currentThread.title}
           onNewThread={handleNewThread}
@@ -140,7 +140,7 @@ export function ChatPage() {
                         <div className="flex items-center gap-2 mb-4">
                           {/* SVG Icon omitted for brevity, logic preserved */}
                           <svg
-                            className="w-6 h-6 text-slate-400"
+                            className="w-6 h-6 text-muted-foreground"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -152,7 +152,7 @@ export function ChatPage() {
                               d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
                             />
                           </svg>
-                          <span className="text-body font-medium text-slate-600">
+                          <span className="text-body font-medium text-muted-foreground">
                             Sources
                           </span>
                         </div>
@@ -172,15 +172,15 @@ export function ChatPage() {
               )}
 
               {isLoading && (
-                <div className="flex items-center gap-4 text-slate-500 pl-2">
+                <div className="flex items-center gap-4 text-muted-foreground pl-2">
                   <div className="flex gap-1.5">
-                    <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" />
+                    <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" />
                     <span
-                      className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
+                      className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
                       style={{ animationDelay: '0.1s' }}
                     />
                     <span
-                      className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
+                      className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
                       style={{ animationDelay: '0.2s' }}
                     />
                   </div>
@@ -203,7 +203,7 @@ export function ChatPage() {
                 onSend={handleSendMessageWrapper}
                 isLoading={isLoading}
               />
-              <p className="mt-2 text-center text-caption text-slate-400">
+              <p className="mt-2 text-center text-caption text-muted-foreground">
                 AI는 실수를 할 수 있습니다. 중요한 정보는 확인해 주세요.
               </p>
             </div>

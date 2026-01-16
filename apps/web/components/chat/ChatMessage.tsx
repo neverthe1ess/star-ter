@@ -47,16 +47,16 @@ export function ChatMessage({ message, chartActions }: ChatMessageProps) {
       <div
         className={`max-w-4xl ${
           isUser
-            ? 'bg-blue-900 text-slate-800 rounded-2xl rounded-br-md px-8 py-6'
-            : 'bg-white rounded-2xl shadow-sm border border-slate-100 px-8 py-6'
+            ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-md px-8 py-6'
+            : 'bg-background rounded-2xl shadow-sm border border-border px-8 py-6'
         }`}
       >
         {/* AI 메시지에 Results 헤더 추가 */}
         {!isUser && (
           <div className="flex items-center justify-between mb-4 relative">
             <div className="flex items-center gap-3">
-              <Bot className="w-6 h-6 text-slate-400" />
-              <span className="text-body font-medium text-slate-600">
+              <Bot className="w-6 h-6 text-muted-foreground" />
+              <span className="text-body font-medium text-muted-foreground">
                 AI Assistant
               </span>
             </div>
@@ -65,7 +65,7 @@ export function ChatMessage({ message, chartActions }: ChatMessageProps) {
             <div className="relative">
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg transition-colors"
+                className="p-1.5 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
                 aria-label="More actions"
               >
                 <MoreHorizontal className="w-5 h-5" />
@@ -78,9 +78,9 @@ export function ChatMessage({ message, chartActions }: ChatMessageProps) {
                     className="fixed inset-0 z-10"
                     onClick={() => setIsMenuOpen(false)}
                   />
-                  <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-xl shadow-xl border border-slate-100 z-20 py-1 overflow-hidden">
+                  <div className="absolute right-0 top-full mt-1 w-32 bg-background rounded-xl shadow-xl border border-border z-20 py-1 overflow-hidden">
                     <button
-                      className="w-full flex items-center gap-2 px-3 py-2 text-caption text-slate-600 hover:bg-slate-50 transition-colors text-left"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-caption text-foreground hover:bg-muted transition-colors text-left"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       <Copy className="w-4 h-4" />
@@ -96,81 +96,83 @@ export function ChatMessage({ message, chartActions }: ChatMessageProps) {
         {/* 메시지 내용 */}
         {isUser ? (
           // 사용자 메시지: 일반 텍스트
-          <div className="text-body leading-relaxed whitespace-pre-wrap text-white font-strong">
+          <div className="text-body leading-relaxed whitespace-pre-wrap text-primary-foreground font-strong">
             {displayContent}
           </div>
         ) : (
           // AI 메시지: 마크다운 렌더링
-          <div className="prose prose-slate prose-lg max-w-none">
+          <div className="prose prose-slate max-w-none text-body text-foreground leading-relaxed font-medium">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
                 // 굵은 텍스트
                 strong: ({ children }) => (
-                  <strong className="font-bold text-slate-900">
+                  <strong className="font-bold text-foreground">
                     {children}
                   </strong>
                 ),
                 // 제목
                 h1: ({ children }) => (
-                  <h1 className="text-h4 font-bold text-slate-800 mt-4 mb-2">
+                  <h1 className="text-h4 font-bold text-foreground mt-4 mb-2">
                     {children}
                   </h1>
                 ),
                 h2: ({ children }) => (
-                  <h2 className="text-h5 font-bold text-slate-800 mt-3 mb-2">
+                  <h2 className="text-h5 font-bold text-foreground mt-3 mb-2">
                     {children}
                   </h2>
                 ),
                 h3: ({ children }) => (
-                  <h3 className="text-body font-bold text-slate-800 mt-2 mb-1">
+                  <h3 className="text-body font-bold text-foreground mt-2 mb-1">
                     {children}
                   </h3>
                 ),
                 // 목록
                 ul: ({ children }) => (
-                  <ul className="list-disc list-inside space-y-1 my-2">
+                  <ul className="list-disc pl-4 space-y-1 mb-2 text-foreground">
                     {children}
                   </ul>
                 ),
                 ol: ({ children }) => (
-                  <ol className="list-decimal list-inside space-y-1 my-2">
+                  <ol className="list-decimal pl-4 space-y-1 mb-2 text-foreground">
                     {children}
                   </ol>
                 ),
                 li: ({ children }) => (
-                  <li className="text-slate-700">{children}</li>
+                  <li className="text-foreground">{children}</li>
                 ),
                 // 단락
                 p: ({ children }) => (
-                  <p className="text-slate-700 leading-relaxed mb-2">
+                  <p className="text-foreground leading-relaxed mb-2">
                     {children}
                   </p>
                 ),
                 // 테이블 스타일 (GFM Tables)
                 table: ({ children }) => (
                   <div className="overflow-x-auto my-4">
-                    <table className="min-w-full border-collapse border border-slate-200 rounded-lg overflow-hidden">
+                    <table className="min-w-full border-collapse border border-border rounded-lg overflow-hidden">
                       {children}
                     </table>
                   </div>
                 ),
                 thead: ({ children }) => (
-                  <thead className="bg-slate-100">{children}</thead>
+                  <thead className="bg-muted">{children}</thead>
                 ),
                 tbody: ({ children }) => (
-                  <tbody className="divide-y divide-slate-200">{children}</tbody>
+                  <tbody className="divide-y divide-border">{children}</tbody>
                 ),
                 tr: ({ children }) => (
-                  <tr className="hover:bg-slate-50 transition-colors">{children}</tr>
+                  <tr className="hover:bg-muted/50 transition-colors">
+                    {children}
+                  </tr>
                 ),
                 th: ({ children }) => (
-                  <th className="px-4 py-3 text-left text-md font-semibold text-slate-700 border-b border-slate-200">
+                  <th className="px-4 py-3 text-left text-md font-semibold text-foreground border-b border-border">
                     {children}
                   </th>
                 ),
                 td: ({ children }) => (
-                  <td className="px-4 py-3 text-md text-slate-600 border-b border-slate-100">
+                  <td className="px-4 py-3 text-md text-muted-foreground border-b border-border">
                     {children}
                   </td>
                 ),
