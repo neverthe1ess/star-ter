@@ -167,7 +167,7 @@ export class AiService {
 
     return finalJson;
   }
-
+  /* 벡터 검색의 신뢰도 임계값보다 높으면(즉, 거리가 멀면) fallback으로, trgm 사용  */
   async getAreaInfo(message: string) {
     const areaText = this.openAiService.getText(
       await this.openAiService.getLocationByMessage(message),

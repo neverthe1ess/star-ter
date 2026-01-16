@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { ChatHeader } from "./ChatHeader";
+import { ChatHeader, type AiProvider } from "./ChatHeader";
 import { SourceCard } from "./SourceCard";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
@@ -18,6 +18,11 @@ import { buildMessageFromAiText } from "@/lib/chat/ai-message";
  * ChatPage 컴포넌트 - AI 챗봇의 메인 페이지
  */
 export function ChatPage() {
+  // 로그인된 사용자 ID 가져오기 (개인화 추천에 사용)
+
+  // AI 프로바이더 상태 (claude | openai)
+  const [aiProvider, setAiProvider] = useState<AiProvider>('openai');
+
   // 커스텀 훅으로 로직 분리
   const {
     messages,
@@ -28,7 +33,7 @@ export function ChatPage() {
     sendMessage,
     handleNewThread,
     loadConversation,
-  } = useChat();
+  } = useChat(aiProvider);
   const conversationId = useChatStore((state) => state.conversationId);
 
   const [isMapOpen, setIsMapOpen] = useState(false);
@@ -118,6 +123,8 @@ export function ChatPage() {
           onNewThread={handleNewThread}
           isMapOpen={isMapOpen}
           onMapToggle={() => setIsMapOpen(!isMapOpen)}
+          aiProvider={aiProvider}
+          onAiProviderChange={setAiProvider}
         />
 
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">

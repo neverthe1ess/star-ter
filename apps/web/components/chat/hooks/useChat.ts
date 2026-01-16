@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { sendMessage as apiSendMessage } from '../../../app/actions/chat';
 import { type AiAction } from '../../../lib/api/ai';
 import { Message, Thread } from '../types';
+import type { AiProvider } from '../ChatHeader';
 import { useChatStore } from '@/store/use-chat-store';
 import {
   buildMessageFromAiResponse,
@@ -9,13 +10,15 @@ import {
 } from '@/lib/chat/ai-message';
 
 // userId를 받아서 개인화 추천에 활용
-export function useChat() {
+export function useChat(aiProvider: AiProvider = 'openai') {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const conversationId = useChatStore((state) => state.conversationId);
   const setConversationId = useChatStore((state) => state.setConversationId);
-  const clearConversationId = useChatStore((state) => state.clearConversationId);
+  const clearConversationId = useChatStore(
+    (state) => state.clearConversationId,
+  );
   const [currentThread, setCurrentThread] = useState<Thread>({
     id: 'default',
     title: 'New Thread',
@@ -74,8 +77,16 @@ export function useChat() {
       }
 
       try {
+        const history = messages.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        }));
+
+        // userId와 aiProvider를 전달
         const response = await apiSendMessage(
           text,
+          history,
+          aiProvider,
           conversationId || undefined,
         );
 
@@ -132,7 +143,7 @@ export function useChat() {
         setIsLoading(false);
       }
     },
-    [messages, conversationId, setConversationId],
+    [messages, aiProvider, conversationId, setConversationId],
   );
 
   return {

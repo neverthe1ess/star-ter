@@ -5,30 +5,39 @@ import { type AiChatResponse } from '@/lib/api/ai';
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
+// AI 프로바이더 타입
+type AiProvider = 'claude' | 'openai';
+
 // Server Action 함수
 // 클라이언트에서 await sendMessage(...) 형태로 호출 가능
 export async function sendMessage(
   message: string,
+  history: Array<{ role: 'user' | 'assistant'; content: string }>,
+  aiProvider: AiProvider = 'openai', // 런타임에 프로바이더 선택
   conversationId?: string,
 ): Promise<AiChatResponse> {
-  console.log('[Server Action] Sending message to chat:', message);
+  // 프로바이더에 따른 API 엔드포인트 결정
+  const endpoint =
+    aiProvider === 'claude' ? '/assistant/message' : '/chat/send';
 
+  console.log(`[Server Action] Sending message to ${aiProvider}:`, message);
   try {
     const cookieStore = await cookies();
     const cookieHeader = cookieStore
       .getAll()
       .map((cookie) => `${cookie.name}=${cookie.value}`)
       .join('; ');
-    const response = await fetch(`${API_BASE_URL}/chat/send`, {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(cookieHeader ? { Cookie: cookieHeader } : {}),
       },
-      body: JSON.stringify({
-        message,
-        conversationId,
-      }),
+      body: JSON.stringify(
+        aiProvider === 'claude'
+          ? { message, history }
+          : { message, conversationId },
+      ),
       // 캐싱 방지 (항상 새로운 응답 필요)
       cache: 'no-store',
     });
