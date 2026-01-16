@@ -25,7 +25,11 @@ import {
   updateOnboarding,
   updateProfile,
 } from '@/services/user/user.api';
-import { getChatConversations } from '@/services/chat/chat.api';
+import {
+  deleteConversation,
+  getChatConversations,
+  updateConversationTitle,
+} from '@/services/chat/chat.api';
 import type { OnboardingData } from './onboarding/onboarding-options';
 import { Logo } from './landing/header/Logo';
 
@@ -74,6 +78,9 @@ export function Sidebar({
   const clearConversationId = useChatStore(
     (state) => state.clearConversationId,
   );
+  const currentConversationId = useChatStore(
+    (state) => state.conversationId,
+  );
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [showPreferencesPopup, setShowPreferencesPopup] = useState(false);
   const [nickname, setNickname] = useState(authUser?.nickname ?? '사용자');
@@ -91,6 +98,17 @@ export function Sidebar({
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
+  const [deletingConversationId, setDeletingConversationId] = useState<
+    string | null
+  >(null);
+  const [editingConversationId, setEditingConversationId] = useState<
+    string | null
+  >(null);
+  const [editingTitle, setEditingTitle] = useState('');
+  const [isSavingTitle, setIsSavingTitle] = useState(false);
+  const historyClickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   const [isMounted, setIsMounted] = useState(false);
   const layoutTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -113,6 +131,10 @@ export function Sidebar({
       if (layoutTimeoutRef.current) {
         clearTimeout(layoutTimeoutRef.current);
         layoutTimeoutRef.current = null;
+      }
+      if (historyClickTimeoutRef.current) {
+        clearTimeout(historyClickTimeoutRef.current);
+        historyClickTimeoutRef.current = null;
       }
     };
   }, []);
@@ -209,6 +231,90 @@ export function Sidebar({
     } finally {
       setIsLoggingOut(false);
     }
+  };
+
+  const handleDeleteConversation = async (conversationId: string) => {
+    if (!authUserId || deletingConversationId) return;
+    setDeletingConversationId(conversationId);
+    setHistoryError(null);
+    try {
+      await deleteConversation(conversationId);
+      setChatHistory((prev) =>
+        prev.filter((item) => item.id !== conversationId),
+      );
+      if (currentConversationId === conversationId) {
+        clearConversationId();
+      }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : '대화 삭제에 실패했습니다.';
+      setHistoryError(message);
+    } finally {
+      setDeletingConversationId(null);
+    }
+  };
+
+  const handleHistoryItemClick = (conversationId: string) => {
+    if (historyClickTimeoutRef.current) {
+      clearTimeout(historyClickTimeoutRef.current);
+      historyClickTimeoutRef.current = null;
+    }
+    historyClickTimeoutRef.current = setTimeout(() => {
+      setConversationId(conversationId);
+      router.push('/chat');
+      historyClickTimeoutRef.current = null;
+    }, 250);
+  };
+
+  const handleHistoryItemDoubleClick = (item: ChatHistoryItem) => {
+    if (historyClickTimeoutRef.current) {
+      clearTimeout(historyClickTimeoutRef.current);
+      historyClickTimeoutRef.current = null;
+    }
+    setHistoryError(null);
+    setEditingConversationId(item.id);
+    setEditingTitle(item.title?.trim() ? item.title : '새 대화');
+  };
+
+  const handleSaveConversationTitle = async () => {
+    if (!editingConversationId || isSavingTitle) return;
+    const trimmedTitle = editingTitle.trim();
+    if (!trimmedTitle) {
+      setHistoryError('제목을 입력해주세요.');
+      return;
+    }
+    if (trimmedTitle.length > 50) {
+      setHistoryError('제목은 50자 이하로 입력해주세요.');
+      return;
+    }
+    setIsSavingTitle(true);
+    setHistoryError(null);
+    try {
+      const updated = await updateConversationTitle(
+        editingConversationId,
+        trimmedTitle,
+      );
+      setChatHistory((prev) =>
+        prev.map((item) =>
+          item.id === updated.id
+            ? { ...item, title: updated.title ?? trimmedTitle }
+            : item,
+        ),
+      );
+      setEditingConversationId(null);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : '대화 제목 수정에 실패했습니다.';
+      setHistoryError(message);
+    } finally {
+      setIsSavingTitle(false);
+    }
+  };
+
+  const handleCancelConversationTitle = () => {
+    setEditingConversationId(null);
+    setEditingTitle('');
+    setHistoryError(null);
   };
 
   const handleOpenPreferences = () => {
@@ -398,20 +504,66 @@ export function Sidebar({
                   ) : (
                     chatHistory.map((item) => {
                       const label = item.title?.trim() ? item.title : '새 대화';
+                      const isDeleting = deletingConversationId === item.id;
+                      const isEditing = editingConversationId === item.id;
                       return (
-                        <button
+                        <div
                           key={item.id}
-                          onClick={() => {
-                            setConversationId(item.id);
-                            router.push('/chat');
-                          }}
-                          className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors text-left"
+                          className="w-full flex items-center gap-2 px-4 py-2 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors"
                         >
-                          <MessageSquare className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-                          <span className="truncate text-caption font-strong">
-                            {label}
-                          </span>
-                        </button>
+                          {isEditing ? (
+                            <div className="flex-1 min-w-0 flex items-center gap-3">
+                              <MessageSquare className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                              <input
+                                value={editingTitle}
+                                onChange={(event) =>
+                                  setEditingTitle(event.target.value)
+                                }
+                                onBlur={handleSaveConversationTitle}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter') {
+                                    event.preventDefault();
+                                    handleSaveConversationTitle();
+                                  }
+                                  if (event.key === 'Escape') {
+                                    event.preventDefault();
+                                    handleCancelConversationTitle();
+                                  }
+                                }}
+                                maxLength={50}
+                                autoFocus
+                                className="w-full min-w-0 bg-transparent border-b border-slate-200 focus:outline-none focus:border-slate-400 text-caption font-strong text-slate-700"
+                              />
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleHistoryItemClick(item.id)}
+                              onDoubleClick={() =>
+                                handleHistoryItemDoubleClick(item)
+                              }
+                              className="flex-1 min-w-0 flex items-center gap-3 text-left"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                              <span className="truncate text-caption font-strong">
+                                {label}
+                              </span>
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleDeleteConversation(item.id);
+                            }}
+                            disabled={isDeleting || isEditing}
+                            className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            aria-label="대화 삭제"
+                            title="삭제"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       );
                     })
                   )}
