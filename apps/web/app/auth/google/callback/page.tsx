@@ -5,14 +5,15 @@ type CallbackSearchParams = {
   next?: string | string[];
 };
 
-export default function GoogleCallbackPage({
+export default async function GoogleCallbackPage({
   searchParams,
 }: {
-  searchParams?: CallbackSearchParams;
+  searchParams?: Promise<CallbackSearchParams>;
 }) {
-  const nextParam = Array.isArray(searchParams?.next)
-    ? searchParams?.next[0]
-    : searchParams?.next;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const nextParam = Array.isArray(resolvedSearchParams.next)
+    ? resolvedSearchParams.next[0]
+    : resolvedSearchParams.next;
   const nextPath = normalizeNextPath(nextParam);
 
   return <GoogleCallbackClient nextPath={nextPath} />;
