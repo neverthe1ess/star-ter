@@ -63,6 +63,17 @@ export class AiService {
     // 사용된 Tool 이름 수집
     const usedTools: string[] = [];
 
+    // 매물 추천 결과 저장 (히스토리에 UUID 매핑 포함용)
+    interface ListingItem {
+      listingNumber: number;
+      listingId: string;
+      title: string;
+    }
+    interface RecommendRealEstateResult {
+      data?: ListingItem[];
+    }
+    let recommendRealEstateResult: RecommendRealEstateResult | null = null;
+
     for (const toolCall of toolCallResponse.output) {
       if (toolCall.type !== 'function_call') continue;
       usedTools.push(toolCall.name);
@@ -73,6 +84,11 @@ export class AiService {
 
       if (toolResult === undefined) {
         continue;
+      }
+
+      // recommend_real_estate 결과 저장 (나중에 reply에 매핑 정보 추가용)
+      if (toolCall.name === 'recommend_real_estate' && toolResult) {
+        recommendRealEstateResult = toolResult as RecommendRealEstateResult;
       }
 
       input.push({
@@ -173,6 +189,19 @@ export class AiService {
         });
       }
     }
+
+    // 매물 번호-UUID 매핑 정보를 reply에 추가 (DB 저장 시 히스토리에 포함되도록)
+    // 프론트엔드 useChat.ts와 동일한 형식 사용
+    if (recommendRealEstateResult?.data && recommendRealEstateResult.data.length > 0) {
+      const markers = recommendRealEstateResult.data.map((item) => ({
+        id: item.listingId,
+        listingNumber: item.listingNumber,
+        title: item.title,
+      }));
+      parsedResponse.reply += `\n\n[매물 목록 참조용 - 이 메시지는 사용자에게 보이지 않습니다]\n${JSON.stringify(markers)}`;
+      console.log(`[AiService] Added markers to reply for DB storage`);
+    }
+
     const finalJson = this.aiResponseProcessor.patchCoordinates(
       parsedResponse,
       areaList,

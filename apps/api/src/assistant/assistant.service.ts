@@ -393,12 +393,24 @@ export class AssistantService {
       sources?: { tool: string; displayName: string; source: string }[];
     };
 
+    // 매물 번호-UUID 매핑 정보를 reply에 추가 (DB 저장 시 히스토리에 포함되도록)
+    // 프론트엔드 useChat.ts와 동일한 형식 사용
+    let contentWithMarkers = parsedResult.reply;
+    const listingsAction = parsedResult.actions?.find(
+      (a: { type: string }) => a.type === 'list.listings'
+    ) as { type: string; payload?: { markers?: unknown } } | undefined;
+    
+    if (listingsAction?.payload?.markers) {
+      contentWithMarkers += `\n\n[매물 목록 참조용 - 이 메시지는 사용자에게 보이지 않습니다]\n${JSON.stringify(listingsAction.payload.markers)}`;
+      console.log(`[AssistantService] Added markers to content for DB storage`);
+    }
+
     // AI 응답 DB 저장 (userId가 있는 경우)
     if (userId && currentConversationId) {
       await this.chatRepository.addMessage({
         conversationId: currentConversationId,
         role: 'assistant',
-        content: parsedResult.reply,
+        content: contentWithMarkers, // 매핑 정보 포함된 응답 저장
       });
       console.log(`[AssistantService] Saved AI response to DB`);
     }
