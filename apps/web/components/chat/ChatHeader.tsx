@@ -85,7 +85,7 @@ export function ChatHeader({
                 <div className="w-5 h-5 flex items-center justify-center">
                   <CurrentIcon />
                 </div>
-                <span className="text-base font-medium text-slate-700 hidden sm:inline">
+                <span className="text-body font-medium text-slate-700 hidden sm:inline">
                   {currentProvider.name}
                 </span>
                 <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
@@ -112,9 +112,9 @@ export function ChatHeader({
                     <div className="w-5 h-5 flex items-center justify-center">
                       <IconComponent />
                     </div>
-                    <span className="text-md font-medium text-slate-700">{provider.name}</span>
+                    <span className="text-body font-medium text-slate-700">{provider.name}</span>
                     {aiProvider === provider.id && (
-                      <span className="ml-auto text-blue-500 text-sm">✓</span>
+                      <span className="ml-auto text-blue-500 text-caption">✓</span>
                     )}
                   </button>
                 );
@@ -125,8 +125,8 @@ export function ChatHeader({
       </div>
 
       {/* 가운데: 스레드 제목 */}
-      <div className="flex items-center gap-3 justify-center flex-shrink-0 mx-4">
-        <span className="text-base font-medium text-slate-700 max-w-[200px] sm:max-w-sm truncate">
+      <div className="flex items-center gap-3 justify-center shrink-0 mx-4">
+        <span className="text-body font-medium text-slate-700 max-w-[200px] sm:max-w-sm truncate">
           {threadTitle}
         </span>
       </div>
@@ -137,9 +137,9 @@ export function ChatHeader({
         {onMapToggle && (
           <button
             onClick={onMapToggle}
-            className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-base transition-colors whitespace-nowrap ${
+            className={`flex items-center border border-black gap-2.5 px-4 py-2.5 rounded-xl text-body transition-colors whitespace-nowrap ${
               isMapOpen 
-                ? "bg-blue-100 text-blue-700" 
+                ? "bg-blue-100 text-blue-700 border-blue-700" 
                 : "text-slate-600 hover:bg-slate-100"
             }`}
           >
@@ -149,13 +149,13 @@ export function ChatHeader({
         )}
 
         {/* 새 스레드 버튼 */}
-        <button
+        {/* <button
           onClick={onNewThread}
-          className="flex items-center gap-2.5 px-5 py-2.5 bg-slate-900 text-white rounded-xl text-base font-medium hover:bg-slate-800 transition-colors whitespace-nowrap"
+          className="flex items-center gap-2.5 px-5 py-2.5 bg-slate-900 text-white rounded-xl text-body font-medium hover:bg-slate-800 transition-colors whitespace-nowrap"
         >
           <Plus className="w-5 h-5" />
           <span className="hidden sm:inline">새 대화 생성</span>
-        </button>
+        </button> */}
       </div>
     </header>
   );

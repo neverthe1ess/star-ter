@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { ChatHeader, type AiProvider } from "./ChatHeader";
-import { SourceCard } from "./SourceCard";
-import { ChatMessage } from "./ChatMessage";
-import { ChatInput } from "./ChatInput";
-import { ChatMapSection, type ChatMapSectionRef } from "./ChatMapSection";
-import { ChatWelcome } from "./ChatWelcome";
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { ChatHeader, type AiProvider } from './ChatHeader';
+import { SourceCard } from './SourceCard';
+import { ChatMessage } from './ChatMessage';
+import { ChatInput } from './ChatInput';
+import { ChatMapSection, type ChatMapSectionRef } from './ChatMapSection';
+import { ChatWelcome } from './ChatWelcome';
 
-import { useChat } from "./hooks/useChat";
-import { useActionDispatcher } from "./hooks/useActionDispatcher";
-import { getConversationHistory } from "@/services/chat/chat.api";
-import { useChatStore } from "@/store/use-chat-store";
-import { buildMessageFromAiText } from "@/lib/chat/ai-message";
+import { useChat } from './hooks/useChat';
+import { useActionDispatcher } from './hooks/useActionDispatcher';
+import { getConversationHistory } from '@/services/chat/chat.api';
+import { useChatStore } from '@/store/use-chat-store';
+import { buildMessageFromAiText } from '@/lib/chat/ai-message';
 
 /**
  * ChatPage 컴포넌트 - AI 챗봇의 메인 페이지
@@ -46,7 +46,7 @@ export function ChatPage() {
 
   // 새 메시지 추가 시 스크롤 맨 아래로 이동
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   // Action Dispatcher Hook 사용
@@ -55,14 +55,14 @@ export function ChatPage() {
   // 메시지 전송 래퍼 (액션 처리 콜백 전달)
   const handleSendMessageWrapper = useCallback(
     (text?: string) => {
-      const messageText = typeof text === "string" ? text : inputValue.trim();
+      const messageText = typeof text === 'string' ? text : inputValue.trim();
       // useChat의 sendMessage에 dispatch 함수를 전달
       sendMessage(messageText, dispatch);
     },
-    [inputValue, sendMessage, dispatch]
+    [inputValue, sendMessage, dispatch],
   );
 
-  // TODO: 메인에서 검색제거 시 반드시 제거 
+  // TODO: 메인에서 검색제거 시 반드시 제거
   const hasLoadedHistory = useRef<string | null>(null);
   const prevConversationId = useRef<string | null>(null);
 
@@ -90,11 +90,11 @@ export function ChatPage() {
             role: item.role,
             content: item.content,
             timestamp: new Date(),
-          })
+          }),
         );
         const titleFromHistory =
-          mapped.find((item) => item.role === "user")?.content?.slice(0, 50) ||
-          "New Thread";
+          mapped.find((item) => item.role === 'user')?.content?.slice(0, 50) ||
+          'New Thread';
         loadConversation({
           conversationId: conversationId,
           messages: mapped,
@@ -102,14 +102,13 @@ export function ChatPage() {
         });
       })
       .catch((error) => {
-        console.error("Failed to load conversation history:", error);
+        console.error('Failed to load conversation history:', error);
       });
 
     return () => {
       cancelled = true;
     };
   }, [conversationId, loadConversation, handleNewThread]);
-
 
   return (
     <div className="flex h-full gap-4 overflow-hidden">
@@ -136,7 +135,7 @@ export function ChatPage() {
               ) : (
                 messages.map((message) => (
                   <div key={message.id}>
-                    {message.role === "assistant" && message.sources && (
+                    {message.role === 'assistant' && message.sources && (
                       <div className="mb-6">
                         <div className="flex items-center gap-2 mb-4">
                           {/* SVG Icon omitted for brevity, logic preserved */}
@@ -153,7 +152,7 @@ export function ChatPage() {
                               d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
                             />
                           </svg>
-                          <span className="text-base font-medium text-slate-600">
+                          <span className="text-body font-medium text-slate-600">
                             Sources
                           </span>
                         </div>
@@ -164,7 +163,10 @@ export function ChatPage() {
                         </div>
                       </div>
                     )}
-                    <ChatMessage message={message} chartActions={message.chartActions} />
+                    <ChatMessage
+                      message={message}
+                      chartActions={message.chartActions}
+                    />
                   </div>
                 ))
               )}
@@ -172,17 +174,19 @@ export function ChatPage() {
               {isLoading && (
                 <div className="flex items-center gap-4 text-slate-500 pl-2">
                   <div className="flex gap-1.5">
-                    <span className="w-3 h-3 bg-slate-400 rounded-full animate-bounce" />
+                    <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" />
                     <span
-                      className="w-3 h-3 bg-slate-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "0.1s" }}
+                      className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
+                      style={{ animationDelay: '0.1s' }}
                     />
                     <span
-                      className="w-3 h-3 bg-slate-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "0.2s" }}
+                      className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
+                      style={{ animationDelay: '0.2s' }}
                     />
                   </div>
-                  <span className="text-lg">AI가 응답을 생성하고 있습니다...</span>
+                  <span className="text-h5">
+                    AI가 응답을 생성하고 있습니다...
+                  </span>
                 </div>
               )}
 
@@ -199,7 +203,7 @@ export function ChatPage() {
                 onSend={handleSendMessageWrapper}
                 isLoading={isLoading}
               />
-              <p className="mt-2 text-center text-md text-slate-400">
+              <p className="mt-2 text-center text-caption text-slate-400">
                 AI는 실수를 할 수 있습니다. 중요한 정보는 확인해 주세요.
               </p>
             </div>

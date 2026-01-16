@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { ExternalLink } from "lucide-react";
+import { ExternalLink } from 'lucide-react';
 
 /**
  * SourceCard 컴포넌트 - 출처 정보 카드
@@ -26,7 +26,7 @@ export function SourceCard({ source }: SourceCardProps) {
   // URL에서 도메인 추출
   const getDomain = (url: string) => {
     try {
-      return new URL(url).hostname.replace("www.", "");
+      return new URL(url).hostname.replace('www.', '');
     } catch {
       return url;
     }
@@ -47,7 +47,7 @@ export function SourceCard({ source }: SourceCardProps) {
             alt=""
             className="w-4 h-4"
             onError={(e) => {
-              (e.target as HTMLImageElement).style.display = "none";
+              (e.target as HTMLImageElement).style.display = 'none';
             }}
           />
         ) : (
@@ -57,12 +57,12 @@ export function SourceCard({ source }: SourceCardProps) {
 
       {/* 출처 정보 */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-slate-700 truncate group-hover:text-slate-900">
+        <p className="text-caption font-medium text-slate-700 truncate group-hover:text-slate-900">
           {source.title}
         </p>
-        <p className="text-xs text-slate-400 flex items-center gap-1.5">
+        <p className="text-tiny text-slate-400 flex items-center gap-1.5">
           <span className="w-3 h-3 bg-amber-100 rounded-sm flex items-center justify-center">
-            <span className="text-[8px] font-bold text-amber-600">★</span>
+            <span className="text-tiny font-bold text-amber-600">★</span>
           </span>
           {getDomain(source.url)} • {source.number}
         </p>
@@ -74,7 +74,7 @@ export function SourceCard({ source }: SourceCardProps) {
 // "+N More" 버튼 컴포넌트
 export function SourceMoreButton({ count }: { count: number }) {
   return (
-    <button className="flex items-center justify-center px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-100 transition-all text-sm text-slate-500 font-medium min-w-[100px]">
+    <button className="flex items-center justify-center px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-100 transition-all text-caption text-slate-500 font-medium min-w-[100px]">
       +{count} More
     </button>
   );
