@@ -122,13 +122,17 @@ export function SidebarChatHistory({
 
   return (
     <div className="space-y-1">
-      <p className="px-4 text-tiny font-strong text-gray-400 mb-2">History</p>
+      <p className="px-4 text-tiny font-strong text-muted-foreground mb-2">
+        History
+      </p>
       {isLoading ? (
-        <div className="px-4 py-2 text-tiny text-slate-400">불러오는 중...</div>
+        <div className="px-4 py-2 text-tiny text-muted-foreground">
+          불러오는 중...
+        </div>
       ) : error ? (
-        <div className="px-4 py-2 text-tiny text-rose-400">{error}</div>
+        <div className="px-4 py-2 text-tiny text-destructive">{error}</div>
       ) : items.length === 0 ? (
-        <div className="px-4 py-2 text-tiny text-slate-400">
+        <div className="px-4 py-2 text-tiny text-muted-foreground">
           대화 내역이 없습니다.
         </div>
       ) : (
@@ -139,11 +143,11 @@ export function SidebarChatHistory({
           return (
             <div
               key={item.id}
-              className="w-full flex items-center gap-2 px-4 py-2 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors"
+              className="w-full flex items-center gap-2 px-4 py-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
             >
               {isEditing ? (
                 <div className="flex-1 min-w-0 flex items-center gap-3">
-                  <MessageSquare className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                  <MessageSquare className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
                   <input
                     value={editingTitle}
                     onChange={(event) => setEditingTitle(event.target.value)}
@@ -160,7 +164,7 @@ export function SidebarChatHistory({
                     }}
                     maxLength={50}
                     autoFocus
-                    className="w-full min-w-0 bg-transparent border-b border-slate-200 focus:outline-none focus:border-slate-400 text-caption font-strong text-slate-700"
+                    className="w-full min-w-0 bg-transparent border-b border-border focus:outline-none focus:border-ring text-caption font-strong text-foreground"
                   />
                 </div>
               ) : (
@@ -170,7 +174,7 @@ export function SidebarChatHistory({
                   onDoubleClick={() => handleHistoryItemDoubleClick(item)}
                   className="flex-1 min-w-0 flex items-center gap-3 text-left"
                 >
-                  <MessageSquare className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                  <MessageSquare className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
                   <span className="truncate text-caption font-strong">
                     {label}
                   </span>
@@ -183,7 +187,7 @@ export function SidebarChatHistory({
                   handleDeleteConversation(item.id);
                 }}
                 disabled={isDeleting || isEditing}
-                className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 aria-label="대화 삭제"
                 title="삭제"
               >
