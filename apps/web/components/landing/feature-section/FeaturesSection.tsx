@@ -52,7 +52,7 @@ export function FeaturesSection() {
   const feature = FEATURES[activeTab];
 
   return (
-    <section className="py-24 px-6 bg-gray-50">
+    <section className="py-24 px-6 bg-muted/60">
       <div className="max-w-[1200px] mx-auto">
         <div className="mb-20">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -64,24 +64,24 @@ export function FeaturesSection() {
                     onClick={() => setActiveTab(index)}
                     className={`text-caption px-3 py-1 rounded-full transition-colors ${
                       activeTab === index
-                        ? 'bg-white border border-gray-300 shadow-sm font-bold text-blue-900'
-                        : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
+                        ? 'bg-background border border-border shadow-sm font-bold text-primary'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
                     }`}
                   >
                     {item.label}
                   </button>
                 ))}
               </div>
-              <h2 className="text-display font-heading mb-8">
+              <h2 className="text-display font-heading mb-8 text-primary">
                 {feature.title}
               </h2>
-              <p className="text-gray-600 mb-6 text-h5 leading-relaxed min-h-[84px]">
+              <p className="text-muted-foreground mb-6 text-h5 leading-relaxed min-h-[84px]">
                 {feature.description}
               </p>
             </div>
 
-            <div className="p-2 bg-white rounded-3xl shadow-xl border border-gray-100 transition-all duration-300 h-[520px] flex items-center justify-center overflow-hidden">
-              <figure className="w-full h-full bg-white rounded-2xl flex items-center justify-center">
+            <div className="p-2 bg-background rounded-3xl shadow-xl border border-border transition-all duration-300 h-[520px] flex items-center justify-center overflow-hidden">
+              <figure className="w-full h-full bg-background rounded-2xl flex items-center justify-center">
                 <img
                   src={feature.image.src}
                   alt={feature.label}
