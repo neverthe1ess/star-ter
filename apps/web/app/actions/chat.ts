@@ -53,6 +53,7 @@ export async function sendMessage(
     return {
       reply: result.reply || '',
       actions: result.actions || [],
+      sources: result.sources || [],
       conversationId: result.conversationId,
     };
   } catch (error) {

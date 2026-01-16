@@ -18,6 +18,7 @@ import {
   BusinessCategoryVectorDto,
   AreaVectorDto,
 } from '../ai/dto/column-vector';
+import { getToolMetadata } from '../ai/tools/tool-metadata';
 
 @Injectable()
 export class AssistantService {
@@ -49,7 +50,7 @@ export class AssistantService {
     message: string,
     userId: string, // 필수로 변경
     conversationId?: string,
-  ): Promise<{ reply: string; actions: unknown[]; conversationId?: string }> {
+  ): Promise<{ reply: string; actions: unknown[]; sources?: { tool: string; displayName: string; source: string }[]; conversationId?: string }> {
     // 0. conversationId 처리 (DB 저장 시 필요)
     let currentConversationId = conversationId;
 
@@ -157,6 +158,9 @@ export class AssistantService {
     }
 
     console.log(`[AssistantService] Tool calls: ${toolCalls.length}`);
+
+    // 사용된 Tool 이름 수집
+    const usedTools: string[] = toolCalls.map((tc) => tc.name);
 
     // 4. Tool 실행 및 결과 수집
     let breakEvenContext: {
@@ -300,6 +304,14 @@ export class AssistantService {
     // 6. 응답 파싱 및 후처리
     const parsedResponse = this.aiResponseProcessor.parseResponse(responseText);
 
+    // sources 배열 생성
+    if (usedTools.length > 0) {
+      parsedResponse.sources = usedTools.map((name) => ({
+        tool: name,
+        ...getToolMetadata(name),
+      }));
+    }
+
     // [DEBUG] 파싱된 응답 확인
     console.log('[DEBUG] Parsed Response:');
     console.log('  reply:', parsedResponse.reply?.substring(0, 100) + '...');
@@ -378,6 +390,7 @@ export class AssistantService {
     const parsedResult = JSON.parse(finalJson) as {
       reply: string;
       actions: unknown[];
+      sources?: { tool: string; displayName: string; source: string }[];
     };
 
     // AI 응답 DB 저장 (userId가 있는 경우)
@@ -393,12 +406,13 @@ export class AssistantService {
     return {
       reply: parsedResult.reply,
       actions: parsedResult.actions,
+      sources: parsedResult.sources,
       conversationId: currentConversationId,
     };
   }
 
   /**
-   * OpenAI 형식의 TOOLS를 Claude 형식으로 변환
+   * OpenAI 형식의 TOOLS를 Claude 형식으로 변환(임시로, Deprecated)
    */
   private convertToolsForClaude() {
     return TOOLS.map((tool) => ({

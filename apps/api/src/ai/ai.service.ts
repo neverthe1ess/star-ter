@@ -5,6 +5,7 @@ import { BusinessCategoryVectorDto } from './dto/column-vector';
 import { ResponseInputItem } from 'openai/resources/responses/responses.js';
 import { AiToolsService } from './ai-tools.service';
 import { AiResponseProcessor } from './ai-response.processor';
+import { getToolMetadata } from './tools/tool-metadata';
 
 @Injectable()
 export class AiService {
@@ -59,8 +60,12 @@ export class AiService {
     );
     input.push(...toolCallResponse.output);
 
+    // 사용된 Tool 이름 수집
+    const usedTools: string[] = [];
+
     for (const toolCall of toolCallResponse.output) {
       if (toolCall.type !== 'function_call') continue;
+      usedTools.push(toolCall.name);
       const toolResult = await this.aiToolsService.run(
         toolCall.name,
         toolCall.arguments,
@@ -132,6 +137,14 @@ export class AiService {
 
     // Use processor for parsing and patching
     const parsedResponse = this.aiResponseProcessor.parseResponse(responseText);
+
+    // sources 배열 생성
+    if (usedTools.length > 0) {
+      parsedResponse.sources = usedTools.map((name) => ({
+        tool: name,
+        ...getToolMetadata(name),
+      }));
+    }
 
     // [Fix] Force inject chart.breakeven action if missing
     if (breakEvenContext) {
