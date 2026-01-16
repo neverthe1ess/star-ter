@@ -147,6 +147,33 @@ export function ChatMessage({ message, chartActions }: ChatMessageProps) {
                     {children}
                   </p>
                 ),
+                // 테이블 스타일 (GFM Tables)
+                table: ({ children }) => (
+                  <div className="overflow-x-auto my-4">
+                    <table className="min-w-full border-collapse border border-slate-200 rounded-lg overflow-hidden">
+                      {children}
+                    </table>
+                  </div>
+                ),
+                thead: ({ children }) => (
+                  <thead className="bg-slate-100">{children}</thead>
+                ),
+                tbody: ({ children }) => (
+                  <tbody className="divide-y divide-slate-200">{children}</tbody>
+                ),
+                tr: ({ children }) => (
+                  <tr className="hover:bg-slate-50 transition-colors">{children}</tr>
+                ),
+                th: ({ children }) => (
+                  <th className="px-4 py-3 text-left text-md font-semibold text-slate-700 border-b border-slate-200">
+                    {children}
+                  </th>
+                ),
+                td: ({ children }) => (
+                  <td className="px-4 py-3 text-md text-slate-600 border-b border-slate-100">
+                    {children}
+                  </td>
+                ),
               }}
             >
               {displayContent}
