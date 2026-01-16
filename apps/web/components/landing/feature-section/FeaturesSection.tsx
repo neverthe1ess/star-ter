@@ -86,7 +86,7 @@ export function FeaturesSection() {
                 <Image
                   src={feature.image}
                   alt={feature.label}
-                  className="object-cover rounded-2xl"
+                  className="object-contain rounded-2xl"
                   fill
                 />
               </figure>

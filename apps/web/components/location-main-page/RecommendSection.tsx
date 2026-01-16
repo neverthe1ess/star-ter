@@ -29,23 +29,27 @@ const getScoreBadge = (score: number) => {
       text: '최적 매칭',
       badgeColor: 'bg-success',
       textColor: 'text-success',
+      chartColor: 'var(--success)',
     };
   if (score >= 70)
     return {
       text: '추천',
       badgeColor: 'bg-info',
       textColor: 'text-info',
+      chartColor: 'var(--info)',
     };
   if (score >= 50)
     return {
       text: '적합',
       badgeColor: 'bg-primary',
       textColor: 'text-primary',
+      chartColor: 'var(--primary)',
     };
   return {
     text: '참고',
     badgeColor: 'bg-muted',
     textColor: 'text-muted-foreground',
+    chartColor: 'var(--muted-foreground)',
   };
 };
 
@@ -249,7 +253,11 @@ export function RecommendSection() {
                       </div>
 
                       <div className="relative right-6">
-                        <PentagonChart metrics={location.metrics} size={200} />
+                        <PentagonChart
+                          metrics={location.metrics}
+                          size={200}
+                          color={badge.chartColor}
+                        />
                       </div>
                     </div>
                   </Link>
