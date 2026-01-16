@@ -7,11 +7,14 @@ import Link from 'next/link';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { login } from '@/services/auth/auth.api';
-import { useUserStore } from '@/store/use-user-store';
 import { AuthLayout } from './AuthLayout';
+import type { AuthResult } from '@/lib/auth/auth-flow';
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
 interface LoginPageProps {
-  onLogin: (result: { on_boarding_completed: boolean }) => void;
+  onLogin: (result: AuthResult) => void;
 }
 
 export function LoginPage({ onLogin }: LoginPageProps) {
@@ -20,7 +23,6 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const setAuthUser = useUserStore((state) => state.setAuthUser);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,12 +30,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
     setIsSubmitting(true);
     try {
       const response = await login({ email, password });
-      setAuthUser({
-        id: response.id,
-        nickname: response.nickname,
-        profileImageKey: response.profile_image_key ?? null,
-      });
-      onLogin({ on_boarding_completed: response.on_boarding_completed });
+      onLogin(response);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : '로그인에 실패했습니다.';
@@ -44,7 +41,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:4000/auth/google';
+    window.location.href = `${API_BASE_URL}/auth/google`;
   };
 
   return (
