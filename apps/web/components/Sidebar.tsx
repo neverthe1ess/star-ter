@@ -25,9 +25,14 @@ import {
   updateOnboarding,
   updateProfile,
 } from '@/services/user/user.api';
-import { getChatConversations } from '@/services/chat/chat.api';
+import {
+  deleteConversation,
+  getChatConversations,
+  updateConversationTitle,
+} from '@/services/chat/chat.api';
 import type { OnboardingData } from './onboarding/onboarding-options';
 import { Logo } from './landing/header/Logo';
+import { SidebarChatHistory } from './SidebarChatHistory';
 
 interface SidebarProps {
   activeMenu: string;
@@ -74,6 +79,7 @@ export function Sidebar({
   const clearConversationId = useChatStore(
     (state) => state.clearConversationId,
   );
+  const currentConversationId = useChatStore((state) => state.conversationId);
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [showPreferencesPopup, setShowPreferencesPopup] = useState(false);
   const [nickname, setNickname] = useState(authUser?.nickname ?? '사용자');
@@ -209,6 +215,34 @@ export function Sidebar({
     } finally {
       setIsLoggingOut(false);
     }
+  };
+
+  const handleDeleteConversation = async (conversationId: string) => {
+    if (!authUserId) {
+      throw new Error('로그인이 필요합니다.');
+    }
+    await deleteConversation(conversationId);
+    setChatHistory((prev) => prev.filter((item) => item.id !== conversationId));
+    if (currentConversationId === conversationId) {
+      clearConversationId();
+    }
+  };
+
+  const handleUpdateConversationTitle = async (
+    conversationId: string,
+    title: string,
+  ) => {
+    if (!authUserId) {
+      throw new Error('로그인이 필요합니다.');
+    }
+    const updated = await updateConversationTitle(conversationId, title);
+    setChatHistory((prev) =>
+      prev.map((item) =>
+        item.id === updated.id
+          ? { ...item, title: updated.title ?? title }
+          : item,
+      ),
+    );
   };
 
   const handleOpenPreferences = () => {
@@ -378,44 +412,18 @@ export function Sidebar({
                   </button>
                 </div>
 
-                {/* 채팅 히스토리 */}
-                <div className="space-y-1">
-                  <p className="px-4 text-tiny font-strong text-gray-400 mb-2">
-                    History
-                  </p>
-                  {isLoadingHistory ? (
-                    <div className="px-4 py-2 text-tiny text-slate-400">
-                      불러오는 중...
-                    </div>
-                  ) : historyError ? (
-                    <div className="px-4 py-2 text-tiny text-rose-400">
-                      {historyError}
-                    </div>
-                  ) : chatHistory.length === 0 ? (
-                    <div className="px-4 py-2 text-tiny text-slate-400">
-                      대화 내역이 없습니다.
-                    </div>
-                  ) : (
-                    chatHistory.map((item) => {
-                      const label = item.title?.trim() ? item.title : '새 대화';
-                      return (
-                        <button
-                          key={item.id}
-                          onClick={() => {
-                            setConversationId(item.id);
-                            router.push('/chat');
-                          }}
-                          className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors text-left"
-                        >
-                          <MessageSquare className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-                          <span className="truncate text-caption font-strong">
-                            {label}
-                          </span>
-                        </button>
-                      );
-                    })
-                  )}
-                </div>
+                <SidebarChatHistory
+                  items={chatHistory}
+                  isLoading={isLoadingHistory}
+                  error={historyError}
+                  onSelect={(conversationId) => {
+                    setConversationId(conversationId);
+                    router.push('/chat');
+                  }}
+                  onDelete={handleDeleteConversation}
+                  onUpdateTitle={handleUpdateConversationTitle}
+                  onError={setHistoryError}
+                />
               </nav>
 
               <footer className="px-4 py-2 border-t border-gray-100 bg-white">
