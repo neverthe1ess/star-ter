@@ -55,6 +55,7 @@ export class OpenAiService {
       temperature: 0,
       input: input,
       service_tier: 'priority',
+      parallel_tool_calls: true,
       tools: TOOLS as Array<Tool>,
       instructions: PROMPTS.TOOL_CALL_SYSTEM.replace(
         '${categoryVectors}',
@@ -68,7 +69,7 @@ export class OpenAiService {
       model: 'gpt-4.1-mini',
       input: input,
       service_tier: 'priority',
-      max_output_tokens: 1000,
+      max_output_tokens: 10000,
       text: {
         format: FINAL_RESPONSE_SCHEMA_FOR_ACTION,
       },

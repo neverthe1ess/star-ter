@@ -1,5 +1,3 @@
-export { ScoreRow } from './ScoreRow';
-export { CostComparisonRow } from './CostComparisonRow';
 export { AgeScoreSection } from './AgeScoreSection';
 export { RegionScoreSection } from './RegionScoreSection';
 export { TimeScoreSection } from './TimeScoreSection';

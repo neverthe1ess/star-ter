@@ -140,7 +140,7 @@ export function PentagonChart({
         return (
           <div
             key={i}
-            className="absolute text-[12px] font-semibold text-slate-500 whitespace-nowrap"
+            className="absolute text-tiny font-strong text-slate-500 whitespace-nowrap"
             style={{
               left: pos.x + xOffset,
               top: pos.y,

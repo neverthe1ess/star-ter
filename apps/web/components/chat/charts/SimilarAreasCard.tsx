@@ -1,21 +1,19 @@
 "use client";
 
 import React from "react";
-import { Copy, Layers, Sparkles, ThumbsUp, BarChart3 } from "lucide-react";
+import { Layers, MapPin, ChevronRight } from "lucide-react";
 
 /**
  * SimilarAreasCard - 유사 상권 리스트 컴포넌트
- *
- * list.similar_areas 액션 타입에 대응
- * find_similar_commercial_areas 도구 결과를 시각화
+ * 
+ * 지역 선택지 스타일 (순위 색상 없음)
  */
 
-// 개별 유사 상권 데이터 타입
 interface SimilarAreaItem {
   areaCode: string;
   areaName: string;
-  similarity: number; // 유사도 (0-100)
-  targetName?: string; // 비교 대상 상권명
+  similarity: number;
+  targetName?: string;
 }
 
 interface SimilarAreasData {
@@ -28,37 +26,33 @@ interface SimilarAreasCardProps {
   isLoading?: boolean;
 }
 
-// 유사도에 따른 색상
-const getSimilarityColor = (similarity: number): string => {
-  if (similarity >= 90) return "text-green-600";
-  if (similarity >= 80) return "text-blue-600";
-  if (similarity >= 70) return "text-yellow-600";
-  return "text-slate-600 bg-slate-50";
-};
-
-// 유사도 아이콘 컴포넌트
-const SimilarityIcon = ({ similarity }: { similarity: number }) => {
-  if (similarity >= 90) return <Sparkles className="w-5 h-5" />;
-  if (similarity >= 80) return <ThumbsUp className="w-5 h-5" />;
-  return <BarChart3 className="w-5 h-5" />;
+// 유사도에 따른 라벨
+const getSimilarityLabel = (similarity: number) => {
+  if (similarity >= 95) return "매우 유사";
+  if (similarity >= 90) return "거의 동일";
+  if (similarity >= 85) return "유사함";
+  return "비슷함";
 };
 
 export function SimilarAreasCard({ data, isLoading }: SimilarAreasCardProps) {
-  // 로딩 상태
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl border border-slate-200 p-6 animate-pulse">
-        <div className="h-4 bg-slate-200 rounded w-1/3 mb-4"></div>
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 bg-slate-100 rounded"></div>
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden animate-pulse">
+        <div className="px-6 py-4 border-b border-slate-100">
+          <div className="h-5 bg-slate-200 rounded w-1/3"></div>
+        </div>
+        <div className="divide-y divide-slate-100">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="p-4 flex items-center gap-4">
+              <div className="w-5 h-5 bg-slate-200 rounded"></div>
+              <div className="h-4 bg-slate-100 rounded w-1/3"></div>
+            </div>
           ))}
         </div>
       </div>
     );
   }
 
-  // 데이터 없음
   if (!data || !data.similarAreas || data.similarAreas.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-slate-200 p-6 text-slate-500">
@@ -73,50 +67,49 @@ export function SimilarAreasCard({ data, isLoading }: SimilarAreasCardProps) {
   const { targetAreaName, similarAreas } = data;
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-6 my-4">
+    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden my-4">
       {/* 헤더 */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <div className="p-2">
-            <Copy className="w-7 h-7 text-blue-600" />
+      <div className="px-6 py-4 border-b border-slate-100">
+        <div className="flex items-center gap-3">
+          <Layers className="w-5 h-5 text-slate-400" />
+          <div>
+            <h3 className="text-lg font-semibold text-slate-700">
+              {targetAreaName}
+              <span className="text-slate-400 font-normal ml-1">유사 상권</span>
+            </h3>
+            <p className="text-sm text-slate-400">
+              연령대, 유동인구, 인구 구성 기준
+            </p>
           </div>
-          <h3 className="text-2xl font-bold text-slate-800">
-            <span className="text-blue-600">{targetAreaName}</span>과(와) 유사한
-            상권
-          </h3>
         </div>
       </div>
-      <p className="text-base text-slate-500 mb-6 pl-1">
-        연령대 분포, 유동인구 시간대, 인구 구성, 임대료 기준
-      </p>
 
-      {/* 유사 상권 리스트 */}
-      <div className="space-y-3">
+      {/* 리스트 */}
+      <div className="divide-y divide-slate-100">
         {similarAreas.map((area, index) => (
           <div
             key={area.areaCode || index}
-            className="flex items-center justify-between p-5 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+            className="flex items-center justify-between px-6 py-4 hover:bg-slate-50 cursor-pointer transition-colors group"
           >
-            {/* 순위 및 상권명 */}
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 flex items-center justify-center bg-blue-100 text-blue-700 text-xl font-bold rounded-full">
-                {index + 1}
-              </div>
-              <div>
-                <div className="text-xl font-bold text-slate-800">
-                  {area.areaName}
-                </div>
-              </div>
+            {/* 지역명 */}
+            <div className="flex items-center gap-3">
+              <MapPin className="w-4 h-4 text-slate-300" />
+              <span className="text-base font-medium text-slate-700">
+                {area.areaName}
+              </span>
             </div>
 
-            {/* 유사도 배지 */}
-            <div
-              className={`px-4 py-2 rounded-full font-bold flex items-center gap-2 text-lg ${getSimilarityColor(
-                area.similarity
-              )}`}
-            >
-              <SimilarityIcon similarity={area.similarity} />
-              {area.similarity.toFixed(0)}%
+            {/* 유사도 */}
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <div className="text-base font-semibold text-slate-600">
+                  {area.similarity.toFixed(0)}%
+                </div>
+                <div className="text-xs text-slate-400">
+                  {getSimilarityLabel(area.similarity)}
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors" />
             </div>
           </div>
         ))}

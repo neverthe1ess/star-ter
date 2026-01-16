@@ -39,19 +39,21 @@ export function CostScoreSection({
     <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-2">
-        <h4 className="font-bold text-slate-900">창업 비용</h4>
+        <h4 className="text-h4 font-heading text-slate-900">창업 비용</h4>
         <div className="text-right">
-          <p className="text-xs text-slate-400">적합도</p>
-          <p className={`text-xl font-black ${text}`}>{percentage}%</p>
+          <p className="text-caption text-slate-400">적합도</p>
+          <p className={`text-h4 font-heading ${text}`}>{percentage}%</p>
         </div>
       </div>
-      <p className="text-sm text-slate-400 mb-6">예산 대비 예상 비용 비교</p>
+      <p className="text-caption text-slate-400 mb-6">
+        예산 대비 예상 비용 비교
+      </p>
 
       {/* 막대 그래프 비교 */}
       <div className="flex justify-center gap-12 mb-6">
         {/* 사장님 예산 */}
         <div className="flex flex-col items-center">
-          <span className="text-sm font-bold text-emerald-600 mb-2">
+          <span className="text-body font-strong text-emerald-600 mb-2">
             {formatMoney(userBudget)}
           </span>
           <div className="w-20 h-40 bg-slate-100 rounded-lg relative overflow-hidden">
@@ -60,14 +62,16 @@ export function CostScoreSection({
               style={{ height: `${userBarHeight}%` }}
             />
           </div>
-          <p className="text-sm font-bold text-slate-600 mt-2">사장님 예산</p>
-          <p className="text-xs text-slate-400 invisible">placeholder</p>
+          <p className="text-body font-strong text-slate-600 mt-2">
+            사장님 예산
+          </p>
+          <p className="text-caption text-slate-400 invisible">placeholder</p>
         </div>
 
         {/* 예상 비용 */}
         <div className="flex flex-col items-center">
           <span
-            className={`text-sm font-bold mb-2 ${isOverBudget ? 'text-rose-600' : 'text-blue-600'}`}
+            className={`text-body font-strong mb-2 ${isOverBudget ? 'text-rose-600' : 'text-blue-600'}`}
           >
             {formatMoney(estimatedCost)}
           </span>
@@ -79,27 +83,27 @@ export function CostScoreSection({
               style={{ height: `${costBarHeight}%` }}
             />
           </div>
-          <p className="text-sm font-bold text-slate-600 mt-2">예상 비용</p>
-          <p className="text-xs text-slate-400">보증금+월세1년</p>
+          <p className="text-body font-strong text-slate-600 mt-2">예상 비용</p>
+          <p className="text-caption text-slate-400">보증금+월세1년</p>
         </div>
       </div>
 
       {/* 하단 상세 정보 */}
       <div className="pt-4 border-t border-slate-100">
-        <div className="flex justify-between text-sm mb-1">
+        <div className="flex justify-between text-caption mb-1">
           <span className="text-slate-500">상권 평균 보증금</span>
-          <span className="font-medium text-slate-700">
+          <span className="font-strong text-slate-700">
             {formatMoney(actualDeposit)}
           </span>
         </div>
-        <div className="flex justify-between text-sm">
+        <div className="flex justify-between text-caption">
           <span className="text-slate-500">상권 평균 월세</span>
-          <span className="font-medium text-slate-700">
+          <span className="font-strong text-slate-700">
             {formatMoney(actualRent)}
           </span>
         </div>
         {isOverBudget && (
-          <p className="text-xs text-rose-500 mt-2">
+          <p className="text-caption text-rose-500 mt-2">
             예산 {formatMoney(estimatedCost - userBudget)} 초과
           </p>
         )}

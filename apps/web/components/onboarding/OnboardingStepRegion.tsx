@@ -34,18 +34,21 @@ export function OnboardingStepRegion({
       </h1>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-[2vw]">
-         {REGION_OPTIONS.map((option) => (
+        {REGION_OPTIONS.map((option) => (
           <button
             key={option.value}
-            onClick={() => onChange(option.value)}
+            onClick={() => onChange(value === option.value ? '' : option.value)}
             className={`p-[15%] border-2 rounded-2xl text-center transition-all hover:border-gray-900 hover:shadow-lg ${
               value === option.value
                 ? 'border-gray-900 bg-gray-50 shadow-lg'
                 : 'border-gray-300'
-            }`}
+            } ${value && value !== option.value ? 'opacity-40 grayscale-[0.5]' : 'opacity-100'}`}
           >
             <div className="flex justify-center mb-[1.5vh]">
-              <option.Icon size={40} className="w-[clamp(2rem,5vw,2.75rem)] h-[clamp(2rem,5vw,2.75rem)] text-gray-900" />
+              <option.Icon
+                size={40}
+                className="w-[clamp(2rem,5vw,2.75rem)] h-[clamp(2rem,5vw,2.75rem)] text-gray-900"
+              />
             </div>
             <div className="text-[clamp(1rem,2vw,1.25rem)] font-bold text-gray-900">
               {option.label}

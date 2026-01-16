@@ -1,22 +1,22 @@
 "use client";
 
 import React from "react";
-import { Activity, ShieldCheck, AlertTriangle, Frown } from "lucide-react";
+import { TrendingDown, Clock, Building2 } from "lucide-react";
 
 /**
  * SurvivalGauge - 생존 점수 게이지 컴포넌트
- *
- * chart.survival 액션 타입에 대응
- * predict_survival_rate 도구 결과를 시각화
+ * 
+ * 차분하고 일관된 색상 테마 (slate/blue 베이스)
+ * 점수에 따른 포인트 색상은 원형 게이지에만 적용
  */
 
 interface SurvivalData {
-  score: number; // 생존 점수 (1-99)
-  interpretation: string; // 해석 메시지
-  closingRate: number; // 폐업률 (%)
-  avgOperationMonths: number; // 평균 영업 기간 (월)
-  changeStatus?: string; // 상권 상태
-  dataSource?: string; // 데이터 출처
+  score: number;
+  interpretation: string;
+  closingRate: number;
+  avgOperationMonths: number;
+  changeStatus?: string;
+  dataSource?: string;
 }
 
 interface SurvivalGaugeProps {
@@ -25,28 +25,63 @@ interface SurvivalGaugeProps {
   areaName?: string;
 }
 
-// 점수에 따른 색상 결정
-const getScoreColor = (score: number): string => {
-  if (score >= 80) return "text-green-600";
-  if (score >= 60) return "text-blue-600";
-  if (score >= 40) return "text-yellow-600";
-  return "text-red-600";
+// 점수에 따른 메인 색상 (게이지에만 사용)
+const getScoreAccent = (score: number) => {
+  if (score >= 80) return "#10b981"; // emerald
+  if (score >= 60) return "#3b82f6"; // blue
+  if (score >= 40) return "#f59e0b"; // amber
+  return "#ef4444"; // red
 };
 
-const getProgressColor = (score: number): string => {
-  if (score >= 80) return "bg-green-500";
-  if (score >= 60) return "bg-blue-500";
-  if (score >= 40) return "bg-yellow-500";
-  return "bg-red-500";
+// 상태 레이블
+const getStatusLabel = (score: number) => {
+  if (score >= 80) return "안전";
+  if (score >= 60) return "양호";
+  if (score >= 40) return "주의";
+  return "위험";
 };
 
-// 상태 아이콘 컴포넌트
-const StatusIcon = ({ score }: { score: number }) => {
-  if (score >= 80) return <ShieldCheck className="w-6 h-6 text-green-600" />;
-  if (score >= 60) return <Activity className="w-6 h-6 text-blue-600" />;
-  if (score >= 40)
-    return <AlertTriangle className="w-6 h-6 text-yellow-600" />;
-  return <Frown className="w-6 h-6 text-red-600" />;
+// 원형 게이지 SVG
+const CircularGauge = ({ score, size = 160 }: { score: number; size?: number }) => {
+  const strokeWidth = 10;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const progress = (score / 99) * circumference;
+  const accentColor = getScoreAccent(score);
+  
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="transform -rotate-90">
+        {/* 배경 원 */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="#e2e8f0"
+          strokeWidth={strokeWidth}
+        />
+        {/* 진행 원 */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={accentColor}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference - progress}
+          className="transition-all duration-700 ease-out"
+        />
+      </svg>
+      {/* 중앙 점수 */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-4xl font-bold text-slate-800">{score}</span>
+        <span className="text-sm text-slate-400">/99점</span>
+      </div>
+    </div>
+  );
 };
 
 export function SurvivalGauge({
@@ -57,8 +92,13 @@ export function SurvivalGauge({
   if (isLoading) {
     return (
       <div className="bg-white rounded-xl border border-slate-200 p-6 animate-pulse">
-        <div className="h-4 bg-slate-200 rounded w-1/3 mb-4"></div>
-        <div className="h-24 bg-slate-100 rounded"></div>
+        <div className="h-5 bg-slate-200 rounded w-1/3 mb-6"></div>
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="h-20 bg-slate-100 rounded-lg"></div>
+          <div className="h-20 bg-slate-100 rounded-lg"></div>
+          <div className="h-20 bg-slate-100 rounded-lg"></div>
+        </div>
+        <div className="h-40 bg-slate-50 rounded-lg"></div>
       </div>
     );
   }
@@ -71,80 +111,97 @@ export function SurvivalGauge({
     );
   }
 
-  const {
-    score,
-    interpretation,
-    closingRate,
-    avgOperationMonths,
-    changeStatus,
-    dataSource,
-  } = data;
+  const { score, interpretation, closingRate, avgOperationMonths, changeStatus, dataSource } = data;
+  const accentColor = getScoreAccent(score);
+  const statusLabel = getStatusLabel(score);
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-6 my-4">
+    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden my-4">
       {/* 헤더 */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-lg">
-            <StatusIcon score={score} />
+      <div className="px-6 py-4 border-b border-slate-100">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-800">생존 분석</h3>
+            {areaName && <p className="text-sm text-slate-500">{areaName}</p>}
           </div>
-          <h3 className="text-2xl font-semibold text-slate-800">
-            생존 점수 {areaName && <span className="text-slate-500">- {areaName}</span>}
-          </h3>
-        </div>
-        {dataSource && (
-          <span className="text-md font-semibold px-3 py-1 bg-slate-100 text-slate-600 rounded-full">
-            {dataSource}
-          </span>
-        )}
-      </div>
-
-      {/* 메인 점수 */}
-      <div className="text-center mb-8">
-        <div className={`text-7xl font-bold ${getScoreColor(score)}`}>
-          {score}
-          <span className="text-3xl text-slate-400">/99</span>
-        </div>
-        <div className="text-2xl font-semibold text-slate-600 mt-3">
-          {interpretation}
-        </div>
-      </div>
-
-      {/* 게이지 바 */}
-      <div className="mb-8">
-        <div className="h-6 bg-slate-100 rounded-full overflow-hidden">
-          <div
-            className={`h-full ${getProgressColor(score)} transition-all duration-500`}
-            style={{ width: `${(score / 99) * 100}%` }}
-          />
-        </div>
-        <div className="flex justify-between text-sm text-slate-400 mt-2 font-medium">
-          <span>위험</span>
-          <span>보통</span>
-          <span>안전</span>
-        </div>
-      </div>
-
-      {/* 세부 지표 */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="text-center p-4 bg-slate-50 rounded-lg">
-          <div className="text-base text-slate-500 mb-1">폐업률</div>
-          <div
-            className={`text-xl font-bold ${closingRate > 10 ? "text-red-600" : "text-slate-800"}`}
+          <span 
+            className="px-3 py-1 rounded-full text-sm font-medium text-white"
+            style={{ backgroundColor: accentColor }}
           >
-            {closingRate}%
+            {statusLabel}
+          </span>
+        </div>
+      </div>
+
+      {/* 핵심 지표 3개 */}
+      <div className="grid grid-cols-3 divide-x divide-slate-100 border-b border-slate-100">
+        {/* 폐업률 */}
+        <div className="p-5 text-center">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <TrendingDown className="w-4 h-4 text-slate-400" />
+            <span className="text-sm text-slate-500">폐업률</span>
+          </div>
+          <div className="text-2xl font-bold text-slate-800">{closingRate}%</div>
+          <div className="text-xs text-slate-400 mt-1">
+            {closingRate <= 10 ? "낮음" : closingRate <= 18 ? "보통" : "높음"}
           </div>
         </div>
-        <div className="text-center p-4 bg-slate-50 rounded-lg">
-          <div className="text-base text-slate-500 mb-1">평균 영업</div>
-          <div className="text-xl font-bold text-slate-800">
-            {avgOperationMonths}개월
+
+        {/* 평균 영업 */}
+        <div className="p-5 text-center">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Clock className="w-4 h-4 text-slate-400" />
+            <span className="text-sm text-slate-500">평균 영업</span>
+          </div>
+          <div className="text-2xl font-bold text-slate-800">{avgOperationMonths}개월</div>
+          <div className="text-xs text-slate-400 mt-1">
+            {avgOperationMonths >= 60 ? "안정적" : avgOperationMonths >= 36 ? "보통" : "불안정"}
           </div>
         </div>
-        <div className="text-center p-4 bg-slate-50 rounded-lg">
-          <div className="text-base text-slate-500 mb-1">상권 상태</div>
-          <div className="text-xl font-bold text-slate-800">
-            {changeStatus || "-"}
+
+        {/* 상권 상태 */}
+        <div className="p-5 text-center">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Building2 className="w-4 h-4 text-slate-400" />
+            <span className="text-sm text-slate-500">상권 상태</span>
+          </div>
+          <div className="text-2xl font-bold text-slate-800">{changeStatus || "-"}</div>
+          {dataSource && <div className="text-xs text-slate-400 mt-1">{dataSource}</div>}
+        </div>
+      </div>
+
+      {/* 메인 점수 섹션 */}
+      <div className="p-6">
+        <div className="flex items-center gap-8">
+          {/* 원형 게이지 */}
+          <CircularGauge score={score} />
+
+          {/* 해석 텍스트 */}
+          <div className="flex-1">
+            <h4 className="text-xl font-semibold text-slate-800 mb-2">
+              {interpretation}
+            </h4>
+            <p className="text-sm text-slate-500 leading-relaxed">
+              이 상권에서 창업 시 예상되는 생존 가능성을 종합 평가한 점수입니다. 
+              폐업률과 평균 영업 기간을 기반으로 산출됩니다.
+            </p>
+
+            {/* 심플한 진행 바 */}
+            <div className="mt-4">
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div 
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{ 
+                    width: `${(score / 99) * 100}%`,
+                    backgroundColor: accentColor 
+                  }}
+                />
+              </div>
+              <div className="flex justify-between text-xs text-slate-400 mt-1">
+                <span>0</span>
+                <span>99</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

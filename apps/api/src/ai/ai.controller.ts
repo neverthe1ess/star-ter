@@ -1,15 +1,6 @@
-import {
-  Controller,
-  Logger,
-  Post,
-  Body,
-  Get,
-  Query,
-  RequestTimeoutException,
-} from '@nestjs/common';
+import { Controller, Logger, Get, Query } from '@nestjs/common';
 import { AiService } from './ai.service';
 import { ToolsRepository } from './tools.repository';
-
 @Controller('ai')
 export class AiController {
   private readonly logger = new Logger(AiController.name);
@@ -17,51 +8,6 @@ export class AiController {
     private readonly aiService: AiService,
     private readonly toolsRepository: ToolsRepository,
   ) {}
-
-  // 대화 히스토리 포함 POST 엔드포인트 (꼬리 질문 지원)
-  @Post('/message')
-  async chatAIWithHistory(
-    @Body()
-    body: {
-      message: string;
-      history?: Array<{ role: 'user' | 'assistant'; content: string }>;
-    },
-  ) {
-    const startTime = Date.now();
-    this.logger.log(
-      `Received message with history: ${body.message} (${body.history?.length || 0} previous messages)`,
-    );
-
-    // 50초 타임아웃 설정
-    const TIMEOUT_MS = 50000;
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(
-        () =>
-          reject(
-            new RequestTimeoutException(
-              'AI 응답 시간이 초과되었습니다. (50초 제한)',
-            ),
-          ),
-        TIMEOUT_MS,
-      ),
-    );
-
-    try {
-      const response = await Promise.race([
-        this.aiService.getAIMessageWithHistory(
-          body.message,
-          body.history || [],
-        ),
-        timeoutPromise,
-      ]);
-
-      this.logger.log(`Response time: ${Date.now() - startTime} ms`);
-      return response;
-    } catch (error) {
-      this.logger.error(`Error processing message: ${error.message}`);
-      throw error;
-    }
-  }
 
   // =========================================
   // 차트 데이터 API 엔드포인트(LLM 안에 들어가는 카드)
@@ -194,5 +140,47 @@ export class AiController {
         })),
       },
     };
+  }
+
+  /**
+   * 상권 요약 정보 (MapInfoPanel용)
+   * GET /ai/area/summary?areaCd=xxx
+   */
+  @Get('/area/summary')
+  async getAreaSummary(@Query('areaCd') areaCd: string) {
+    const stdrYyquCd = '20253'; // 최신 분기
+
+    try {
+      const result = await this.toolsRepository.getCommercialSummary({
+        areaCd,
+        stdrYyquCd,
+      });
+
+      if (!result || !Array.isArray(result) || result.length === 0) {
+        return {
+          success: false,
+          message: '상권 정보를 찾을 수 없습니다.',
+          data: null,
+        };
+      }
+
+      const row = result[0] as Record<string, unknown>;
+      return {
+        success: true,
+        data: {
+          areaName: row['지역 이름'] as string,
+          revenue: Number(row['해당 분기 매출 금액'] || 0),
+          floatingPopulation: Number(row['총 유동인구'] || 0),
+          storeCount: Number(row['점포 수'] || 0),
+        },
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get area summary: ${error}`);
+      return {
+        success: false,
+        message: '상권 정보 조회 중 오류가 발생했습니다.',
+        data: null,
+      };
+    }
   }
 }

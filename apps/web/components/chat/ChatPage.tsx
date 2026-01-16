@@ -8,22 +8,22 @@ import { ChatInput } from "./ChatInput";
 import { ChatMapSection, type ChatMapSectionRef } from "./ChatMapSection";
 import { ChatWelcome } from "./ChatWelcome";
 
-import { useSearchParams, useRouter } from "next/navigation";
 import { useChat } from "./hooks/useChat";
 import { useActionDispatcher } from "./hooks/useActionDispatcher";
-import { useUserStore } from "@/store/use-user-store";
+import { getConversationHistory } from "@/services/chat/chat.api";
+import { useChatStore } from "@/store/use-chat-store";
+import { buildMessageFromAiText } from "@/lib/chat/ai-message";
 
 /**
  * ChatPage 컴포넌트 - AI 챗봇의 메인 페이지
  */
 export function ChatPage() {
   // 로그인된 사용자 ID 가져오기 (개인화 추천에 사용)
-  const authUser = useUserStore((state) => state.authUser);
 
   // AI 프로바이더 상태 (claude | openai)
   const [aiProvider, setAiProvider] = useState<AiProvider>('openai');
 
-  // 커스텀 훅으로 로직 분리 (userId, aiProvider 전달)
+  // 커스텀 훅으로 로직 분리
   const {
     messages,
     inputValue,
@@ -32,7 +32,9 @@ export function ChatPage() {
     currentThread,
     sendMessage,
     handleNewThread,
-  } = useChat(authUser?.id, aiProvider);
+    loadConversation,
+  } = useChat(aiProvider);
+  const conversationId = useChatStore((state) => state.conversationId);
 
   const [isMapOpen, setIsMapOpen] = useState(false);
 
@@ -61,20 +63,53 @@ export function ChatPage() {
   );
 
   // TODO: 메인에서 검색제거 시 반드시 제거 
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const hasAutoSent = useRef(false);
+  const hasLoadedHistory = useRef<string | null>(null);
+  const prevConversationId = useRef<string | null>(null);
 
   useEffect(() => {
-    const query = searchParams.get("q");
-    if (query && !hasAutoSent.current) {
-      hasAutoSent.current = true;
-      setTimeout(() => {
-        handleSendMessageWrapper(query);
-        router.replace("/chat");
-      }, 500);
+    if (!conversationId) {
+      if (prevConversationId.current) {
+        handleNewThread();
+      }
+      prevConversationId.current = null;
+      hasLoadedHistory.current = null;
+      return;
     }
-  }, [searchParams, router, handleSendMessageWrapper]);
+    if (hasLoadedHistory.current === conversationId) return;
+
+    let cancelled = false;
+    hasLoadedHistory.current = conversationId;
+    prevConversationId.current = conversationId;
+
+    getConversationHistory(conversationId)
+      .then((history) => {
+        if (cancelled) return;
+        const mapped = history.map((item, index) =>
+          buildMessageFromAiText({
+            id: `${conversationId}-${index}`,
+            role: item.role,
+            content: item.content,
+            timestamp: new Date(),
+          })
+        );
+        const titleFromHistory =
+          mapped.find((item) => item.role === "user")?.content?.slice(0, 50) ||
+          "New Thread";
+        loadConversation({
+          conversationId: conversationId,
+          messages: mapped,
+          title: titleFromHistory,
+        });
+      })
+      .catch((error) => {
+        console.error("Failed to load conversation history:", error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [conversationId, loadConversation, handleNewThread]);
+
 
   return (
     <div className="flex h-full gap-4 overflow-hidden">
@@ -156,7 +191,7 @@ export function ChatPage() {
           </div>
 
           {/* 입력창 영역 */}
-          <div className="px-8 pb-8 pt-6">
+          <div className="px-8 pb-4 pt-6">
             <div className="max-w-5xl mx-auto">
               <ChatInput
                 value={inputValue}

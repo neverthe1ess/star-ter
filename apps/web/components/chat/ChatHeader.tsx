@@ -126,8 +126,6 @@ export function ChatHeader({
 
       {/* 가운데: 스레드 제목 */}
       <div className="flex items-center gap-3 justify-center flex-shrink-0 mx-4">
-        <span className="text-base text-slate-400">+</span>
-        <span className="text-base text-slate-500 hidden sm:inline">Collection /</span>
         <span className="text-base font-medium text-slate-700 max-w-[200px] sm:max-w-sm truncate">
           {threadTitle}
         </span>

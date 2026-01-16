@@ -12,6 +12,24 @@ import { Building2, MapPin, Store, Loader2 } from "lucide-react";
  * - 빈 상태: 안내 메시지
  */
 
+// 헬퍼 함수
+function formatRevenue(value: number): string {
+  if (value >= 100000000) {
+    return `${(value / 100000000).toFixed(1)}억`;
+  }
+  if (value >= 10000) {
+    return `${(value / 10000).toFixed(0)}만`;
+  }
+  return value.toLocaleString();
+}
+
+function formatPopulation(value: number): string {
+  if (value >= 10000) {
+    return `${(value / 10000).toFixed(1)}만명`;
+  }
+  return `${value.toLocaleString()}명`;
+}
+
 interface MapInfoPanelProps {
   selectedBuilding?: BuildingInfo | null;
   selectedArea?: AreaInfo | null;
@@ -82,11 +100,17 @@ export function MapInfoPanel({
 
   // 상권 선택 상태
   if (selectedArea) {
+    const hasData = !!(
+      selectedArea.revenue ||
+      selectedArea.floatingPopulation ||
+      selectedArea.storeCount
+    );
+
     return (
       <div className="h-full bg-slate-50 rounded-2xl border border-slate-100 p-4">
         <div className="flex items-center gap-2 mb-4">
-          <div className="p-2 bg-purple-100 rounded-lg">
-            <MapPin className="w-5 h-5 text-purple-600" />
+          <div className="p-2 bg-blue-100 rounded-lg">
+            <MapPin className="w-5 h-5 text-blue-600" />
           </div>
           <div>
             <h3 className="text-lg font-bold text-slate-800">
@@ -100,20 +124,37 @@ export function MapInfoPanel({
         </div>
 
         {/* 상권 정보 */}
-        <div className="grid grid-cols-2 gap-3 mt-4">
-          {selectedArea.revenue !== undefined && (
-            <InfoCard 
-              label="추정 매출" 
-              value={`${(selectedArea.revenue / 100000000).toFixed(1)}억`} 
-            />
-          )}
-          {selectedArea.population !== undefined && (
-            <InfoCard 
-              label="유동인구" 
-              value={`${(selectedArea.population / 10000).toFixed(1)}만명`} 
-            />
-          )}
-        </div>
+        {hasData ? (
+          <div className="space-y-3">
+            {/* 매출 & 유동인구 */}
+            <div className="grid grid-cols-2 gap-3">
+              {(selectedArea.revenue !== undefined && selectedArea.revenue > 0) && (
+                <InfoCard 
+                  label="분기 매출" 
+                  value={formatRevenue(selectedArea.revenue)} 
+                />
+              )}
+              {(selectedArea.floatingPopulation !== undefined && selectedArea.floatingPopulation > 0) && (
+                <InfoCard 
+                  label="유동인구" 
+                  value={formatPopulation(selectedArea.floatingPopulation)} 
+                />
+              )}
+            </div>
+            
+            {/* 점포수 */}
+            {(selectedArea.storeCount !== undefined && selectedArea.storeCount > 0) && (
+              <InfoCard 
+                label="점포 수" 
+                value={`${selectedArea.storeCount.toLocaleString()}개`} 
+              />
+            )}
+          </div>
+        ) : (
+          <div className="text-center text-slate-400 py-6">
+            <p className="text-sm">상세 분석은 AI에게 질문해보세요.</p>
+          </div>
+        )}
       </div>
     );
   }

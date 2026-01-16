@@ -28,12 +28,12 @@ export function OnboardingStepCapital({
         {CAPITAL_OPTIONS.map((option) => (
           <button
             key={option.value}
-            onClick={() => onChange(option.value)}
+            onClick={() => onChange(value === option.value ? '' : option.value)}
             className={`w-full px-[3%] py-[2%] border-2 rounded-2xl text-left transition-all hover:border-gray-900 hover:shadow-lg ${
               value === option.value
                 ? 'border-gray-900 bg-gray-50 shadow-lg'
                 : 'border-gray-300'
-            }`}
+            } ${value && value !== option.value ? 'opacity-40 grayscale-[0.5]' : 'opacity-100'}`}
           >
             <div className="text-[clamp(1.125rem,2vw,1.25rem)] font-bold text-gray-900">
               {option.label}
