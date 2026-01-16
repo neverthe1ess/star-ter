@@ -473,31 +473,32 @@ export const ChatMapSection = forwardRef<
 
   return (
     <div
-      className={`relative bg-white rounded-2xl shadow-lg
+      className={`relative bg-background rounded-2xl shadow-lg
                     transition-all duration-300 flex flex-col`}
       style={{
         // isOpen일 때는 width state 사용, 아니면 0
         width: isOpen ? width : 0,
+        marginRight: isOpen ? '1rem' : 0,
         height: '100%',
         opacity: isOpen ? 1 : 0,
         pointerEvents: isOpen ? 'auto' : 'none',
         // 리사이즈 중에는 transition 없애서 버벅임 방지
         transition: isResizing
           ? 'none'
-          : 'width 300ms ease, opacity 300ms ease',
+          : 'width 300ms ease, margin-right 300ms ease, opacity 300ms ease',
       }}
     >
       {/* 리사이즈 핸들 (오른쪽 가장자리) */}
       <div
         onMouseDown={startResizing}
         className={`absolute top-0 right-0 w-4 h-full cursor-col-resize z-50 flex items-center justify-center
-                      hover:bg-blue-500/10 transition-colors group`}
+                      hover:bg-primary/10 transition-colors group`}
         // 드래그 영역을 좀 더 넓게 잡기 위해 -right-2 등으로 조정 가능하나,
         // 여기서는 심플하게 오른쪽 끝 내부 4px + 외부 확장은 CSS로 처리하거나 현재 유지
         style={{ right: 0 }}
       >
         {/* 핸들 시각적 표시 (작은 바) */}
-        <div className="w-1 h-8 bg-slate-300 rounded-full group-hover:bg-blue-400 opacity-0 group-hover:opacity-100 transition-all" />
+        <div className="w-1 h-8 bg-border rounded-full group-hover:bg-primary opacity-0 group-hover:opacity-100 transition-all" />
       </div>
 
       {/* 지도 영역 (60%) - 패딩 적용 */}
@@ -505,19 +506,19 @@ export const ChatMapSection = forwardRef<
         <div
           id="chat-map-container"
           ref={mapRef}
-          className="h-full w-full rounded-2xl overflow-hidden shadow-sm border border-slate-100 relative bg-slate-100"
+          className="h-full w-full rounded-2xl overflow-hidden shadow-sm border border-border relative bg-muted"
         >
           {!loaded && !error && (
             <div className="h-full flex items-center justify-center">
-              <div className="text-center text-slate-400">
-                <div className="w-8 h-8 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin mx-auto mb-2" />
+              <div className="text-center text-muted-foreground">
+                <div className="w-8 h-8 border-2 border-border border-t-foreground rounded-full animate-spin mx-auto mb-2" />
                 <p className="text-caption">지도 로딩 중...</p>
               </div>
             </div>
           )}
           {error && (
-            <div className="h-full flex items-center justify-center bg-red-50">
-              <div className="text-center text-red-500">
+            <div className="h-full flex items-center justify-center bg-destructive/10">
+              <div className="text-center text-destructive">
                 <p className="text-body">{error}</p>
               </div>
             </div>

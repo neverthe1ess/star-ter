@@ -7,9 +7,9 @@ interface ChatWelcomeProps {
 export function ChatWelcome({ onSuggestionClick }: ChatWelcomeProps) {
   return (
     <div className="flex flex-col items-center justify-center h-full py-20 px-4">
-      <div className="w-20 h-20 bg-linear-to-br from-blue-50 to-indigo-50 rounded-3xl flex items-center justify-center mb-6 shadow-sm">
+      <div className="w-20 h-20 bg-linear-to-br from-primary/10 to-primary/5 rounded-3xl flex items-center justify-center mb-6 shadow-sm">
         <svg
-          className="w-10 h-10 text-blue-500"
+          className="w-10 h-10 text-primary"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -22,10 +22,10 @@ export function ChatWelcome({ onSuggestionClick }: ChatWelcomeProps) {
           />
         </svg>
       </div>
-      <h2 className="text-h2 font-bold text-slate-800 mb-2">
+      <h2 className="text-h2 font-bold text-foreground mb-2">
         무엇을 도와드릴까요?
       </h2>
-      <p className="text-h5 text-slate-500 text-center mb-10 max-w-lg">
+      <p className="text-h5 text-muted-foreground text-center mb-10 max-w-lg">
         상권 분석부터 창업 상세 견적까지,
         <br className="hidden sm:block" />
         AI 전문가에게 무엇이든 물어보세요.
@@ -36,57 +36,57 @@ export function ChatWelcome({ onSuggestionClick }: ChatWelcomeProps) {
           onClick={() =>
             onSuggestionClick('강남구 역세권 치킨집 상권 분석해줘')
           }
-          className="text-left p-7 rounded-3xl bg-white border border-slate-200 hover:border-slate-400 hover:shadow-xl transition-all group flex flex-col items-start"
+          className="text-left p-7 rounded-3xl bg-background border border-border hover:border-primary/50 hover:shadow-xl transition-all group flex flex-col items-start"
         >
           <div className="flex items-center gap-3 mb-2">
-            <TrendingUp className="w-8 h-8 text-slate-600" />
-            <span className="text-h4 font-bold text-slate-800 group-hover:text-slate-600">
+            <TrendingUp className="w-8 h-8 text-muted-foreground group-hover:text-primary transition-colors" />
+            <span className="text-h4 font-bold text-foreground group-hover:text-primary transition-colors">
               상권 분석
             </span>
           </div>
-          <span className="block text-body text-slate-500">
+          <span className="block text-body text-muted-foreground">
             강남구 역세권 치킨집 상권 분석해줘
           </span>
         </button>
         <button
           onClick={() => onSuggestionClick('서울시 뜨는 상권 추천해줘')}
-          className="text-left p-7 rounded-3xl bg-white border border-slate-200 hover:border-slate-400 hover:shadow-xl transition-all group flex flex-col items-start"
+          className="text-left p-7 rounded-3xl bg-background border border-border hover:border-primary/50 hover:shadow-xl transition-all group flex flex-col items-start"
         >
           <div className="flex items-center gap-3 mb-2">
-            <Flame className="w-8 h-8 text-slate-600" />
-            <span className="text-h4 font-bold text-slate-800 group-hover:text-slate-600">
+            <Flame className="w-8 h-8 text-muted-foreground group-hover:text-primary transition-colors" />
+            <span className="text-h4 font-bold text-foreground group-hover:text-primary transition-colors">
               뜨는 상권
             </span>
           </div>
-          <span className="block text-body text-slate-500">
+          <span className="block text-body text-muted-foreground">
             서울시 뜨는 상권 추천해줘
           </span>
         </button>
         <button
           onClick={() => onSuggestionClick('마포구 유동인구 많은 곳 알려줘')}
-          className="text-left p-7 rounded-3xl bg-white border border-slate-200 hover:border-slate-400 hover:shadow-xl transition-all group flex flex-col items-start"
+          className="text-left p-7 rounded-3xl bg-background border border-border hover:border-primary/50 hover:shadow-xl transition-all group flex flex-col items-start"
         >
           <div className="flex items-center gap-3 mb-2">
-            <Users className="w-8 h-8 text-slate-600" />
-            <span className="text-h4 font-bold text-slate-800 group-hover:text-slate-600">
+            <Users className="w-8 h-8 text-muted-foreground group-hover:text-primary transition-colors" />
+            <span className="text-h4 font-bold text-foreground group-hover:text-primary transition-colors">
               유동인구
             </span>
           </div>
-          <span className="block text-body text-slate-500">
+          <span className="block text-body text-muted-foreground">
             마포구 유동인구 많은 곳 알려줘
           </span>
         </button>
         <button
           onClick={() => onSuggestionClick('성수동 카페 창업 비용 견적 내줘')}
-          className="text-left p-7 rounded-3xl bg-white border border-slate-200 hover:border-slate-400 hover:shadow-xl transition-all group flex flex-col items-start"
+          className="text-left p-7 rounded-3xl bg-background border border-border hover:border-primary/50 hover:shadow-xl transition-all group flex flex-col items-start"
         >
           <div className="flex items-center gap-3 mb-2">
-            <CircleDollarSign className="w-8 h-8 text-slate-600" />
-            <span className="text-h4 font-bold text-slate-800 group-hover:text-slate-600">
+            <CircleDollarSign className="w-8 h-8 text-muted-foreground group-hover:text-primary transition-colors" />
+            <span className="text-h4 font-bold text-foreground group-hover:text-primary transition-colors">
               창업 비용
             </span>
           </div>
-          <span className="block text-body text-slate-500">
+          <span className="block text-body text-muted-foreground">
             성수동 카페 창업 비용 견적 내줘
           </span>
         </button>

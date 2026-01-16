@@ -37,10 +37,10 @@ export function SourceCard({ source }: SourceCardProps) {
       href={source.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-sm transition-all group min-w-[180px]"
+      className="flex items-center gap-3 px-4 py-3 bg-background rounded-xl border border-border hover:border-primary/50 hover:shadow-sm transition-all group min-w-[180px]"
     >
       {/* 파비콘 또는 기본 아이콘 */}
-      <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center shrink-0">
+      <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center shrink-0">
         {source.favicon ? (
           <img
             src={source.favicon}
@@ -51,18 +51,18 @@ export function SourceCard({ source }: SourceCardProps) {
             }}
           />
         ) : (
-          <ExternalLink className="w-4 h-4 text-slate-400" />
+          <ExternalLink className="w-4 h-4 text-muted-foreground" />
         )}
       </div>
 
       {/* 출처 정보 */}
       <div className="flex-1 min-w-0">
-        <p className="text-caption font-medium text-slate-700 truncate group-hover:text-slate-900">
+        <p className="text-caption font-medium text-foreground truncate group-hover:text-primary transition-colors">
           {source.title}
         </p>
-        <p className="text-tiny text-slate-400 flex items-center gap-1.5">
-          <span className="w-3 h-3 bg-amber-100 rounded-sm flex items-center justify-center">
-            <span className="text-tiny font-bold text-amber-600">★</span>
+        <p className="text-tiny text-muted-foreground flex items-center gap-1.5">
+          <span className="w-3 h-3 bg-primary/10 rounded-sm flex items-center justify-center">
+            <span className="text-tiny font-bold text-primary">★</span>
           </span>
           {getDomain(source.url)} • {source.number}
         </p>
@@ -74,7 +74,7 @@ export function SourceCard({ source }: SourceCardProps) {
 // "+N More" 버튼 컴포넌트
 export function SourceMoreButton({ count }: { count: number }) {
   return (
-    <button className="flex items-center justify-center px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-100 transition-all text-caption text-slate-500 font-medium min-w-[100px]">
+    <button className="flex items-center justify-center px-4 py-3 bg-background rounded-xl border border-border hover:border-primary/50 hover:bg-muted transition-all text-caption text-muted-foreground font-medium min-w-[100px]">
       +{count} More
     </button>
   );
