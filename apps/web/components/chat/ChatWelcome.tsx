@@ -45,7 +45,7 @@ export function ChatWelcome({ onSuggestionClick }: ChatWelcomeProps) {
             </span>
           </div>
           <span className="block text-body text-muted-foreground">
-            강남구 역세권 치킨집 상권 분석해줘
+            홍대 주변의 상권 분석해줘
           </span>
         </button>
         <button
@@ -69,11 +69,11 @@ export function ChatWelcome({ onSuggestionClick }: ChatWelcomeProps) {
           <div className="flex items-center gap-3 mb-2">
             <Users className="w-8 h-8 text-muted-foreground group-hover:text-primary transition-colors" />
             <span className="text-h4 font-bold text-foreground group-hover:text-primary transition-colors">
-              유동인구
+              생존확률 분석
             </span>
           </div>
-          <span className="block text-body text-muted-foreground">
-            마포구 유동인구 많은 곳 알려줘
+          <span className="block text-body text-slate-500">
+            강남역 주변에 장사하면 초보자가 살아남을 수 있을까?
           </span>
         </button>
         <button
