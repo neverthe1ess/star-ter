@@ -9,6 +9,9 @@ import { Input } from './ui/input';
 import { regist } from '@/services/auth/auth.api';
 import { AuthLayout } from './AuthLayout';
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+
 interface RegisterPageProps {
   onRegister: () => void;
 }
@@ -52,7 +55,7 @@ export function RegisterPage({ onRegister }: RegisterPageProps) {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:4000/auth/google';
+    window.location.href = `${API_BASE_URL}/auth/google`;
   };
 
   return (
