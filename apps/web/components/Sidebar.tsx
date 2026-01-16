@@ -318,7 +318,7 @@ export function Sidebar({
                 <div className="space-y-1">
                   <button
                     onClick={() => onMenuClick('home')}
-                    className={`w-full min-w-0 flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    className={`w-full min-w-0 flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
                       activeMenu === 'home'
                         ? 'bg-slate-50 text-slate-900'
                         : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
@@ -337,7 +337,7 @@ export function Sidebar({
                   </button>
                   <button
                     onClick={() => onMenuClick('templates')}
-                    className={`w-full min-w-0 flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    className={`w-full min-w-0 flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
                       activeMenu === 'templates'
                         ? 'bg-slate-50 text-slate-900'
                         : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
@@ -369,7 +369,7 @@ export function Sidebar({
                       clearConversationId();
                       onMenuClick('chat');
                     }}
-                    className="w-full min-w-0 flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-600 bg-white border border-indigo-100 shadow-sm hover:bg-indigo-50 hover:border-indigo-200 hover:shadow-md transition-all group"
+                    className="w-full min-w-0 flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-600 bg-white border border-indigo-100 shadow-sm hover:bg-indigo-50 hover:border-indigo-200 hover:shadow-md transition-all group"
                   >
                     <MessageSquarePlus className="w-4 h-4 text-slate-500 group-hover:text-slate-700 transition-colors" />
                     <span className="min-w-0 truncate text-caption font-strong">
@@ -384,15 +384,15 @@ export function Sidebar({
                     History
                   </p>
                   {isLoadingHistory ? (
-                    <div className="px-4 py-2 text-xs text-slate-400">
+                    <div className="px-4 py-2 text-tiny text-slate-400">
                       불러오는 중...
                     </div>
                   ) : historyError ? (
-                    <div className="px-4 py-2 text-xs text-rose-400">
+                    <div className="px-4 py-2 text-tiny text-rose-400">
                       {historyError}
                     </div>
                   ) : chatHistory.length === 0 ? (
-                    <div className="px-4 py-2 text-xs text-slate-400">
+                    <div className="px-4 py-2 text-tiny text-slate-400">
                       대화 내역이 없습니다.
                     </div>
                   ) : (
@@ -405,10 +405,12 @@ export function Sidebar({
                             setConversationId(item.id);
                             router.push('/chat');
                           }}
-                          className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors text-left"
+                          className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors text-left"
                         >
                           <MessageSquare className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-                          <span className="truncate">{label}</span>
+                          <span className="truncate text-caption font-strong">
+                            {label}
+                          </span>
                         </button>
                       );
                     })
@@ -461,9 +463,11 @@ export function Sidebar({
                           : '';
                         router.push(`/login${next}`);
                       }}
-                      className="w-full min-w-0 flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+                      className="w-full min-w-0 flex items-center justify-between px-4 py-2.5 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors"
                     >
-                      <span className="truncate">로그인</span>
+                      <span className="truncate text-tiny font-bold">
+                        로그인
+                      </span>
                       <LogIn className="w-4 h-4 text-slate-400" />
                     </button>
                   )}
