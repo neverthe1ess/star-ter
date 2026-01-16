@@ -10,13 +10,13 @@ export function LocationListPage() {
   const { authUser } = useUserStore();
 
   return (
-    <div className="flex flex-1 overflow-y-auto flex-col h-full bg-white rounded-2xl shadow-lg overflow-hidden no-scrollbar">
+    <div className="flex flex-1 overflow-y-auto flex-col h-full bg-background rounded-2xl shadow-lg overflow-hidden no-scrollbar">
       {/* 인사말 헤더 + 검색 */}
       <div className="px-8 pt-6 pb-4 shrink-0">
-        <h1 className="text-h1 font-heading text-slate-900 mb-1">
+        <h1 className="text-h1 font-heading text-foreground mb-1">
           안녕하세요, {authUser?.nickname ? `${authUser.nickname}님` : '사장님'}
         </h1>
-        <p className="text-h5 text-slate-400 mb-4">
+        <p className="text-h4 text-muted-foreground mb-4">
           오늘은 어떤 상권을 찾고 계신가요?
         </p>
       </div>

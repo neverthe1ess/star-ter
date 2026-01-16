@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import bigdata from './img/db_img.png';
 import ai from './img/ai_img.png';
 import recommend from './img/estate_img.png';
@@ -81,11 +82,12 @@ export function FeaturesSection() {
             </div>
 
             <div className="p-2 bg-background rounded-3xl shadow-xl border border-border transition-all duration-300 h-[520px] flex items-center justify-center overflow-hidden">
-              <figure className="w-full h-full bg-background rounded-2xl flex items-center justify-center">
-                <img
-                  src={feature.image.src}
+              <figure className="w-full h-full bg-background rounded-2xl flex items-center justify-center relative">
+                <Image
+                  src={feature.image}
                   alt={feature.label}
                   className="object-cover rounded-2xl"
+                  fill
                 />
               </figure>
             </div>
