@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { motion } from 'motion/react';
 
 import { Button } from './ui/button';
@@ -37,17 +37,38 @@ export function StartupPreferencesPopup({
   isLoading,
   error,
 }: StartupPreferencesPopupProps) {
-  const [data, setData] = useState<OnboardingData>({
-    age: '',
-    region: '',
-    operatingTime: '',
-    capital: '',
-    industryCode: null,
+  // 초기 렌더링 시 여부 체크 (useEffect 중복 실행 방지)
+  const isFirstRender = useRef(true);
+
+  const [data, setData] = useState<OnboardingData>(() => {
+    if (initialData) {
+      return {
+        ...initialData,
+        industryCode: initialData.industryCode ?? null,
+      };
+    }
+    return {
+      age: '',
+      region: '',
+      operatingTime: '',
+      capital: '',
+      industryCode: null,
+    };
   });
-  const [selectedMacro, setSelectedMacro] =
-    useState<MacroCategoryCode>(DEFAULT_MACRO);
+  const [selectedMacro, setSelectedMacro] = useState<MacroCategoryCode>(() => {
+    if (initialData?.industryCode) {
+      return INDUSTRY_MAPPING[initialData.industryCode] ?? DEFAULT_MACRO;
+    }
+    return DEFAULT_MACRO;
+  });
 
   useEffect(() => {
+    // 첫 렌더링은 useState 초기화값으로 충분하므로 건너뜀
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
     if (initialData) {
       setData({
         ...initialData,

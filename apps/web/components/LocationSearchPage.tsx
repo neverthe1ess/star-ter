@@ -424,7 +424,7 @@ export function LocationSearchPage({
                                 }}
                                 className={`w-full px-2 py-2 text-left text-caption rounded-lg transition-colors ${
                                   industryCode === item.code
-                                    ? 'text-blue-600 font-bold bg-blue-50'
+                                    ? 'text-info font-bold bg-blue-50'
                                     : 'text-slate-700 hover:bg-slate-100'
                                 }`}
                               >
@@ -524,7 +524,7 @@ export function LocationSearchPage({
               </p>
               <button
                 onClick={() => router.push('/login')}
-                className="mt-2 px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors"
+                className="mt-2 px-6 py-2.5 bg-info text-white font-bold rounded-xl hover:bg-blue-700 transition-colors"
               >
                 로그인하기
               </button>
@@ -547,7 +547,7 @@ export function LocationSearchPage({
                     {index + 1}
                   </span>
                   <div className="text-left">
-                    <div className="text-h5 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <div className="text-h5 font-bold text-slate-900 group-hover:text-info transition-colors">
                       {item.name}
                     </div>
                   </div>
@@ -560,7 +560,7 @@ export function LocationSearchPage({
                       item.totalScore >= 90
                         ? 'bg-emerald-50 text-emerald-600'
                         : item.totalScore >= 70
-                          ? 'bg-blue-50 text-blue-600'
+                          ? 'bg-blue-50 text-info'
                           : item.totalScore >= 50
                             ? 'bg-amber-50 text-amber-600'
                             : 'bg-slate-100 text-slate-600'
@@ -774,7 +774,7 @@ export function LocationSearchPage({
                                   x={getX(i)}
                                   y={chartHeight - 5}
                                   textAnchor="middle"
-                                  className="text-tiny fill-blue-600 font-bold"
+                                  className="text-tiny fill-info font-bold"
                                 >
                                   {Math.round(s.value * 100)}%
                                 </text>
@@ -802,7 +802,7 @@ export function LocationSearchPage({
                     {item.rank}
                   </span>
                   <div className="text-left">
-                    <div className="text-h5 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <div className="text-h5 font-bold text-slate-900 group-hover:text-info transition-colors">
                       {item.name}
                     </div>
                   </div>
@@ -856,7 +856,7 @@ export function LocationSearchPage({
                     {item.rank}
                   </span>
                   <div className="text-left">
-                    <div className="text-h5 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <div className="text-h5 font-bold text-slate-900 group-hover:text-info transition-colors">
                       {item.name}
                     </div>
                   </div>
@@ -903,7 +903,7 @@ export function LocationSearchPage({
                     {item.rank}
                   </span>
                   <div className="text-left">
-                    <div className="text-h5 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <div className="text-h5 font-bold text-slate-900 group-hover:text-info transition-colors">
                       {item.name}
                     </div>
                   </div>
@@ -960,7 +960,7 @@ export function LocationSearchPage({
                   </span>
 
                   <div className="text-left">
-                    <div className="text-h5 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <div className="text-h5 font-bold text-slate-900 group-hover:text-info transition-colors">
                       {item.name}
                     </div>
                     <div className="text-caption font-strong text-slate-400">
