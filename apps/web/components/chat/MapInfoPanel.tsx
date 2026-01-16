@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { BuildingInfo, AreaInfo, StoreInfo } from "./types/mapTypes";
-import { Building2, MapPin, Store, Loader2 } from "lucide-react";
+import { BuildingInfo, AreaInfo, StoreInfo } from './types/mapTypes';
+import { Building2, MapPin, Store, Loader2 } from 'lucide-react';
 
 /**
  * MapInfoPanel 컴포넌트
- * 
+ *
  * - ChatMapSection 내 부가 정보 영역을 담당
  * - 건물 선택 시: 건물명, 주소, 점포 리스트
  * - 상권 선택 시: 상권명, 관련 정보
@@ -36,19 +36,18 @@ interface MapInfoPanelProps {
   isLoading?: boolean;
 }
 
-export function MapInfoPanel({ 
-  selectedBuilding, 
-  selectedArea, 
-  isLoading = false 
+export function MapInfoPanel({
+  selectedBuilding,
+  selectedArea,
+  isLoading = false,
 }: MapInfoPanelProps) {
-  
   // 로딩 상태
   if (isLoading) {
     return (
       <div className="h-full bg-slate-50 rounded-2xl border border-slate-100 p-4 flex items-center justify-center">
         <div className="flex flex-col items-center gap-2 text-slate-400">
           <Loader2 className="w-6 h-6 animate-spin" />
-          <span className="text-sm">정보를 불러오는 중...</span>
+          <span className="text-caption">정보를 불러오는 중...</span>
         </div>
       </div>
     );
@@ -64,11 +63,11 @@ export function MapInfoPanel({
             <Building2 className="w-5 h-5 text-blue-600" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-slate-800">
-              {selectedBuilding.name || "건물 정보"}
+            <h3 className="text-h5 font-bold text-slate-800">
+              {selectedBuilding.name || '건물 정보'}
             </h3>
             {selectedBuilding.address && (
-              <p className="text-sm text-slate-500 flex items-center gap-1">
+              <p className="text-caption text-slate-500 flex items-center gap-1">
                 <MapPin className="w-3 h-3" />
                 {selectedBuilding.address}
               </p>
@@ -78,12 +77,12 @@ export function MapInfoPanel({
 
         {/* 점포 리스트 */}
         <div className="space-y-2">
-          <h4 className="text-sm font-semibold text-slate-600 mb-2">
+          <h4 className="text-caption font-strong text-slate-600 mb-2">
             입점 점포 ({selectedBuilding.stores.length}개)
           </h4>
-          
+
           {selectedBuilding.stores.length === 0 ? (
-            <p className="text-sm text-slate-400 py-4 text-center">
+            <p className="text-caption text-slate-400 py-4 text-center">
               등록된 점포 정보가 없습니다.
             </p>
           ) : (
@@ -113,12 +112,15 @@ export function MapInfoPanel({
             <MapPin className="w-5 h-5 text-blue-600" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-slate-800">
+            <h3 className="text-h5 font-bold text-slate-800">
               {selectedArea.name}
             </h3>
-            <p className="text-sm text-slate-500">
-              {selectedArea.type === 'commercial' ? '상권' : 
-               selectedArea.type === 'dong' ? '행정동' : '자치구'}
+            <p className="text-caption text-slate-500">
+              {selectedArea.type === 'commercial'
+                ? '상권'
+                : selectedArea.type === 'dong'
+                  ? '행정동'
+                  : '자치구'}
             </p>
           </div>
         </div>
@@ -128,31 +130,34 @@ export function MapInfoPanel({
           <div className="space-y-3">
             {/* 매출 & 유동인구 */}
             <div className="grid grid-cols-2 gap-3">
-              {(selectedArea.revenue !== undefined && selectedArea.revenue > 0) && (
-                <InfoCard 
-                  label="분기 매출" 
-                  value={formatRevenue(selectedArea.revenue)} 
-                />
-              )}
-              {(selectedArea.floatingPopulation !== undefined && selectedArea.floatingPopulation > 0) && (
-                <InfoCard 
-                  label="유동인구" 
-                  value={formatPopulation(selectedArea.floatingPopulation)} 
-                />
-              )}
+              {selectedArea.revenue !== undefined &&
+                selectedArea.revenue > 0 && (
+                  <InfoCard
+                    label="분기 매출"
+                    value={formatRevenue(selectedArea.revenue)}
+                  />
+                )}
+              {selectedArea.floatingPopulation !== undefined &&
+                selectedArea.floatingPopulation > 0 && (
+                  <InfoCard
+                    label="유동인구"
+                    value={formatPopulation(selectedArea.floatingPopulation)}
+                  />
+                )}
             </div>
-            
+
             {/* 점포수 */}
-            {(selectedArea.storeCount !== undefined && selectedArea.storeCount > 0) && (
-              <InfoCard 
-                label="점포 수" 
-                value={`${selectedArea.storeCount.toLocaleString()}개`} 
-              />
-            )}
+            {selectedArea.storeCount !== undefined &&
+              selectedArea.storeCount > 0 && (
+                <InfoCard
+                  label="점포 수"
+                  value={`${selectedArea.storeCount.toLocaleString()}개`}
+                />
+              )}
           </div>
         ) : (
           <div className="text-center text-slate-400 py-6">
-            <p className="text-sm">상세 분석은 AI에게 질문해보세요.</p>
+            <p className="text-caption">상세 분석은 AI에게 질문해보세요.</p>
           </div>
         )}
       </div>
@@ -164,9 +169,12 @@ export function MapInfoPanel({
     <div className="h-full bg-slate-50 rounded-2xl border border-slate-100 p-4 flex flex-col items-center justify-center">
       <div className="text-center text-slate-400">
         <Building2 className="w-10 h-10 mx-auto mb-3 opacity-50" />
-        <h3 className="text-lg font-bold text-slate-600 mb-1">상권 상세 정보</h3>
-        <p className="text-md">
-          지도에서 건물을 선택하면<br/>
+        <h3 className="text-h5 font-bold text-slate-600 mb-1">
+          상권 상세 정보
+        </h3>
+        <p className="text-body">
+          지도에서 건물을 선택하면
+          <br />
           상세 분석 데이터가 여기에 표시됩니다.
         </p>
       </div>
@@ -182,11 +190,11 @@ function StoreItem({ store }: { store: StoreInfo }) {
         <Store className="w-4 h-4 text-slate-500" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-slate-700 truncate">
-          {store.name || "상호명 없음"}
+        <p className="text-caption font-medium text-slate-700 truncate">
+          {store.name || '상호명 없음'}
         </p>
-        <p className="text-xs text-slate-400 truncate">
-          {store.category || "업종 미분류"}
+        <p className="text-tiny text-slate-400 truncate">
+          {store.category || '업종 미분류'}
           {store.subcategory && ` · ${store.subcategory}`}
         </p>
       </div>
@@ -198,8 +206,8 @@ function StoreItem({ store }: { store: StoreInfo }) {
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-white rounded-lg border border-slate-100 p-3 text-center">
-      <p className="text-xs text-slate-500 mb-1">{label}</p>
-      <p className="text-lg font-bold text-slate-800">{value}</p>
+      <p className="text-tiny text-slate-500 mb-1">{label}</p>
+      <p className="text-h5 font-bold text-slate-800">{value}</p>
     </div>
   );
 }
