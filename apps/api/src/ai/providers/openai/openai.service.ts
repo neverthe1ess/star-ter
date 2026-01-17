@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
-import { AreaVectorDto, BusinessCategoryVectorDto } from '../../dto/column-vector';
+import {
+  AreaVectorDto,
+  BusinessCategoryVectorDto,
+} from '../../dto/column-vector';
 import { ResponseInput, Tool } from 'openai/resources/responses/responses.js';
 import { TOOLS } from '../../tools/definitions';
 import { FINAL_RESPONSE_SCHEMA_FOR_ACTION } from '../../schemas/response-schemas';
@@ -128,11 +131,6 @@ export class OpenAiService {
     llmFunction: () => Promise<string>,
   ) {
     const client = await initValkeySemanticCache();
-    // Windows: 캐시 없이 직접 LLM 호출
-    if (!client) {
-      const value = await llmFunction();
-      return { response: value, hit: false };
-    }
     const vec = (await this.embedText(text)).data[0].embedding;
 
     const cached = await semanticGetByVec(client, vec, 1);

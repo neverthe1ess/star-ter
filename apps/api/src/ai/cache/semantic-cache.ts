@@ -1,26 +1,11 @@
 // semantic-cache.ts
-// Windows에서는 valkey-glide가 지원되지 않으므로 조건부 로드
-const IS_WINDOWS = process.platform === 'win32';
-
-type GlideClient = import('@valkey/valkey-glide').GlideClient;
-type GlideString = import('@valkey/valkey-glide').GlideString;
-type GlideFt = typeof import('@valkey/valkey-glide').GlideFt;
+import { GlideClient, GlideFt, GlideString } from '@valkey/valkey-glide';
 
 const INDEX = 'sc_idx';
 const DOC_PREFIX = 'sc:doc:';
 
 // COSINE: 보통 score=distance(낮을수록 유사), cosineSim = 1 - distance
 const MIN_COSINE_SIMILARITY = 0.8;
-
-let _GlideFt: GlideFt | null = null;
-
-async function loadGlideFt(): Promise<GlideFt | null> {
-  if (IS_WINDOWS) return null;
-  if (_GlideFt) return _GlideFt;
-  const mod = await import('@valkey/valkey-glide');
-  _GlideFt = mod.GlideFt;
-  return _GlideFt;
-}
 
 const sha256Hex = async (s: string) => {
   const buf = await crypto.subtle.digest(
@@ -37,15 +22,10 @@ const float32ToBuffer = (v: number[]) =>
 
 // GET: queryVec(임베딩 벡터)로 시맨틱 캐시 조회
 export async function semanticGetByVec(
-  client: GlideClient | null,
+  client: GlideClient,
   queryVec: number[],
   topK = 1,
 ): Promise<GlideString | null> {
-  if (!client) return null; // Windows fallback
-  
-  const GlideFt = await loadGlideFt();
-  if (!GlideFt) return null;
-
   const qvec = float32ToBuffer(queryVec);
 
   const knnQuery = `*=>[KNN ${topK} @VEC $qvec AS score]`;
@@ -70,7 +50,9 @@ export async function semanticGetByVec(
 
   const distance = Number(fields.score);
   const cosineSim = 1 - distance;
-
+  console.log(
+    `Semantic cache lookup: distance=${distance}, cosineSim=${cosineSim}`,
+  );
   if (cosineSim < MIN_COSINE_SIMILARITY) return null;
 
   return fields.res != null ? String(fields.res) : null;
@@ -78,14 +60,12 @@ export async function semanticGetByVec(
 
 // SET: docKey 한 곳에 vec+res 저장
 export async function semanticSetByVec(
-  client: GlideClient | null,
+  client: GlideClient,
   idSeed: string,
   queryVec: number[],
   response: string,
   ttlSec = 300,
 ): Promise<void> {
-  if (!client) return; // Windows fallback
-
   const id = await sha256Hex(idSeed);
   const docKey = `${DOC_PREFIX}${id}`;
   const vecBuf = float32ToBuffer(queryVec);
@@ -94,4 +74,3 @@ export async function semanticSetByVec(
   await client.hset(docKey, { vec: vecBuf, res: response });
   await client.expire(docKey, ttlSec);
 }
-
