@@ -75,7 +75,7 @@ export function ChatHeader({
     AI_PROVIDERS.find((p) => p.id === aiProvider) || AI_PROVIDERS[0];
 
   return (
-    <header className="h-20 border-b border-border flex items-center px-8 shrink-0">
+    <header className="h-[82px] border-b border-border flex items-center px-8 shrink-0">
       {/* 왼쪽: AI 프로바이더 선택 드롭다운 */}
       <div className="flex items-center gap-4 flex-1 justify-start min-w-0">
         <div className="relative" ref={dropdownRef}>
