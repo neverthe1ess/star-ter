@@ -78,7 +78,7 @@ export class AssistantService {
     // DB에서 히스토리 로드 (OpenAI와 동일: 50개)
     const historyMessages =
       await this.chatRepository.listMessagesByConversation(
-        currentConversationId,
+        currentConversationId!,
         { take: this.MAX_HISTORY_LENGTH, order: 'asc' },
       );
     const history = historyMessages.map((msg) => ({
@@ -89,7 +89,7 @@ export class AssistantService {
 
     // 사용자 메시지 저장
     await this.chatRepository.addMessage({
-      conversationId: currentConversationId,
+      conversationId: currentConversationId!,
       role: 'user',
       content: message,
     });

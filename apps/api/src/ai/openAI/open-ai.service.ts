@@ -128,6 +128,11 @@ export class OpenAiService {
     llmFunction: () => Promise<string>,
   ) {
     const client = await initValkeySemanticCache();
+    // Windows: 캐시 없이 직접 LLM 호출
+    if (!client) {
+      const value = await llmFunction();
+      return { response: value, hit: false };
+    }
     const vec = (await this.embedText(text)).data[0].embedding;
 
     const cached = await semanticGetByVec(client, vec, 1);
