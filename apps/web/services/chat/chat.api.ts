@@ -33,6 +33,7 @@ type ChatHistoryMetadata = {
   actions?: AiAction[];
   sources?: SourceInfo[];
   markers?: unknown[];
+  streamAborted?: boolean;
 };
 
 type ChatHistoryMessage = {

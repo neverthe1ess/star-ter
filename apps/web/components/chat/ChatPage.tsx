@@ -84,6 +84,9 @@ export function ChatPage() {
       hasLoadedHistory.current = null;
       return;
     }
+    if (messages.length > 0 && currentThread.id === conversationId) {
+      return;
+    }
     if (hasLoadedHistory.current === conversationId) return;
 
     let cancelled = false;
