@@ -20,7 +20,7 @@ export function HeroSection() {
         <div className="grid lg:grid-cols-2 gap-16 items-center relative z-10 w-full max-w-[1200px]">
           <div className="max-w-xl">
             <h1 className="text-display font-heading text-foreground mb-6 leading-[1.15]">
-              상권을 묻고, 데이터로 답한다
+              거리 위 데이터를 전략적 가치로
               <br />
               <Logo className="mt-4" width={240}></Logo>
             </h1>

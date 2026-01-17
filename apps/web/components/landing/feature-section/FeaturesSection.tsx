@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import bigdata from './img/db_img.png';
+import bigdata from './img/data_img.png';
 import ai from './img/ai_img.png';
-import recommend from './img/estate_img.png';
+import recommend from './img/recommend_img.png';
 
 const FEATURES = [
   {
@@ -81,7 +81,7 @@ export function FeaturesSection() {
               </p>
             </div>
 
-            <div className="p-2 bg-background rounded-3xl shadow-xl border border-border transition-all duration-300 h-[520px] flex items-center justify-center overflow-hidden">
+            <div className="p-2 bg-background rounded-3xl shadow-xl border border-border transition-all duration-300 h-[480px] flex items-center justify-center overflow-hidden">
               <figure className="w-full h-full bg-background rounded-2xl flex items-center justify-center relative">
                 <Image
                   src={feature.image}
