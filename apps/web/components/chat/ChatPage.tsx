@@ -72,6 +72,7 @@ export function ChatPage() {
 
   // TODO: 메인에서 검색제거 시 반드시 제거
   const hasLoadedHistory = useRef<string | null>(null);
+  const historyRequestId = useRef(0);
   const prevConversationId = useRef<string | null>(null);
 
   useEffect(() => {
@@ -86,12 +87,13 @@ export function ChatPage() {
     if (hasLoadedHistory.current === conversationId) return;
 
     let cancelled = false;
-    hasLoadedHistory.current = conversationId;
+    const requestId = historyRequestId.current + 1;
+    historyRequestId.current = requestId;
     prevConversationId.current = conversationId;
 
     getConversationHistory(conversationId)
       .then((history) => {
-        if (cancelled) return;
+        if (cancelled || historyRequestId.current !== requestId) return;
         const chartUpdateQueue: Array<
           Promise<{ messageId: string; update: ChartItemUpdate }>
         > = [];
@@ -167,6 +169,7 @@ export function ChatPage() {
           messages: mapped,
           title: titleFromHistory,
         });
+        hasLoadedHistory.current = conversationId;
 
         chartUpdateQueue.forEach((updatePromise) => {
           updatePromise.then(({ messageId, update }) => {
@@ -190,8 +193,9 @@ export function ChatPage() {
         });
       })
       .catch((error) => {
+        if (cancelled || historyRequestId.current !== requestId) return;
         console.error('Failed to load conversation history:', error);
-      });
+      })
 
     return () => {
       cancelled = true;
