@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, ChevronDown, X, Settings2 } from 'lucide-react';
+import { ChevronDown, X, Settings2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence } from 'motion/react';
 
@@ -35,7 +35,11 @@ import { StartupPreferencesPopup } from '@/components/StartupPreferencesPopup';
 import type { OnboardingData } from '@/components/onboarding/onboarding-options';
 
 // 맞춤 추천 탭 에러 타입
-type RecommendErrorType = 'not_logged_in' | 'onboarding_incomplete' | 'other' | null;
+type RecommendErrorType =
+  | 'not_logged_in'
+  | 'onboarding_incomplete'
+  | 'other'
+  | null;
 
 export { type LocationRankItem } from '@/services/location/location.service';
 
@@ -279,7 +283,9 @@ export function LocationSearchPage({
         setError(null);
       }
     } catch (err) {
-      setPrefsError(err instanceof Error ? err.message : '저장에 실패했습니다.');
+      setPrefsError(
+        err instanceof Error ? err.message : '저장에 실패했습니다.',
+      );
     } finally {
       setIsSaving(false);
     }
@@ -330,9 +336,19 @@ export function LocationSearchPage({
   const displayedData = currentData.slice(0, displayCount);
   const hasMore = displayCount < currentData.length;
 
+  const gridCols = isRecommendTab(subTab)
+    ? '3fr 1fr 2fr'
+    : isPopulationTab(subTab)
+      ? '3fr 1.2fr 0.8fr 1fr'
+      : isMZTab(subTab)
+        ? '3fr 1.2fr 0.8fr 1fr'
+        : isClosureRateTab(subTab)
+          ? '3fr 0.6fr 1fr 1.2fr 1fr'
+          : '3fr 1fr 1.2fr 1fr 1.2fr';
+
   return (
-    <div className="flex flex-1 flex-col h-full overflow-hidden">
-      <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-sm border border-border overflow-hidden">
+    <div className="flex flex-1 flex-col h-full">
+      <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-lg border border-border overflow-hidden">
         <div className="px-8 pt-6 pb-4 border-b border-border shrink-0">
           <div className="flex justify-between items-center">
             <div className="flex gap-8">
@@ -519,15 +535,7 @@ export function LocationSearchPage({
         <div
           className="px-6 py-3 grid items-center text-body font-strong text-muted-foreground shrink-0 border-b border-border bg-muted/30 gap-4"
           style={{
-            gridTemplateColumns: isRecommendTab(subTab)
-              ? '3fr 1fr 2fr'
-              : isPopulationTab(subTab)
-                ? '3fr 1.2fr 0.8fr 1fr'
-                : isMZTab(subTab)
-                  ? '3fr 1.2fr 0.8fr 1fr'
-                  : isClosureRateTab(subTab)
-                    ? '3fr 0.6fr 1fr 1.2fr 1fr'
-                    : '3fr 1fr 1.2fr 1fr 1.2fr',
+            gridTemplateColumns: gridCols,
           }}
         >
           {isRecommendTab(subTab) ? (
@@ -571,8 +579,30 @@ export function LocationSearchPage({
 
         <div className="flex-1 overflow-y-auto overflow-x-visible px-6 pb-10 no-scrollbar">
           {isLoading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <div className="flex flex-col gap-4">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="w-full py-4 items-center rounded-2xl grid gap-4 border border-transparent"
+                  style={{ gridTemplateColumns: gridCols }}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-6 h-6 rounded bg-muted animate-pulse" />
+                    <div className="flex-1">
+                      <div className="h-6 w-3/4 bg-muted animate-pulse rounded mb-2" />
+                      <div className="h-4 w-1/2 bg-muted animate-pulse rounded" />
+                    </div>
+                  </div>
+                  {/* 나머지 컬럼들에 대한 스켈레톤 (gridCols의 컬럼 수에 맞춰 대략적으로 렌더링) */}
+                  {Array.from({
+                    length: gridCols.split(' ').length - 1,
+                  }).map((_, j) => (
+                    <div key={j} className="flex justify-center">
+                      <div className="h-6 w-16 bg-muted animate-pulse rounded" />
+                    </div>
+                  ))}
+                </div>
+              ))}
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">

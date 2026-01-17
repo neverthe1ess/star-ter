@@ -118,7 +118,7 @@ export function StartupPreferencesPopup({
         <div className="px-6 py-5 border-b border-border sm:px-8 sm:py-6 shrink-0">
           <h2 className="text-h3 font-black text-foreground">창업 조건 설정</h2>
           <p className="text-body text-muted-foreground mt-1">
-            온보딩에서 입력한 창업 조건을 다시 설정할 수 있습니다.
+            창업 조건을 설정 및 수정할 수 있습니다.
           </p>
           {isLoading && (
             <p className="text-caption text-muted-foreground mt-2">
@@ -318,7 +318,11 @@ export function StartupPreferencesPopup({
             <span />
           )}
           <div className="flex items-center gap-3">
-            <Button variant="ghost" onClick={onClose} className="px-6">
+            <Button
+              variant="ghost"
+              onClick={onClose}
+              className="text-primary hover:text-primary/50 hover:bg-white rounded-lg font-medium cursor-pointer"
+            >
               취소
             </Button>
             <Button
