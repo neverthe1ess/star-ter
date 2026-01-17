@@ -15,9 +15,7 @@ export async function sendMessage(
   aiProvider: AiProvider = 'openai',
   conversationId?: string,
 ): Promise<AiChatResponse & { conversationId?: string }> {
-  // 프로바이더에 따른 API 엔드포인트 결정
-  const endpoint =
-    aiProvider === 'claude' ? '/assistant/message' : '/chat/send';
+  const endpoint = '/chat/send';
 
   console.log(`[Server Action] Sending message to ${aiProvider}:`, message);
   try {
@@ -36,6 +34,7 @@ export async function sendMessage(
       body: JSON.stringify({
         message,
         conversationId,
+        aiProvider,
       }),
       cache: 'no-store',
     });

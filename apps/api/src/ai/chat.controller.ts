@@ -14,6 +14,7 @@ import { User } from 'src/auth/decorators/user.decorator';
 import type { AuthenticatedUser } from 'src/auth/types/authenticatedUser';
 import { ChatService } from './chat.service';
 import { UpdateConversationTitleDto } from './dto/update-conversation-title.dto';
+import type { AiProviderName } from './core/ai-types';
 
 @Controller('chat')
 export class ChatController {
@@ -29,6 +30,8 @@ export class ChatController {
     body: {
       message: string;
       conversationId?: string;
+      aiProvider?: AiProviderName;
+      toolPlanner?: AiProviderName;
     },
   ) {
     const startTime = Date.now();
@@ -39,6 +42,10 @@ export class ChatController {
       user.id,
       body.conversationId || null,
       body.message,
+      {
+        aiProvider: body.aiProvider,
+        toolPlanner: body.toolPlanner,
+      },
     );
 
     this.logger.log(`Response time: ${Date.now() - startTime} ms`);
