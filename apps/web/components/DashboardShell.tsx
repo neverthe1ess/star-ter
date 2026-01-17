@@ -31,7 +31,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         activeMenu={activeMenu}
         onMenuClick={(id) => {
           if (id === 'home') router.push('/locations');
-          if (id === 'templates') router.push('/locations/search');
+          if (id === 'templates')
+            router.push('/locations/search?tab=맞춤 추천');
           if (id === 'meetings') router.push('/locations/detail');
           if (id === 'chat') router.push('/chat');
         }}
