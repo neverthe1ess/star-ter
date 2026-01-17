@@ -228,8 +228,6 @@ export function Sidebar({
     );
   };
 
-
-
   const handleSaveProfile = async () => {
     if (!authUser) return;
     setIsSavingProfile(true);
@@ -266,7 +264,7 @@ export function Sidebar({
   const sidebarContainerClass = `fixed left-0 top-0 h-full z-40 flex flex-col transition-all duration-300 ease-in-out ${
     isOpen ? 'w-[320px] p-4' : 'w-20 px-3 py-4'
   }`;
-  const sidebarHeaderClass = `h-16 flex items-center border-b border-border shrink-0 ${
+  const sidebarHeaderClass = `h-[82px] flex items-center border-b border-border shrink-0 ${
     useCompactLayout ? 'justify-center' : 'px-6 justify-between'
   }`;
 
@@ -519,7 +517,6 @@ export function Sidebar({
           </AnimatePresence>,
           document.body,
         )}
-
     </>
   );
 }
