@@ -293,13 +293,17 @@ export class AiChatOrchestrator {
         { messages, toolCalls, toolResults },
         (chunk) => {
           if (!chunk || signal?.aborted) return;
-          console.log(`[AiChatOrchestrator] Delta chunk: ${chunk.slice(0, 50)}...`);
+          console.log(
+            `[AiChatOrchestrator] Delta chunk: ${chunk.slice(0, 50)}...`,
+          );
           reply += chunk;
           onEvent('delta', { text: chunk });
         },
         signal,
       );
-      console.log(`[AiChatOrchestrator] Stream completed, total length: ${reply.length}`);
+      console.log(
+        `[AiChatOrchestrator] Stream completed, total length: ${reply.length}`,
+      );
 
       if (!signal?.aborted) {
         onEvent('done', {

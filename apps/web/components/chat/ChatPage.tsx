@@ -52,10 +52,27 @@ export function ChatPage() {
   // 스크롤 컨테이너 참조
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // 새 메시지 추가 시 스크롤 맨 아래로 이동
+  // 이전 메시지 개수를 저장하여 새로운 메시지 추가 여부만 감지
+  const prevMessagesLength = useRef(messages.length);
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    // 새 메시지가 추가된 경우에만 스크롤
+    if (messages.length > prevMessagesLength.current) {
+      // 마지막 메시지의 ID를 찾아서 스크롤
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage) {
+        const element = document.getElementById(`msg-${lastMessage.id}`);
+        if (element) {
+          // block: 'start' 옵션으로 해당 요소를 화면 상단에 맞춤
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          // 요소가 아직 DOM에 없으면(그럴 리 적지만) 기존 방식 fallback
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+    }
+    prevMessagesLength.current = messages.length;
+  }, [messages.length, messages]);
 
   // Action Dispatcher Hook 사용
   const { dispatch } = useActionDispatcher(mapSectionRef, setIsMapOpen);
