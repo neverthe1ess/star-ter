@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, ChevronDown, X } from 'lucide-react';
+import { Loader2, ChevronDown, X, Settings2 } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { AnimatePresence } from 'motion/react';
 
 import {
   fetchLocationRanking,
@@ -23,8 +25,17 @@ import {
   getRecommendations,
   ScoredLocation,
 } from '@/services/location/locationRecommend.service';
-import { getOnboarding } from '@/services/user/user.api';
+import {
+  getOnboarding,
+  getPersonalization,
+  updateOnboarding,
+} from '@/services/user/user.api';
 import { useUserStore } from '@/store/use-user-store';
+import { StartupPreferencesPopup } from '@/components/StartupPreferencesPopup';
+import type { OnboardingData } from '@/components/onboarding/onboarding-options';
+
+// 맞춤 추천 탭 에러 타입
+type RecommendErrorType = 'not_logged_in' | 'onboarding_incomplete' | 'other' | null;
 
 export { type LocationRankItem } from '@/services/location/location.service';
 
@@ -69,13 +80,29 @@ export function LocationSearchPage({
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [recommendErrorType, setRecommendErrorType] =
+    useState<RecommendErrorType>(null);
   const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
 
   // 검색 상태
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
 
+  // 창업 조건 설정 팝업 상태
+  const [isMounted, setIsMounted] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingPrefs, setIsLoadingPrefs] = useState(false);
+  const [prefsError, setPrefsError] = useState<string | null>(null);
+  const [preferencesData, setPreferencesData] = useState<OnboardingData | null>(
+    null,
+  );
+
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // 검색어 디바운스
   useEffect(() => {
@@ -131,8 +158,10 @@ export function LocationSearchPage({
       try {
         if (isRecommendTab(subTab)) {
           // 맞춤 추천
+          setRecommendErrorType(null);
           if (!authUser) {
             setRecommendData([]);
+            setRecommendErrorType('not_logged_in');
             setError('로그인이 필요합니다.');
             return;
           }
@@ -140,6 +169,7 @@ export function LocationSearchPage({
           const onboarding = await getOnboarding();
           if (!onboarding || !onboarding.completed) {
             setRecommendData([]);
+            setRecommendErrorType('onboarding_incomplete');
             setError('온보딩을 완료해주세요.');
             return;
           }
@@ -211,6 +241,49 @@ export function LocationSearchPage({
 
     loadData();
   }, [subTab, industryCode, ageGroup, timeSlot, debouncedQuery, authUser]);
+
+  // 창업 조건 팝업 열기
+  const handleOpenPopup = async () => {
+    setPrefsError(null);
+    setIsLoadingPrefs(true);
+    setShowPopup(true);
+    try {
+      const data = await getPersonalization();
+      setPreferencesData(data);
+    } catch {
+      setPreferencesData(null);
+    } finally {
+      setIsLoadingPrefs(false);
+    }
+  };
+
+  // 창업 조건 저장
+  const handleSavePreferences = async (data: OnboardingData) => {
+    setIsSaving(true);
+    setPrefsError(null);
+    try {
+      await updateOnboarding(data);
+      setPreferencesData(data);
+      setShowPopup(false);
+      setRecommendErrorType(null);
+      // 저장 후 데이터 다시 로드
+      const response = await getRecommendations({
+        age: data.age,
+        region: data.region,
+        operatingTime: data.operatingTime,
+        capital: data.capital,
+        industryCode: data.industryCode ?? undefined,
+      });
+      if (response) {
+        setRecommendData(response.locations);
+        setError(null);
+      }
+    } catch (err) {
+      setPrefsError(err instanceof Error ? err.message : '저장에 실패했습니다.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // 드롭다운 외부 클릭 시 닫기
   useEffect(() => {
@@ -504,30 +577,49 @@ export function LocationSearchPage({
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
               <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-2">
-                <svg
-                  className="w-8 h-8 text-muted-foreground"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
+                {recommendErrorType === 'onboarding_incomplete' ? (
+                  <Settings2 className="w-8 h-8 text-muted-foreground" />
+                ) : (
+                  <svg
+                    className="w-8 h-8 text-muted-foreground"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                )}
               </div>
-              <p className="text-h4 font-strong text-foreground">{error}</p>
-              <p className="text-body text-muted-foreground">
-                맞춤 추천을 받으려면 로그인이 필요합니다.
+              <p className="text-h4 font-strong text-foreground">
+                {recommendErrorType === 'onboarding_incomplete'
+                  ? '창업 조건을 설정해주세요'
+                  : error}
               </p>
-              <button
-                onClick={() => router.push('/login')}
-                className="mt-2 px-6 py-2.5 bg-info text-white font-bold rounded-xl hover:bg-info/90 transition-colors"
-              >
-                로그인하기
-              </button>
+              <p className="text-body text-muted-foreground">
+                {recommendErrorType === 'onboarding_incomplete'
+                  ? '맞춤 상권 추천을 받으려면 창업 조건을 입력해야 합니다.'
+                  : '맞춤 추천을 받으려면 로그인이 필요합니다.'}
+              </p>
+              {recommendErrorType === 'onboarding_incomplete' ? (
+                <button
+                  onClick={handleOpenPopup}
+                  className="mt-2 px-6 py-2.5 bg-primary text-primary-foreground font-bold rounded-xl hover:bg-primary/90 transition-colors"
+                >
+                  창업 조건 설정하기
+                </button>
+              ) : (
+                <button
+                  onClick={() => router.push('/login')}
+                  className="mt-2 px-6 py-2.5 bg-info text-white font-bold rounded-xl hover:bg-info/90 transition-colors"
+                >
+                  로그인하기
+                </button>
+              )}
             </div>
           ) : currentData.length === 0 ? (
             <div className="flex items-center justify-center py-20 text-muted-foreground">
@@ -1024,6 +1116,24 @@ export function LocationSearchPage({
           )}
         </div>
       </div>
+
+      {/* 창업 조건 설정 팝업 */}
+      {isMounted &&
+        createPortal(
+          <AnimatePresence>
+            {showPopup && (
+              <StartupPreferencesPopup
+                initialData={preferencesData ?? undefined}
+                onClose={() => setShowPopup(false)}
+                onSave={handleSavePreferences}
+                isSaving={isSaving}
+                isLoading={isLoadingPrefs}
+                error={prefsError}
+              />
+            )}
+          </AnimatePresence>,
+          document.body,
+        )}
     </div>
   );
 }

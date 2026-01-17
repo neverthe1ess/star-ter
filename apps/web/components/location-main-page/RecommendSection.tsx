@@ -73,6 +73,11 @@ export function RecommendSection() {
   const prefetchConsumed = useRef(false);
   const [refreshToken, setRefreshToken] = useState(0); // 추천 새로고침용
 
+  // 온보딩 완료 여부 상태
+  const [isOnboardingCompleted, setIsOnboardingCompleted] = useState<
+    boolean | null
+  >(null);
+
   // 설정 팝업 관련 상태
   const [isMounted, setIsMounted] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
@@ -108,7 +113,8 @@ export function RecommendSection() {
       await updateOnboarding(data);
       setPreferencesData(data);
       setShowPopup(false);
-      // 저장 후 추천 다시 불러오기 (새로고침 없이)
+      // 저장 후 온보딩 완료 상태 업데이트 및 추천 다시 불러오기
+      setIsOnboardingCompleted(true);
       prefetchConsumed.current = false;
       setRefreshToken((prev) => prev + 1);
     } catch (err) {
@@ -122,6 +128,7 @@ export function RecommendSection() {
 
   useEffect(() => {
     if (!authUser) {
+      setIsOnboardingCompleted(null);
       setRecommendedLocations([]);
       setIsLoading(false);
       return;
@@ -137,6 +144,7 @@ export function RecommendSection() {
     if (isLoaded && recommendResult && !prefetchConsumed.current) {
       prefetchConsumed.current = true;
       setRecommendedLocations(recommendResult.locations.slice(0, 5));
+      setIsOnboardingCompleted(true);
       setIsLoading(false);
       clearRecommendResult(); // 스토어 클리어
       return;
@@ -151,14 +159,21 @@ export function RecommendSection() {
       setIsLoading(true);
       try {
         const onboarding = await getOnboarding();
-        if (!onboarding || !onboarding.completed) return;
+        if (!onboarding || !onboarding.completed) {
+          setIsOnboardingCompleted(false);
+          setIsLoading(false);
+          return;
+        }
+        setIsOnboardingCompleted(true);
         if (
           !onboarding.age ||
           !onboarding.region ||
           !onboarding.operatingTime ||
           !onboarding.capital
-        )
+        ) {
+          setIsLoading(false);
           return;
+        }
 
         const response = await getRecommendations({
           age: onboarding.age,
@@ -210,7 +225,7 @@ export function RecommendSection() {
     return [];
   }, [recommendedLocations]);
 
-  // 로그인 안됨 or 온보딩 미완료시 표시할 내용
+  // 로그인 안됨
   if (!authUser) {
     return (
       <section className="px-8 py-6">
@@ -231,6 +246,63 @@ export function RecommendSection() {
           </p>
         </div>
       </section>
+    );
+  }
+
+  // 로그인됨 + 온보딩 미완료
+  if (authUser && isOnboardingCompleted === false) {
+    return (
+      <>
+        <section className="px-8 py-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-h3 font-heading text-foreground">
+              {authUser?.nickname ? `${authUser.nickname}님` : '사장님'}께
+              추천하는 상권
+            </h2>
+            <Link
+              href="/locations/search?tab=맞춤 추천"
+              className="flex items-center gap-1 text-body font-strong text-muted-foreground hover:text-foreground transition-colors"
+            >
+              더보기 <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <div className="bg-muted/30 rounded-2xl p-8 border border-border flex flex-col items-center text-center">
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+              <Settings2 className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-h4 font-strong text-foreground mb-2">
+              창업 조건을 설정해주세요
+            </h3>
+            <p className="text-body text-muted-foreground mb-6">
+              맞춤 상권 추천을 받으려면 창업 조건을 입력해야 합니다.
+            </p>
+            <button
+              onClick={handleOpenPopup}
+              className="px-6 py-3 bg-primary text-primary-foreground font-bold rounded-xl hover:bg-primary/90 transition-colors"
+            >
+              창업 조건 설정하기
+            </button>
+          </div>
+        </section>
+
+        {/* 창업 조건 설정 팝업 */}
+        {isMounted &&
+          createPortal(
+            <AnimatePresence>
+              {showPopup && (
+                <StartupPreferencesPopup
+                  initialData={preferencesData ?? undefined}
+                  onClose={() => setShowPopup(false)}
+                  onSave={handleSavePreferences}
+                  isSaving={isSaving}
+                  isLoading={isLoadingPrefs}
+                  error={prefsError}
+                />
+              )}
+            </AnimatePresence>,
+            document.body,
+          )}
+      </>
     );
   }
 
