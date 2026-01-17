@@ -15,10 +15,8 @@ export function OnboardingIntroPage({
 }: OnboardingIntroPageProps) {
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
-      <header className="px-4 py-6 flex items-center justify-between shrink-0">
-
+      <header className="px-4 py-6 flex items-center justify-center shrink-0">
         <Logo className="h-8" />
-        <div className="w-20"></div>
       </header>
 
       <div className="flex-1 flex flex-col justify-center px-[5%] py-[3vh] overflow-y-auto">
