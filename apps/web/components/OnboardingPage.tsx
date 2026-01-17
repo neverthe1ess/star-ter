@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Button } from './ui/button';
-import { Logo } from './landing/header/Logo';
 import { ArrowLeft } from 'lucide-react';
 import { OnboardingStepAge } from './onboarding/OnboardingStepAge';
 import { OnboardingStepRegion } from './onboarding/OnboardingStepRegion';
@@ -47,8 +46,9 @@ export function OnboardingPage({
   const defaultMacro = Object.keys(MACRO_CATEGORIES)[0] as MacroCategoryCode;
   const [selectedMacro, setSelectedMacro] =
     useState<MacroCategoryCode>(defaultMacro);
-  const [selectedIndustryCode, setSelectedIndustryCode] =
-    useState<string | null>(null);
+  const [selectedIndustryCode, setSelectedIndustryCode] = useState<
+    string | null
+  >(null);
 
   const handleNext = async () => {
     if (step < 5) {
@@ -93,30 +93,49 @@ export function OnboardingPage({
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <header className="px-8 py-6 flex items-center justify-between">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
+      <header className="relative px-8 py-6 flex items-center justify-between shrink-0">
         <button
           onClick={handleBack}
-          className="flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors"
+          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors z-10"
         >
           <ArrowLeft className="w-5 h-5" />
           <span className="font-medium">뒤로</span>
         </button>
+
+        <div className="absolute inset-0 flex items-center justify-center z-0">
+          <div className="w-full mx-auto px-8 flex items-center justify-between max-w-300">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <div key={s} className="flex-1 last:flex-none flex items-center">
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-caption font-bold transition-all duration-300 shrink-0 ${
+                    s <= step
+                      ? 'bg-primary text-white'
+                      : 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {s}
+                </div>
+                {s < 5 && (
+                  <div className="flex-1 h-0.5 bg-muted overflow-hidden mx-2">
+                    <div
+                      className="h-full bg-primary transition-all duration-500"
+                      style={{
+                        width: s < step ? '100%' : '0%',
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
         <div className="w-20"></div>
       </header>
 
-      <div className="w-full h-1 bg-gray-200">
+      <div className="flex-1 flex flex-col px-[5%] pt-[5vh] pb-[5vh] overflow-y-auto">
         <div
-          className="h-full bg-gray-900 transition-all duration-300"
-          style={{ width: `${(step / 5) * 100}%` }}
-        />
-      </div>
-
-      <div className="flex-1 flex flex-col justify-center px-8 py-20">
-        <div
-          className={`w-full mx-auto ${
-            step === 5 ? 'max-w-5xl' : 'max-w-4xl'
-          }`}
+          className={`w-full mx-auto ${step === 5 ? 'max-w-300' : 'max-w-250'}`}
         >
           {step === 1 && (
             <OnboardingStepAge
@@ -135,9 +154,7 @@ export function OnboardingPage({
           {step === 3 && (
             <OnboardingStepOperatingTime
               value={data.operatingTime}
-              onChange={(value) =>
-                setData({ ...data, operatingTime: value })
-              }
+              onChange={(value) => setData({ ...data, operatingTime: value })}
             />
           )}
 
@@ -159,7 +176,7 @@ export function OnboardingPage({
         </div>
       </div>
 
-      <div className="px-8 py-8 border-t">
+      <div className="px-8 py-4 border-t shrink-0">
         <div
           className={`max-w-4xl mx-auto flex items-center ${
             step === 5 && onSkip ? 'justify-between' : 'justify-end'
@@ -169,7 +186,7 @@ export function OnboardingPage({
             <Button
               onClick={handleSkip}
               variant="ghost"
-              className="text-gray-500 hover:text-gray-900 text-lg font-medium"
+              className="text-muted-foreground hover:text-foreground text-lg font-medium"
             >
               건너뛰기
             </Button>
@@ -177,7 +194,7 @@ export function OnboardingPage({
           <Button
             onClick={handleNext}
             disabled={!isStepValid()}
-            className="bg-gray-900 hover:bg-gray-800 text-white px-12 py-7 rounded-lg text-lg font-medium disabled:bg-gray-300"
+            className="bg-primary hover:bg-primary/90 text-white px-12 py-7 rounded-lg text-lg font-medium disabled:bg-muted disabled:text-muted-foreground"
           >
             {step === 5 ? '완료' : '다음'}
           </Button>

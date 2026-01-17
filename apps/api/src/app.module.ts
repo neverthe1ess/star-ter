@@ -11,6 +11,7 @@ import { RevenueModule } from './revenue/revenue.module';
 import { StoreModule } from './store/store.module';
 import { GeoModule } from './geo/geo.module';
 import { AiModule } from './ai/ai.module';
+import { AssistantModule } from './assistant/assistant.module';
 import { AnalysisModule } from './analysis/analysis.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './user/user.module';
@@ -21,7 +22,6 @@ import { RealEstateModule } from './real-estate/real_estate.module';
 import { RealEstateBookmarkModule } from './real-estate-bookmark/real_estate_bookmark.module';
 import { ImageModule } from './image/image.module';
 import { LocationRecommendModule } from './location-recommend/location-recommend.module';
-import { SearchModule } from './search/search.module';
 import { NewsModule } from './news/news.module';
 
 @Module({
@@ -36,6 +36,7 @@ import { NewsModule } from './news/news.module';
     StoreModule,
     GeoModule,
     AiModule,
+    AssistantModule,
     AnalysisModule,
     AuthModule,
     UsersModule,
@@ -46,7 +47,6 @@ import { NewsModule } from './news/news.module';
     RealEstateBookmarkModule,
     ImageModule,
     LocationRecommendModule,
-    SearchModule,
     NewsModule,
   ],
   controllers: [HealthController],

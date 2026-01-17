@@ -1,21 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import {
-  Camera,
-  ChevronRight,
-  LogOut,
-  SlidersHorizontal,
-  type LucideIcon,
-} from 'lucide-react';
+import { Camera, LogOut } from 'lucide-react';
 import { motion } from 'motion/react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { ProfileImageCropModal } from './ProfileImageCropModal';
+import { ImUser } from 'react-icons/im';
 
-type SettingsGroup = {
-  title: string;
-  items: { label: string; icon: LucideIcon; onClick?: () => void }[];
-};
 
 type ProfilePopupProps = {
   nickname: string;
@@ -24,7 +15,6 @@ type ProfilePopupProps = {
   onLogout: () => void;
   isLoggingOut: boolean;
   logoutError: string | null;
-  onOpenPreferences: () => void;
   onSaveProfile: () => void;
   isSavingProfile: boolean;
   profileError: string | null;
@@ -40,7 +30,6 @@ export function ProfilePopup({
   onLogout,
   isLoggingOut,
   logoutError,
-  onOpenPreferences,
   onSaveProfile,
   isSavingProfile,
   profileError,
@@ -55,14 +44,12 @@ export function ProfilePopup({
 
   const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
-  const fallbackImage =
-    'https://images.unsplash.com/photo-1649433658557-54cf58577c68?q=80&w=200&h=200&auto=format&fit=crop';
   const profileImageUrl = profileImageKey
     ? `${API_BASE_URL}/image/${encodeURIComponent(profileImageKey)}`
-    : fallbackImage;
+    : '';
   const popupPositionClass = isSidebarOpen
-    ? 'bottom-28 left-6 w-[calc(350px-3rem)]'
-    : 'bottom-20 left-6 w-[calc(350px-3rem)]';
+    ? 'bottom-24 left-4 w-[calc(320px-2rem)]'
+    : 'bottom-20 left-4 w-[calc(320px-2rem)]';
 
   useEffect(() => {
     return () => {
@@ -87,18 +74,7 @@ export function ProfilePopup({
     setIsCropOpen(true);
   };
 
-  const settingsGroups: SettingsGroup[] = [
-    {
-      title: 'Account',
-      items: [
-        {
-          label: '창업 조건 설정',
-          icon: SlidersHorizontal,
-          onClick: onOpenPreferences,
-        },
-      ],
-    },
-  ];
+
 
   return (
     <>
@@ -115,22 +91,26 @@ export function ProfilePopup({
         initial={{ opacity: 0, scale: 0.95, y: 16 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 16 }}
-        className={`fixed z-50 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col ${popupPositionClass}`}
+        className={`fixed z-50 bg-background rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col ${popupPositionClass}`}
       >
-        <div className="p-6 border-b border-gray-50 bg-slate-50/50">
+        <div className="p-6 border-b border-border bg-muted/30">
           <div className="flex items-center gap-4">
             <div className="relative">
-              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-md">
-                <ImageWithFallback
-                  src={profileImageUrl}
-                  alt="Profile"
-                  className="w-full h-full object-cover"
-                />
+              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-background shadow-md bg-muted flex items-center justify-center">
+                {profileImageKey ? (
+                  <ImageWithFallback
+                    src={profileImageUrl}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <ImUser className="w-full h-full text-muted-foreground p-3" />
+                )}
               </div>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="absolute -bottom-1 -right-1 p-1.5 bg-slate-900 text-white rounded-full shadow-lg hover:scale-110 transition-transform"
+                className="absolute -bottom-1 -right-1 p-1.5 bg-primary text-primary-foreground rounded-full shadow-lg hover:scale-110 transition-transform"
                 aria-label="프로필 이미지 변경"
               >
                 <Camera className="w-3 h-3" />
@@ -141,62 +121,39 @@ export function ProfilePopup({
                 type="text"
                 value={nickname}
                 onChange={(e) => onNicknameChange(e.target.value)}
-                className="w-full text-lg font-black text-slate-900 bg-transparent border-none focus:ring-0 p-0 mb-0.5"
+                className="w-full text-h5 font-bold text-foreground bg-transparent border-none focus:ring-0 p-0"
                 placeholder="닉네임 입력"
               />
               <button
                 type="button"
                 onClick={onSaveProfile}
                 disabled={isSavingProfile || nickname.trim().length === 0}
-                className="text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors disabled:opacity-60"
+                className="text-caption font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-60"
               >
                 {isSavingProfile ? '저장 중...' : '프로필 저장'}
               </button>
             </div>
           </div>
           {profileError && (
-            <p className="mt-3 text-xs text-red-500">{profileError}</p>
+            <p className="mt-3 text-tiny text-destructive">{profileError}</p>
           )}
         </div>
 
-        <div className="p-2">
-          {settingsGroups.map((group) => (
-            <div key={group.title} className="mb-2">
-              <p className="px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                {group.title}
-              </p>
-              {group.items.map((item) => (
-                <button
-                  key={item.label}
-                  onClick={item.onClick}
-                  className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-slate-50 rounded-xl transition-all group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-slate-400 group-hover:text-blue-600 shadow-sm">
-                      <item.icon className="w-4 h-4" />
-                    </div>
-                    <span className="text-sm font-bold text-slate-700">
-                      {item.label}
-                    </span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-300" />
-                </button>
-              ))}
-            </div>
-          ))}
-        </div>
 
-        <div className="p-2 bg-slate-50 border-t border-gray-100">
+
+        <div className="p-2 bg-muted/50 border-t border-border">
           <button
             onClick={onLogout}
             disabled={isLoggingOut}
-            className="w-full flex items-center justify-center gap-2 py-3 text-sm font-bold text-red-500 hover:bg-white hover:shadow-sm rounded-xl transition-all disabled:opacity-60"
+            className="w-full flex items-center justify-center gap-2 py-3 text-caption font-bold text-destructive hover:bg-background hover:shadow-sm rounded-xl transition-all disabled:opacity-60"
           >
             <LogOut className="w-4 h-4" />
             {isLoggingOut ? '로그아웃 중...' : '로그아웃'}
           </button>
           {logoutError && (
-            <p className="px-2 pt-2 text-xs text-red-500">{logoutError}</p>
+            <p className="px-2 pt-2 text-caption text-destructive">
+              {logoutError}
+            </p>
           )}
         </div>
       </motion.div>

@@ -1,26 +1,33 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 import {
   Home,
   FileText,
-  Calendar,
-  Plus,
+  MessageSquare,
+  MessageSquarePlus,
   X,
   Settings,
   Menu,
   LogIn,
-} from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
-import { createPortal } from "react-dom";
-import { AnimatePresence } from "motion/react";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { logout } from "@/services/auth/auth.api";
-import { useUserStore } from "@/store/use-user-store";
-import { ProfilePopup } from "./ProfilePopup";
-import { StartupPreferencesPopup } from "./StartupPreferencesPopup";
-import { getPersonalization, updateOnboarding, updateProfile } from "@/services/user/user.api";
-import type { OnboardingData } from "./onboarding/onboarding-options";
+} from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { createPortal } from 'react-dom';
+import { AnimatePresence } from 'motion/react';
+import { ImageWithFallback } from './figma/ImageWithFallback';
+import { logout } from '@/services/auth/auth.api';
+import { useUserStore } from '@/store/use-user-store';
+import { useChatStore } from '@/store/use-chat-store';
+import { ProfilePopup } from './ProfilePopup';
+import { updateProfile } from '@/services/user/user.api';
+import {
+  deleteConversation,
+  getChatConversations,
+  updateConversationTitle,
+} from '@/services/chat/chat.api';
+import { Logo } from './landing/header/Logo';
+import { SidebarChatHistory } from './SidebarChatHistory';
+import { ImUser } from 'react-icons/im';
 
 interface SidebarProps {
   activeMenu: string;
@@ -30,47 +37,57 @@ interface SidebarProps {
 }
 
 const MENU_ITEMS = [
-  { id: "home", icon: Home, label: "홈" },
-  { id: "templates", icon: FileText, label: "상권 찾기" },
-  { id: "meetings", icon: Calendar, label: "상세정보" },
+  { id: 'home', icon: Home, label: '홈' },
+  { id: 'templates', icon: FileText, label: '상권 찾기' },
+  { id: 'chat', icon: MessageSquare, label: 'AI 채팅' },
 ] as const;
 
-const COLLECTIONS = [
-  { id: "hot", label: "여기서 치킨집 차리는거 어때?", color: "bg-gray-500" },
-  { id: "stable", label: "손익분기 넘길라면 몇 년 걸려?", color: "bg-gray-500" },
-] as const;
+type ChatHistoryItem = {
+  id: string;
+  title?: string | null;
+};
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
-const DEFAULT_PROFILE_IMAGE =
-  "https://images.unsplash.com/photo-1649433658557-54cf58577c68?q=80&w=200&h=200&auto=format&fit=crop";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 const LAYOUT_SWITCH_DELAY_MS = 180;
 
-const getProfileImageUrl = (profileImageKey?: string | null) =>
-  profileImageKey ? `${API_BASE_URL}/image/${encodeURIComponent(profileImageKey)}` : DEFAULT_PROFILE_IMAGE;
+const getProfileImageUrl = (profileImageKey: string) =>
+  `${API_BASE_URL}/image/${encodeURIComponent(profileImageKey)}`;
 
-export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarProps) {
+export function Sidebar({
+  activeMenu,
+  onMenuClick,
+  isOpen,
+  onToggle,
+}: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const authUser = useUserStore((state) => state.authUser);
+  const authUserId = authUser?.id;
   const clearAuthUser = useUserStore((state) => state.clearAuthUser);
   const setAuthUser = useUserStore((state) => state.setAuthUser);
+  const setConversationId = useChatStore((state) => state.setConversationId);
+  const clearConversationId = useChatStore(
+    (state) => state.clearConversationId,
+  );
+  const currentConversationId = useChatStore((state) => state.conversationId);
   const [showProfilePopup, setShowProfilePopup] = useState(false);
-  const [showPreferencesPopup, setShowPreferencesPopup] = useState(false);
-  const [nickname, setNickname] = useState(authUser?.nickname ?? "사용자");
+  const [nickname, setNickname] = useState(authUser?.nickname ?? '사용자');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
-  const [isSavingPreferences, setIsSavingPreferences] = useState(false);
-  const [preferencesError, setPreferencesError] = useState<string | null>(null);
-  const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
-  const [initialPreferences, setInitialPreferences] = useState<OnboardingData | undefined>();
+  const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
+
   const [isMounted, setIsMounted] = useState(false);
   const layoutTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [useCompactLayout, setUseCompactLayout] = useState(!isOpen);
 
   useEffect(() => {
-    setNickname(authUser?.nickname ?? "사용자");
+    setNickname(authUser?.nickname ?? '사용자');
   }, [authUser?.nickname]);
 
   const handleNicknameChange = (value: string) => {
@@ -93,9 +110,60 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
   useEffect(() => {
     if (!isOpen) {
       setShowProfilePopup(false);
-      setShowPreferencesPopup(false);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!authUserId) {
+      setChatHistory([]);
+      return;
+    }
+
+    let isCancelled = false;
+    setIsLoadingHistory(true);
+    setHistoryError(null);
+
+    getChatConversations()
+      .then((conversations) => {
+        if (!isCancelled) {
+          setChatHistory(conversations);
+        }
+      })
+      .catch((err) => {
+        if (!isCancelled) {
+          const message =
+            err instanceof Error
+              ? err.message
+              : '대화 목록 조회에 실패했습니다.';
+          setHistoryError(message);
+          setChatHistory([]);
+        }
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setIsLoadingHistory(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [authUserId, historyRefreshToken]);
+
+  useEffect(() => {
+    if (!authUserId) {
+      return;
+    }
+
+    const handleRefresh = () => {
+      setHistoryRefreshToken((prev) => prev + 1);
+    };
+
+    window.addEventListener('chat:updated', handleRefresh);
+    return () => {
+      window.removeEventListener('chat:updated', handleRefresh);
+    };
+  }, [authUserId]);
 
   useEffect(() => {
     if (layoutTimeoutRef.current) {
@@ -120,46 +188,47 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
     try {
       await logout();
       clearAuthUser();
+      clearConversationId();
+      setChatHistory([]);
       setShowProfilePopup(false);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "로그아웃에 실패했습니다.";
+      const message =
+        err instanceof Error ? err.message : '로그아웃에 실패했습니다.';
       setLogoutError(message);
     } finally {
       setIsLoggingOut(false);
     }
   };
 
-  const handleOpenPreferences = () => {
-    setShowProfilePopup(false);
-    setPreferencesError(null);
-    setShowPreferencesPopup(true);
-    setIsLoadingPreferences(true);
-    getPersonalization()
-      .then((data) => {
-        setInitialPreferences(data);
-      })
-      .catch((err) => {
-        const message = err instanceof Error ? err.message : "개인화 정보 조회에 실패했습니다.";
-        setPreferencesError(message);
-      })
-      .finally(() => {
-        setIsLoadingPreferences(false);
-      });
-  };
-
-  const handleSavePreferences = async (data: OnboardingData) => {
-    setIsSavingPreferences(true);
-    setPreferencesError(null);
-    try {
-      await updateOnboarding(data);
-      setShowPreferencesPopup(false);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "설정 저장에 실패했습니다.";
-      setPreferencesError(message);
-    } finally {
-      setIsSavingPreferences(false);
+  const handleDeleteConversation = async (conversationId: string) => {
+    if (!authUserId) {
+      throw new Error('로그인이 필요합니다.');
+    }
+    await deleteConversation(conversationId);
+    setChatHistory((prev) => prev.filter((item) => item.id !== conversationId));
+    if (currentConversationId === conversationId) {
+      clearConversationId();
     }
   };
+
+  const handleUpdateConversationTitle = async (
+    conversationId: string,
+    title: string,
+  ) => {
+    if (!authUserId) {
+      throw new Error('로그인이 필요합니다.');
+    }
+    const updated = await updateConversationTitle(conversationId, title);
+    setChatHistory((prev) =>
+      prev.map((item) =>
+        item.id === updated.id
+          ? { ...item, title: updated.title ?? title }
+          : item,
+      ),
+    );
+  };
+
+
 
   const handleSaveProfile = async () => {
     if (!authUser) return;
@@ -173,7 +242,8 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
         profileImageKey: response.profile_image_key ?? authUser.profileImageKey,
       });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "프로필 저장에 실패했습니다.";
+      const message =
+        err instanceof Error ? err.message : '프로필 저장에 실패했습니다.';
       setProfileError(message);
     } finally {
       setIsSavingProfile(false);
@@ -194,78 +264,118 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
   };
 
   const sidebarContainerClass = `fixed left-0 top-0 h-full z-40 flex flex-col transition-all duration-300 ease-in-out ${
-    isOpen ? "w-[350px] p-4" : "w-20 px-3 py-4"
+    isOpen ? 'w-[320px] p-4' : 'w-20 px-3 py-4'
   }`;
-  const sidebarHeaderClass = `h-16 flex items-center border-b border-gray-100 shrink-0 ${
-    useCompactLayout ? "justify-center" : "px-6 justify-between"
+  const sidebarHeaderClass = `h-16 flex items-center border-b border-border shrink-0 ${
+    useCompactLayout ? 'justify-center' : 'px-6 justify-between'
   }`;
 
   return (
     <>
       <div className={sidebarContainerClass}>
-        <div className="bg-white rounded-2xl shadow-lg h-full flex flex-col overflow-hidden">
+        <div className="bg-background rounded-2xl shadow-lg h-full flex flex-col overflow-hidden border border-border">
           <header className={sidebarHeaderClass}>
-            {!useCompactLayout && (
-              <span className="text-lg font-black text-slate-900 tracking-tight whitespace-nowrap">
-                Starter
-              </span>
-            )}
+            {!useCompactLayout && isOpen ? <Logo width={72}></Logo> : null}
             <button
               onClick={handleSidebarToggle}
-              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
-              aria-label={isOpen ? "Close sidebar" : "Open sidebar"}
+              className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+              aria-label={isOpen ? 'Close sidebar' : 'Open sidebar'}
             >
-              {isOpen ? <X className="w-4 h-4" /> : <Menu className="w-5 h-5" />}
+              {isOpen ? (
+                <X className="w-4 h-4" />
+              ) : (
+                <Menu className="w-5 h-5" />
+              )}
             </button>
           </header>
 
           {!useCompactLayout ? (
-            <div className={`flex flex-col flex-1 ${isOpen ? "" : "pointer-events-none"}`}>
-              <div className="px-4 py-4 border-b border-gray-100">
-                <button className="w-full min-w-0 flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors group">
-                  <span className="min-w-0 truncate group-hover:text-slate-900">New chat</span>
-                  <Plus className="w-4 h-4 text-gray-400 group-hover:text-slate-600" />
-                </button>
-              </div>
-
+            <div
+              className={`flex flex-col flex-1 ${isOpen ? '' : 'pointer-events-none'}`}
+            >
               <nav className="flex-1 px-4 py-3 overflow-y-auto no-scrollbar">
+                {/* 메인 네비게이션 */}
+                <p className="px-4 text-tiny font-strong text-muted-foreground mb-2">
+                  메인 메뉴
+                </p>
                 <div className="space-y-1">
-                  {MENU_ITEMS.map(({ id, icon: Icon, label }) => (
-                    <button
-                      key={id}
-                      onClick={() => onMenuClick(id)}
-                      className={`w-full min-w-0 flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                        activeMenu === id
-                          ? "bg-slate-100 text-slate-900 shadow-sm"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  <button
+                    onClick={() => onMenuClick('home')}
+                    className={`w-full min-w-0 flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
+                      activeMenu === 'home'
+                        ? 'bg-muted text-foreground'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    }`}
+                  >
+                    <Home
+                      className={`w-4 h-4 shrink-0 transition-colors ${
+                        activeMenu === 'home'
+                          ? 'text-foreground'
+                          : 'text-muted-foreground'
                       }`}
-                    >
-                      <Icon
-                        className={`w-4 h-4 shrink-0 transition-colors ${
-                          activeMenu === id ? "text-slate-900" : "text-slate-400"
-                        }`}
-                      />
-                      <span className="min-w-0 truncate">{label}</span>
-                    </button>
-                  ))}
+                    />
+                    <span className="min-w-0 truncate text-caption font-strong">
+                      홈
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => onMenuClick('templates')}
+                    className={`w-full min-w-0 flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
+                      activeMenu === 'templates'
+                        ? 'bg-muted text-foreground'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    }`}
+                  >
+                    <FileText
+                      className={`w-4 h-4 shrink-0 transition-colors ${
+                        activeMenu === 'templates'
+                          ? 'text-foreground'
+                          : 'text-muted-foreground'
+                      }`}
+                    />
+                    <span className="min-w-0 truncate text-caption font-strong">
+                      상권 찾기
+                    </span>
+                  </button>
                 </div>
 
-                <div className="my-4 border-t border-gray-100" />
+                {/* 구분선 */}
+                <div className="my-4 border-t border-border" />
 
-                <div className="space-y-1">
-                  {COLLECTIONS.map(({ id, label, color }) => (
-                    <button
-                      key={id}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors text-left"
-                    >
-                      <div className={`w-2 h-2 rounded-full shrink-0 ${color}`} />
-                      <span className="truncate">{label}</span>
-                    </button>
-                  ))}
+                {/* AI 채팅 섹션 */}
+                <div className="mb-3">
+                  <p className="px-4 text-tiny font-strong text-muted-foreground mb-2">
+                    AI 분석
+                  </p>
+                  <button
+                    onClick={() => {
+                      clearConversationId();
+                      onMenuClick('chat');
+                    }}
+                    className="w-full min-w-0 flex items-center gap-3 px-4 py-2.5 rounded-lg text-muted-foreground bg-background border border-primary/20 shadow-sm hover:bg-primary/5 hover:border-primary/40 hover:shadow-md transition-all group"
+                  >
+                    <MessageSquarePlus className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                    <span className="min-w-0 truncate text-caption font-strong">
+                      New Chat
+                    </span>
+                  </button>
                 </div>
+
+                <SidebarChatHistory
+                  items={chatHistory}
+                  isLoading={isLoadingHistory}
+                  error={historyError}
+                  onSelect={(conversationId) => {
+                    setConversationId(conversationId);
+                    router.push('/chat');
+                  }}
+                  onDelete={handleDeleteConversation}
+                  onUpdateTitle={handleUpdateConversationTitle}
+                  onError={setHistoryError}
+                />
               </nav>
 
-              <footer className="px-4 py-4 border-t border-gray-100 bg-white">
+              <footer className="px-4 py-2 border-t border-border bg-background">
                 <div className="flex items-center gap-3 px-2 py-2">
                   {authUser ? (
                     <>
@@ -276,38 +386,49 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
                         aria-label="Open profile settings"
                       >
                         <div className="relative shrink-0">
-                          <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100">
-                            <ImageWithFallback
-                              src={getProfileImageUrl(authUser?.profileImageKey)}
-                              alt="Profile"
-                              className="w-full h-full object-cover"
-                            />
+                          <div className="w-8 h-8 rounded-full overflow-hidden border border-border bg-muted flex items-center justify-center">
+                            {authUser?.profileImageKey ? (
+                              <ImageWithFallback
+                                src={getProfileImageUrl(
+                                  authUser.profileImageKey,
+                                )}
+                                alt="Profile"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <ImUser className="w-full h-full text-muted-foreground p-1.5" />
+                            )}
                           </div>
-                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full shadow-sm" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-slate-900 truncate">{nickname}</p>
+                          <p className="text-body font-strong text-foreground truncate">
+                            {nickname}
+                          </p>
                         </div>
                       </button>
                       <button
                         onClick={() => setShowProfilePopup((prev) => !prev)}
-                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all"
+                        className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-all"
                         aria-label="Settings"
                       >
-                        <Settings className="w-4 h-4" />
+                        <Settings className="w-5 h-5" />
                       </button>
                     </>
                   ) : (
                     <button
                       type="button"
                       onClick={() => {
-                        const next = pathname ? `?next=${encodeURIComponent(pathname)}` : "";
+                        const next = pathname
+                          ? `?next=${encodeURIComponent(pathname)}`
+                          : '';
                         router.push(`/login${next}`);
                       }}
-                      className="w-full min-w-0 flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+                      className="w-full min-w-0 flex items-center justify-between px-4 py-2.5 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
                     >
-                      <span className="truncate">로그인</span>
-                      <LogIn className="w-4 h-4 text-slate-400" />
+                      <span className="truncate text-caption font-bold">
+                        로그인
+                      </span>
+                      <LogIn className="w-4 h-4 text-muted-foreground" />
                     </button>
                   )}
                 </div>
@@ -322,8 +443,8 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
                     onClick={() => onMenuClick(id)}
                     className={`p-2 rounded-lg transition-colors ${
                       activeMenu === id
-                        ? "bg-slate-100 text-slate-900"
-                        : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                        ? 'bg-muted text-foreground'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`}
                     aria-label={label}
                     title={label}
@@ -338,26 +459,32 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
                   <button
                     type="button"
                     onClick={() => setShowProfilePopup((prev) => !prev)}
-                    className="relative rounded-full border border-gray-100"
+                    className="relative rounded-full border border-border"
                     aria-label="Open profile settings"
                   >
-                    <div className="w-9 h-9 rounded-full overflow-hidden">
-                      <ImageWithFallback
-                        src={getProfileImageUrl(authUser?.profileImageKey)}
-                        alt="Profile"
-                        className="w-full h-full object-cover"
-                      />
+                    <div className="w-9 h-9 rounded-full overflow-hidden bg-muted flex items-center justify-center">
+                      {authUser?.profileImageKey ? (
+                        <ImageWithFallback
+                          src={getProfileImageUrl(authUser.profileImageKey)}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <ImUser className="w-full h-full text-muted-foreground p-1.5" />
+                      )}
                     </div>
-                    <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />
+                    <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-success border-2 border-background rounded-full" />
                   </button>
                 ) : (
                   <button
                     type="button"
                     onClick={() => {
-                      const next = pathname ? `?next=${encodeURIComponent(pathname)}` : "";
+                      const next = pathname
+                        ? `?next=${encodeURIComponent(pathname)}`
+                        : '';
                       router.push(`/login${next}`);
                     }}
-                    className="p-2 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                    className="p-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                     aria-label="Login"
                     title="로그인"
                   >
@@ -378,7 +505,6 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
                 nickname={nickname}
                 onNicknameChange={handleNicknameChange}
                 onClose={() => setShowProfilePopup(false)}
-                onOpenPreferences={handleOpenPreferences}
                 onLogout={handleLogout}
                 isLoggingOut={isLoggingOut}
                 logoutError={logoutError}
@@ -393,22 +519,7 @@ export function Sidebar({ activeMenu, onMenuClick, isOpen, onToggle }: SidebarPr
           </AnimatePresence>,
           document.body,
         )}
-      {isMounted &&
-        createPortal(
-          <AnimatePresence>
-            {showPreferencesPopup && (
-              <StartupPreferencesPopup
-                initialData={initialPreferences}
-                onClose={() => setShowPreferencesPopup(false)}
-                onSave={handleSavePreferences}
-                isSaving={isSavingPreferences}
-                isLoading={isLoadingPreferences}
-                error={preferencesError}
-              />
-            )}
-          </AnimatePresence>,
-          document.body,
-        )}
+
     </>
   );
 }

@@ -1,9 +1,25 @@
 'use client';
+import Link from 'next/link';
+import Image from 'next/image';
+import LogoImg from '@/components/img/logo.png';
 
-export function Logo({ className = 'h-8' }: { className?: string }) {
+interface LogoProps {
+  className?: string;
+  width?: number;
+}
+
+export function Logo({ className = '', width = 120 }: LogoProps) {
   return (
-    <div className={`flex items-center ${className}`}>
-      <span className="text-2xl font-bold text-blue-900">Starter</span>
-    </div>
+    <Link href="/locations">
+      <div className={`flex items-center ${className}`}>
+        <Image
+          src={LogoImg}
+          alt="Alley Logo"
+          width={width}
+          style={{ width: `${width}px`, height: 'auto' }}
+          className="object-contain"
+        />
+      </div>
+    </Link>
   );
 }

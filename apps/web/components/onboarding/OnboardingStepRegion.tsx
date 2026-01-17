@@ -28,26 +28,26 @@ export function OnboardingStepRegion({
   onChange,
 }: OnboardingStepRegionProps) {
   return (
-    <div className="space-y-12">
-      <h1 className="text-5xl font-semibold text-gray-900">
+    <div className="space-y-[4vh]">
+      <h1 className="text-display font-bold text-foreground">
         선호하는 지역 특징을 선택하세요
       </h1>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-[2vw]">
         {REGION_OPTIONS.map((option) => (
           <button
             key={option.value}
-            onClick={() => onChange(option.value)}
-            className={`p-12 border-2 rounded-2xl text-center transition-all hover:border-gray-900 hover:shadow-lg ${
+            onClick={() => onChange(value === option.value ? '' : option.value)}
+            className={`p-[15%] border-2 rounded-2xl text-center transition-all hover:border-primary hover:shadow-lg ${
               value === option.value
-                ? 'border-gray-900 bg-gray-50 shadow-lg'
-                : 'border-gray-300'
-            }`}
+                ? 'border-primary bg-primary/5 shadow-lg'
+                : 'border-border'
+            } ${value && value !== option.value ? 'opacity-40 grayscale-[0.5]' : 'opacity-100'}`}
           >
-            <div className="flex justify-center mb-6">
-              <option.Icon size={56} className="text-gray-900" />
+            <div className="flex justify-center mb-[1.5vh]">
+              <option.Icon size={40} className="w-12 h-12 text-foreground" />
             </div>
-            <div className="text-xl font-semibold text-gray-900">
+            <div className="text-h5 font-bold text-foreground">
               {option.label}
             </div>
           </button>
