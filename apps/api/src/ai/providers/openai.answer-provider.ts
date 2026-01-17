@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ResponseInputItem } from 'openai/resources/responses/responses.js';
-import { OpenAiService } from '../openAI/open-ai.service';
+import { OpenAiService } from './openai/openai.service';
 import { AnswerContext, AnswerProvider } from '../core/ai-types';
 
 @Injectable()

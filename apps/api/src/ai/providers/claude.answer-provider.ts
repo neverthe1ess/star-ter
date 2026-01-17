@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type Anthropic from '@anthropic-ai/sdk';
-import { ClaudeService } from '../../assistant/claude.service';
-import { CLAUDE_PROMPTS } from '../../assistant/prompts/claude-prompts';
+import { ClaudeService } from './claude/claude.service';
+import { CLAUDE_PROMPTS } from '../prompts/claude-prompts';
 import { AnswerContext, AnswerProvider } from '../core/ai-types';
 
 @Injectable()

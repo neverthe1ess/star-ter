@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { OpenAiService } from '../openAI/open-ai.service';
+import { OpenAiService } from '../providers/openai/openai.service';
 import { AiRepository } from '../ai.repository';
 import { AreaVectorDto, BusinessCategoryVectorDto } from '../dto/column-vector';
 

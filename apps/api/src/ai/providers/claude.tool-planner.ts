@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { ClaudeService } from '../../assistant/claude.service';
-import { CLAUDE_PROMPTS } from '../../assistant/prompts/claude-prompts';
+import { ClaudeService } from './claude/claude.service';
+import { CLAUDE_PROMPTS } from '../prompts/claude-prompts';
 import { TOOLS } from '../tools/definitions';
 import { PlannerContext, ToolCall, ToolPlanner } from '../core/ai-types';
 import type Anthropic from '@anthropic-ai/sdk';
