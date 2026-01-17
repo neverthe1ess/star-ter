@@ -1,83 +1,29 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ChatRepository } from './chat.repository';
-import { AiService } from './ai.service';
+import {
+  AiChatOrchestrator,
+  AiChatOptions,
+} from './core/ai-chat-orchestrator.service';
 
 @Injectable()
 export class ChatService {
   constructor(
     private readonly chatRepository: ChatRepository,
-    private readonly aiService: AiService,
+    private readonly aiChatOrchestrator: AiChatOrchestrator,
   ) {}
 
   async handleChatMessage(
     userId: string,
     conversationId: string | null,
     message: string,
+    options: AiChatOptions = {},
   ) {
-    if (!conversationId) {
-      conversationId = await this.chatRepository
-        .createConversation({
-          userId: userId,
-          title: message.slice(0, 50), // 첫 메시지 일부를 제목으로 사용
-        })
-        .then((conv) => conv.id);
-    }
-
-    if (!conversationId) {
-      throw new Error('Failed to create conversation');
-    }
-
-    const conversation =
-      await this.chatRepository.getConversation(conversationId);
-
-    if (conversation?.userId !== userId) {
-      throw new Error('Access denied to this conversation');
-    }
-
-    await this.chatRepository.addMessage({
-      conversationId: conversationId,
-      role: 'user',
-      content: message,
-    });
-
-    const historyMessages = await this.getHistoryMessages(conversationId);
-    const aiResponseJson = await this.aiService.getAIMessageWithHistory(
+    return this.aiChatOrchestrator.handleMessage(
+      userId,
+      conversationId,
       message,
-      historyMessages,
+      options,
     );
-
-    // JSON 파싱
-    const parsed = JSON.parse(aiResponseJson) as {
-      reply: string;
-      actions?: unknown[];
-      sources?: { tool: string; displayName: string; source: string }[];
-    };
-
-    await this.chatRepository.addMessage({
-      conversationId: conversationId,
-      role: 'assistant',
-      content: parsed.reply,
-    });
-
-    return {
-      reply: parsed.reply,
-      actions: parsed.actions || [],
-      sources: parsed.sources || [],
-      conversationId,
-    };
-  }
-
-  private async getHistoryMessages(
-    conversationId: string,
-  ): Promise<{ role: 'user' | 'assistant'; content: string }[]> {
-    const messages = await this.chatRepository.listMessagesByConversation(
-      conversationId,
-      { take: 50, skip: 0, cursorId: undefined, order: 'asc' },
-    );
-    return messages.map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-    }));
   }
 
   async getUserConversations(userId: string) {

@@ -10,6 +10,13 @@ import { OpenAiService } from './openAI/open-ai.service';
 import { LocationRecommendModule } from '../location-recommend/location-recommend.module';
 import { ChatRepository } from './chat.repository';
 import { ChatService } from './chat.service';
+import { AiChatOrchestrator } from './core/ai-chat-orchestrator.service';
+import { AiContextService } from './core/ai-context.service';
+import { OpenAiToolPlanner } from './providers/openai.tool-planner';
+import { ClaudeToolPlanner } from './providers/claude.tool-planner';
+import { OpenAiAnswerProvider } from './providers/openai.answer-provider';
+import { ClaudeAnswerProvider } from './providers/claude.answer-provider';
+import { ClaudeService } from '../assistant/claude.service';
 
 @Module({
   imports: [LocationRecommendModule],
@@ -21,9 +28,16 @@ import { ChatService } from './chat.service';
     AiToolsService,
     AiResponseProcessor,
     OpenAiService,
+    ClaudeService,
+    AiContextService,
+    OpenAiToolPlanner,
+    ClaudeToolPlanner,
+    OpenAiAnswerProvider,
+    ClaudeAnswerProvider,
+    AiChatOrchestrator,
     ChatRepository,
     ChatService,
   ],
-  exports: [AiService, AiRepository],
+  exports: [AiService, AiRepository, AiChatOrchestrator],
 })
 export class AiModule {}
