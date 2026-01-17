@@ -178,8 +178,9 @@ export function ChatPage() {
           });
         });
 
-        if (lastMapPayload && lastMapPayload.mapCommands.length > 0) {
-          dispatch(lastMapPayload);
+        const finalMapPayload = lastMapPayload as ActionDispatchPayload | null;
+        if (finalMapPayload?.mapCommands && finalMapPayload.mapCommands.length > 0) {
+          dispatch(finalMapPayload);
         }
 
         mapCommandUpdates.forEach((commandPromise) => {
