@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
-import { AreaVectorDto, BusinessCategoryVectorDto } from '../dto/column-vector';
+import { AreaVectorDto, BusinessCategoryVectorDto } from '../../dto/column-vector';
 import { ResponseInput, Tool } from 'openai/resources/responses/responses.js';
-import { TOOLS } from '../tools/definitions';
-import { FINAL_RESPONSE_SCHEMA_FOR_ACTION } from '../schemas/response-schemas';
-import { PROMPTS } from '../constants/prompts';
-import { initValkeySemanticCache } from '../cache/valkey.client';
-import { semanticGetByVec, semanticSetByVec } from '../cache/semantic-cache';
+import { TOOLS } from '../../tools/definitions';
+import { FINAL_RESPONSE_SCHEMA_FOR_ACTION } from '../../schemas/response-schemas';
+import { PROMPTS } from '../../prompts/openai-prompts';
+import { initValkeySemanticCache } from '../../cache/valkey.client';
+import { semanticGetByVec, semanticSetByVec } from '../../cache/semantic-cache';
 
 @Injectable()
 export class OpenAiService {

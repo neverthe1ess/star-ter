@@ -7,7 +7,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import {
   AreaVectorDto,
   BusinessCategoryVectorDto,
-} from '../ai/dto/column-vector';
+} from '../../dto/column-vector';
 
 // Claude Tool 정의 타입
 interface ClaudeTool {
