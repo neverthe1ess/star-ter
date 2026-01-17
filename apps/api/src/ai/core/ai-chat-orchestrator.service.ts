@@ -24,6 +24,13 @@ export interface AiChatResponse {
   conversationId: string;
 }
 
+export type AiStreamEventName = 'meta' | 'actions' | 'delta' | 'done' | 'error';
+
+export type AiStreamEventHandler = (
+  event: AiStreamEventName,
+  data: Record<string, unknown>,
+) => void;
+
 @Injectable()
 export class AiChatOrchestrator {
   private readonly MAX_HISTORY_LENGTH = 50;
@@ -187,6 +194,154 @@ export class AiChatOrchestrator {
     };
   }
 
+  async handleMessageStream(
+    userId: string,
+    conversationId: string | null,
+    message: string,
+    options: AiChatOptions,
+    onEvent: AiStreamEventHandler,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    const startTime = Date.now();
+    console.log(
+      `[AiChatOrchestrator] Starting handleMessageStream for user ${userId}`,
+    );
+
+    const currentConversationId = await this.resolveConversationId(
+      userId,
+      conversationId,
+      message,
+    );
+
+    const historyMessages =
+      await this.chatRepository.listMessagesByConversation(
+        currentConversationId,
+        { take: this.MAX_HISTORY_LENGTH, order: 'asc' },
+      );
+    const listingIdLookup = this.buildListingIdLookup(historyMessages);
+    const history: AiMessage[] = historyMessages.map((msg) => ({
+      role: msg.role as 'user' | 'assistant',
+      content: msg.content,
+    }));
+
+    await this.chatRepository.addMessage({
+      conversationId: currentConversationId,
+      role: 'user',
+      content: message,
+    });
+
+    const messages: AiMessage[] = [
+      ...history,
+      { role: 'user', content: message },
+    ];
+
+    const [categories, areas] = await Promise.all([
+      this.contextService.getCategories(message),
+      this.contextService.getAreaInfo(message),
+    ]);
+
+    const plannerName = options.toolPlanner || 'openai';
+    const answerName = options.aiProvider || 'openai';
+
+    const plannedToolCalls = await this.getPlanner(plannerName).planTools({
+      messages,
+      categories,
+      areas,
+    });
+    const toolCalls = this.normalizeListingIds(
+      plannedToolCalls,
+      listingIdLookup,
+    );
+    const toolResults = await this.runTools(toolCalls);
+
+    const actions = this.actionMapper.buildActions(toolCalls, toolResults);
+    const sources =
+      toolCalls.length > 0
+        ? toolCalls.map((toolCall) => ({
+            tool: toolCall.name,
+            ...getToolMetadata(toolCall.name),
+          }))
+        : undefined;
+
+    const responseForPatch = { reply: '', actions, sources };
+    this.aiResponseProcessor.patchCoordinates(responseForPatch, areas);
+
+    const patchedActions = responseForPatch.actions ?? [];
+    const patchedSources = responseForPatch.sources;
+    const markersForHistory = this.extractMarkersFromActions(patchedActions);
+
+    onEvent('meta', { conversationId: currentConversationId });
+    if (patchedActions.length > 0 || (patchedSources?.length ?? 0) > 0) {
+      onEvent('actions', { actions: patchedActions, sources: patchedSources });
+    }
+
+    let reply = '';
+    let aborted = signal?.aborted ?? false;
+    if (signal && !aborted) {
+      signal.addEventListener(
+        'abort',
+        () => {
+          aborted = true;
+        },
+        { once: true },
+      );
+    }
+
+    try {
+      console.log(`[AiChatOrchestrator] Starting stream with ${answerName}`);
+      reply = await this.getAnswerProvider(answerName).stream(
+        { messages, toolCalls, toolResults },
+        (chunk) => {
+          if (!chunk || signal?.aborted) return;
+          console.log(
+            `[AiChatOrchestrator] Delta chunk: ${chunk.slice(0, 50)}...`,
+          );
+          reply += chunk;
+          onEvent('delta', { text: chunk });
+        },
+        signal,
+      );
+      console.log(
+        `[AiChatOrchestrator] Stream completed, total length: ${reply.length}`,
+      );
+
+      if (!signal?.aborted) {
+        onEvent('done', {
+          reply,
+          actions: patchedActions,
+          sources: patchedSources,
+          conversationId: currentConversationId,
+        });
+      }
+    } catch (error) {
+      if (!signal?.aborted) {
+        const message =
+          error instanceof Error ? error.message : 'Stream failed';
+        onEvent('error', { message });
+      }
+    } finally {
+      if (reply.length > 0 || aborted) {
+        const metadata = this.buildMessageMetadata({
+          actions: patchedActions,
+          sources: patchedSources,
+          markers: markersForHistory,
+          streamAborted: aborted,
+        });
+        await this.chatRepository.addMessage({
+          conversationId: currentConversationId,
+          role: 'assistant',
+          content: reply,
+          metadata,
+        });
+      }
+    }
+
+    const totalTime = Date.now() - startTime;
+    console.log(
+      `[AiChatOrchestrator] handleMessageStream completed in ${totalTime}ms`,
+    );
+  }
+
   private async resolveConversationId(
     userId: string,
     conversationId: string | null,
@@ -292,6 +447,7 @@ export class AiChatOrchestrator {
     actions: unknown[];
     sources?: { tool: string; displayName: string; source: string }[];
     markers: unknown[];
+    streamAborted?: boolean;
   }): Prisma.InputJsonValue | undefined {
     const metadata: Record<string, unknown> = {};
 
@@ -303,6 +459,9 @@ export class AiChatOrchestrator {
     }
     if (params.markers.length > 0) {
       metadata.markers = params.markers;
+    }
+    if (params.streamAborted) {
+      metadata.streamAborted = true;
     }
 
     return Object.keys(metadata).length > 0

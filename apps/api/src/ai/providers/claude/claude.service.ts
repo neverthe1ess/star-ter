@@ -123,6 +123,45 @@ export class ClaudeService {
   }
 
   /**
+   * 결과 분석 및 최종 응답 생성 (스트리밍)
+   */
+  async streamAnalyzeResults(
+    messages: Anthropic.MessageParam[],
+    systemPrompt: string,
+    onDelta: (text: string) => void,
+    signal?: AbortSignal,
+  ): Promise<string> {
+    const stream = this.client.messages.stream(
+      {
+        model: this.MODEL,
+        max_tokens: 2000,
+        system: systemPrompt,
+        messages,
+      },
+      signal ? { signal } : undefined,
+    );
+
+    let fullText = '';
+    stream.on('text', (text) => {
+      if (!text) return;
+      onDelta(text);
+      fullText += text;
+    });
+
+    await stream.done();
+
+    if (!fullText) {
+      try {
+        fullText = await stream.finalText();
+      } catch {
+        // ignore
+      }
+    }
+
+    return fullText;
+  }
+
+  /**
    * 업종 벡터를 프롬프트 문자열로 변환
    */
   formatCategoryVectors(categories: BusinessCategoryVectorDto[]): string {

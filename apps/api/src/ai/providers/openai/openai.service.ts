@@ -76,6 +76,37 @@ export class OpenAiService {
     });
   }
 
+  async streamAnalyzeResults(
+    input: ResponseInput,
+    onDelta: (text: string) => void,
+    signal?: AbortSignal,
+  ): Promise<string> {
+    const stream = await this.client.responses.create(
+      {
+        model: 'gpt-4o-mini',
+        input: input,
+        service_tier: 'priority',
+        max_output_tokens: 10000,
+        instructions: PROMPTS.ANALYZE_RESULTS_SYSTEM,
+        stream: true,
+      },
+      signal ? { signal } : undefined,
+    );
+
+    let fullText = '';
+    for await (const event of stream) {
+      if (event.type === 'response.output_text.delta') {
+        const delta = event.delta ?? '';
+        if (delta) {
+          onDelta(delta);
+          fullText += delta;
+        }
+      }
+    }
+
+    return fullText;
+  }
+
   getTablesByMessage(message: string) {
     return this.client.responses.create({
       model: 'gpt-4.1-mini',
