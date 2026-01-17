@@ -11,7 +11,15 @@ import { useChat } from './hooks/useChat';
 import { useActionDispatcher } from './hooks/useActionDispatcher';
 import { getConversationHistory } from '@/services/chat/chat.api';
 import { useChatStore } from '@/store/use-chat-store';
-import { buildMessageFromAiText } from '@/lib/chat/ai-message';
+import {
+  buildMessageFromAiText,
+  parseAiResponseText,
+} from '@/lib/chat/ai-message';
+import {
+  processAiActions,
+  type ChartItemUpdate,
+} from './actions/actionProcessor';
+import { type ActionDispatchPayload, type MapCommand } from './actions/commandTypes';
 
 /**
  * ChatPage 컴포넌트 - AI 챗봇의 메인 페이지
@@ -32,6 +40,7 @@ export function ChatPage() {
     sendMessage,
     handleNewThread,
     loadConversation,
+    applyChartItemUpdate,
   } = useChat(aiProvider);
   const conversationId = useChatStore((state) => state.conversationId);
 
@@ -63,6 +72,7 @@ export function ChatPage() {
 
   // TODO: 메인에서 검색제거 시 반드시 제거
   const hasLoadedHistory = useRef<string | null>(null);
+  const historyRequestId = useRef(0);
   const prevConversationId = useRef<string | null>(null);
 
   useEffect(() => {
@@ -77,20 +87,80 @@ export function ChatPage() {
     if (hasLoadedHistory.current === conversationId) return;
 
     let cancelled = false;
-    hasLoadedHistory.current = conversationId;
+    const requestId = historyRequestId.current + 1;
+    historyRequestId.current = requestId;
     prevConversationId.current = conversationId;
 
     getConversationHistory(conversationId)
       .then((history) => {
-        if (cancelled) return;
-        const mapped = history.map((item, index) =>
-          buildMessageFromAiText({
+        if (cancelled || historyRequestId.current !== requestId) return;
+        const chartUpdateQueue: Array<
+          Promise<{ messageId: string; update: ChartItemUpdate }>
+        > = [];
+        let lastMapPayload: ActionDispatchPayload | null = null;
+        const mapCommandUpdates: Promise<MapCommand[]>[] = [];
+
+        const mapped = history.map((item, index) => {
+          const baseMessage = buildMessageFromAiText({
             id: `${conversationId}-${index}`,
             role: item.role,
             content: item.content,
             timestamp: new Date(),
-          }),
-        );
+          });
+
+          if (baseMessage.role !== 'assistant') {
+            return baseMessage;
+          }
+
+          const parsed = parseAiResponseText(item.content);
+          const actions =
+            item.metadata?.actions ??
+            (parsed?.actions && parsed.actions.length > 0
+              ? parsed.actions
+              : []);
+          const sources = item.metadata?.sources;
+
+          if (!actions || actions.length === 0) {
+            return {
+              ...baseMessage,
+              sources: sources ?? undefined,
+            };
+          }
+
+          const actionPlan = processAiActions({
+            reply: baseMessage.content,
+            actions,
+          });
+
+          actionPlan.chartItemUpdates.forEach((updatePromise) => {
+            chartUpdateQueue.push(
+              updatePromise.then((update) => ({
+                messageId: baseMessage.id,
+                update,
+              })),
+            );
+          });
+
+          if (
+            actionPlan.mapCommands.length > 0 ||
+            actionPlan.mapCommandUpdates.length > 0
+          ) {
+            lastMapPayload = {
+              openMapPanel: actionPlan.openMapPanel,
+              mapCommands: actionPlan.mapCommands,
+            };
+            mapCommandUpdates.push(...actionPlan.mapCommandUpdates);
+          }
+
+          return {
+            ...baseMessage,
+            chartItems:
+              actionPlan.chartItems.length > 0
+                ? actionPlan.chartItems
+                : undefined,
+            sources: sources ?? undefined,
+          };
+        });
         const titleFromHistory =
           mapped.find((item) => item.role === 'user')?.content?.slice(0, 50) ||
           'New Thread';
@@ -99,15 +169,44 @@ export function ChatPage() {
           messages: mapped,
           title: titleFromHistory,
         });
+        hasLoadedHistory.current = conversationId;
+
+        chartUpdateQueue.forEach((updatePromise) => {
+          updatePromise.then(({ messageId, update }) => {
+            if (cancelled) return;
+            applyChartItemUpdate(messageId, update);
+          });
+        });
+
+        if (lastMapPayload && lastMapPayload.mapCommands.length > 0) {
+          dispatch(lastMapPayload);
+        }
+
+        mapCommandUpdates.forEach((commandPromise) => {
+          commandPromise.then((commands) => {
+            if (cancelled || commands.length === 0) return;
+            dispatch({
+              openMapPanel: lastMapPayload?.openMapPanel ?? false,
+              mapCommands: commands,
+            });
+          });
+        });
       })
       .catch((error) => {
+        if (cancelled || historyRequestId.current !== requestId) return;
         console.error('Failed to load conversation history:', error);
-      });
+      })
 
     return () => {
       cancelled = true;
     };
-  }, [conversationId, loadConversation, handleNewThread]);
+  }, [
+    conversationId,
+    loadConversation,
+    handleNewThread,
+    applyChartItemUpdate,
+    dispatch,
+  ]);
 
   return (
     <div className="flex h-full overflow-hidden">

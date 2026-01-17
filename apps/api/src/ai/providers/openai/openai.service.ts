@@ -6,7 +6,6 @@ import {
 } from '../../dto/column-vector';
 import { ResponseInput, Tool } from 'openai/resources/responses/responses.js';
 import { TOOLS } from '../../tools/definitions';
-import { FINAL_RESPONSE_SCHEMA_FOR_ACTION } from '../../schemas/response-schemas';
 import { PROMPTS } from '../../prompts/openai-prompts';
 import { initValkeySemanticCache } from '../../cache/valkey.client';
 import { semanticGetByVec, semanticSetByVec } from '../../cache/semantic-cache';
@@ -73,9 +72,6 @@ export class OpenAiService {
       input: input,
       service_tier: 'priority',
       max_output_tokens: 10000,
-      text: {
-        format: FINAL_RESPONSE_SCHEMA_FOR_ACTION,
-      },
       instructions: PROMPTS.ANALYZE_RESULTS_SYSTEM,
     });
   }
