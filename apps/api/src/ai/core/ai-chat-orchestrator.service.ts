@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from 'generated/prisma/client';
 import { AiContextService } from './ai-context.service';
 import { AiMessage, AiProviderName, ToolCall, ToolResult } from './ai-types';
 import { ChatRepository } from '../chat.repository';
@@ -61,6 +62,7 @@ export class AiChatOrchestrator {
         currentConversationId,
         { take: this.MAX_HISTORY_LENGTH, order: 'asc' },
       );
+    const listingIdLookup = this.buildListingIdLookup(historyMessages);
     const history: AiMessage[] = historyMessages.map((msg) => ({
       role: msg.role as 'user' | 'assistant',
       content: msg.content,
@@ -94,11 +96,15 @@ export class AiChatOrchestrator {
     console.log(
       `[AiChatOrchestrator] Tool planning start with ${plannerName} (${Date.now() - startTime}ms)`,
     );
-    const toolCalls = await this.getPlanner(plannerName).planTools({
+    const plannedToolCalls = await this.getPlanner(plannerName).planTools({
       messages,
       categories,
       areas,
     });
+    const toolCalls = this.normalizeListingIds(
+      plannedToolCalls,
+      listingIdLookup,
+    );
     console.log(
       `[AiChatOrchestrator] Tool planning end. Calls: ${toolCalls.length} (${Date.now() - startTime}ms)`,
     );
@@ -129,6 +135,9 @@ export class AiChatOrchestrator {
     console.log(
       `[AiChatOrchestrator] Answer generation end (${Date.now() - startTime}ms)`,
     );
+    console.log(
+      `[AiChatOrchestrator] Raw LLM Response (preview): ${responseText.slice(0, 200)}...`,
+    );
 
     const actions = this.actionMapper.buildActions(toolCalls, toolResults);
     const sources =
@@ -145,18 +154,24 @@ export class AiChatOrchestrator {
     );
 
     const finalResult = this.parseFinalResponse(finalJson);
+
+    console.log(`[AiChatOrchestrator] Final Backend Response (preview):`);
+    console.log(`- Reply: ${finalResult.reply.slice(0, 100)}...`);
+    console.log(`- Actions: ${JSON.stringify(finalResult.actions)}`);
     const markersForHistory = this.extractMarkersFromActions(
       finalResult.actions,
     );
-    const contentWithMarkers = this.appendMarkersToReply(
-      finalResult.reply,
-      markersForHistory,
-    );
+    const metadata = this.buildMessageMetadata({
+      actions: finalResult.actions,
+      sources: finalResult.sources,
+      markers: markersForHistory,
+    });
 
     await this.chatRepository.addMessage({
       conversationId: currentConversationId,
       role: 'assistant',
-      content: contentWithMarkers,
+      content: finalResult.reply,
+      metadata,
     });
 
     const totalTime = Date.now() - startTime;
@@ -259,14 +274,6 @@ export class AiChatOrchestrator {
     }
   }
 
-  private appendMarkersToReply(reply: string, markers: unknown[]): string {
-    if (!markers.length) return reply;
-
-    return `${reply}\n\n[매물 목록 참조용 - 이 메시지는 사용자에게 보이지 않습니다]\n${JSON.stringify(
-      markers,
-    )}`;
-  }
-
   private extractMarkersFromActions(actions: unknown[]): unknown[] {
     for (const action of actions) {
       if (!action || typeof action !== 'object') continue;
@@ -279,5 +286,175 @@ export class AiChatOrchestrator {
     }
 
     return [];
+  }
+
+  private buildMessageMetadata(params: {
+    actions: unknown[];
+    sources?: { tool: string; displayName: string; source: string }[];
+    markers: unknown[];
+  }): Prisma.InputJsonValue | undefined {
+    const metadata: Record<string, unknown> = {};
+
+    if (params.actions.length > 0) {
+      metadata.actions = params.actions;
+    }
+    if (params.sources && params.sources.length > 0) {
+      metadata.sources = params.sources;
+    }
+    if (params.markers.length > 0) {
+      metadata.markers = params.markers;
+    }
+
+    return Object.keys(metadata).length > 0
+      ? (metadata as Prisma.InputJsonValue)
+      : undefined;
+  }
+
+  private buildListingIdLookup(
+    historyMessages: Array<{ content: string; metadata?: unknown | null }>,
+  ): Map<number, string> {
+    const lookup = new Map<number, string>();
+
+    for (const message of historyMessages) {
+      const markers = this.extractMarkersFromMetadata(message.metadata);
+      const fallbackMarkers =
+        markers.length > 0
+          ? markers
+          : this.extractMarkersFromContent(message.content);
+
+      for (const marker of fallbackMarkers) {
+        if (!marker || typeof marker !== 'object') continue;
+        const record = marker as Record<string, unknown>;
+
+        const listingNumber = this.coerceListingNumber(
+          record.listingNumber ?? record.listingNo ?? record.label,
+        );
+        const listingId = this.pickString(record.listingId, record.id);
+
+        if (listingNumber !== null && listingId) {
+          lookup.set(listingNumber, listingId);
+        }
+      }
+    }
+
+    return lookup;
+  }
+
+  private normalizeListingIds(
+    toolCalls: ToolCall[],
+    listingIdLookup: Map<number, string>,
+  ): ToolCall[] {
+    if (listingIdLookup.size === 0) return toolCalls;
+
+    let updatedCount = 0;
+    const normalized = toolCalls.map((toolCall) => {
+      if (toolCall.name !== 'calc_break_even_with_listing') {
+        return toolCall;
+      }
+
+      const listingIdValue = toolCall.args?.listingId;
+      const resolved = this.resolveListingId(listingIdValue, listingIdLookup);
+      if (!resolved || resolved === listingIdValue) {
+        return toolCall;
+      }
+
+      updatedCount += 1;
+      const args = { ...toolCall.args, listingId: resolved };
+      return {
+        ...toolCall,
+        args,
+        argsJson: JSON.stringify(args),
+      };
+    });
+
+    if (updatedCount > 0) {
+      console.log(
+        `[AiChatOrchestrator] Mapped ${updatedCount} listing reference(s) from history`,
+      );
+    }
+
+    return normalized;
+  }
+
+  private resolveListingId(
+    listingIdValue: unknown,
+    listingIdLookup: Map<number, string>,
+  ): string | null {
+    if (typeof listingIdValue === 'string') {
+      const trimmed = listingIdValue.trim();
+      if (trimmed && this.isUuid(trimmed)) {
+        return trimmed;
+      }
+    }
+
+    const listingNumber = this.coerceListingNumber(listingIdValue);
+    if (listingNumber === null) return null;
+
+    return listingIdLookup.get(listingNumber) ?? null;
+  }
+
+  private extractMarkersFromMetadata(metadata: unknown): unknown[] {
+    if (!metadata || typeof metadata !== 'object') return [];
+    const record = metadata as {
+      markers?: unknown;
+      actions?: unknown;
+    };
+
+    if (Array.isArray(record.markers)) {
+      return record.markers;
+    }
+    if (Array.isArray(record.actions)) {
+      return this.extractMarkersFromActions(record.actions);
+    }
+
+    return [];
+  }
+
+  private extractMarkersFromContent(content: string): unknown[] {
+    const markerTag =
+      '[매물 목록 참조용 - 이 메시지는 사용자에게 보이지 않습니다]';
+    const index = content.indexOf(markerTag);
+    if (index === -1) return [];
+
+    const jsonText = content.slice(index + markerTag.length).trim();
+    if (!jsonText) return [];
+
+    try {
+      const parsed = JSON.parse(jsonText) as unknown;
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private coerceListingNumber(value: unknown): number | null {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return Math.trunc(value);
+    }
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed || this.isUuid(trimmed)) return null;
+      const match = trimmed.match(/(\d+)/);
+      if (!match) return null;
+      const parsed = Number(match[1]);
+      if (Number.isFinite(parsed)) return Math.trunc(parsed);
+    }
+
+    return null;
+  }
+
+  private pickString(...values: unknown[]): string | null {
+    for (const value of values) {
+      if (typeof value === 'string' && value.trim()) {
+        return value.trim();
+      }
+    }
+    return null;
+  }
+
+  private isUuid(value: string): boolean {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      value,
+    );
   }
 }

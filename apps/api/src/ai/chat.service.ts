@@ -50,6 +50,7 @@ export class ChatService {
         messages.map((msg) => ({
           role: msg.role,
           content: msg.content,
+          metadata: msg.metadata ?? null,
         })),
       );
   }

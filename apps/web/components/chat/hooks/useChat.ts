@@ -55,6 +55,13 @@ export function useChat(aiProvider: AiProvider = 'openai') {
     [setConversationId],
   );
 
+  const applyChartItemUpdateToMessage = useCallback(
+    (messageId: string, update: ChartItemUpdate) => {
+      setMessages((prev) => applyChartItemUpdate(prev, messageId, update));
+    },
+    [setMessages],
+  );
+
   const sendMessage = useCallback(
     async (text: string, onDispatch?: (payload: ActionDispatchPayload) => void) => {
       if (!text.trim()) return;
@@ -162,6 +169,7 @@ export function useChat(aiProvider: AiProvider = 'openai') {
     sendMessage,
     handleNewThread,
     loadConversation,
+    applyChartItemUpdate: applyChartItemUpdateToMessage,
   };
 }
 
