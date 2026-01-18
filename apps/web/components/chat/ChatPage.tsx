@@ -19,7 +19,10 @@ import {
   processAiActions,
   type ChartItemUpdate,
 } from './actions/actionProcessor';
-import { type ActionDispatchPayload, type MapCommand } from './actions/commandTypes';
+import {
+  type ActionDispatchPayload,
+  type MapCommand,
+} from './actions/commandTypes';
 
 /**
  * ChatPage 컴포넌트 - AI 챗봇의 메인 페이지
@@ -199,7 +202,10 @@ export function ChatPage() {
         });
 
         const finalMapPayload = lastMapPayload as ActionDispatchPayload | null;
-        if (finalMapPayload?.mapCommands && finalMapPayload.mapCommands.length > 0) {
+        if (
+          finalMapPayload?.mapCommands &&
+          finalMapPayload.mapCommands.length > 0
+        ) {
           dispatch(finalMapPayload);
         }
 
@@ -216,7 +222,7 @@ export function ChatPage() {
       .catch((error) => {
         if (cancelled || historyRequestId.current !== requestId) return;
         console.error('Failed to load conversation history:', error);
-      })
+      });
 
     return () => {
       cancelled = true;
@@ -262,7 +268,7 @@ export function ChatPage() {
                 ))
               )}
 
-              {isLoading && (
+              {/* {isLoading && (
                 <div className="flex items-center gap-4 text-muted-foreground pl-2">
                   <div className="flex gap-1.5">
                     <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" />
@@ -279,7 +285,7 @@ export function ChatPage() {
                     AI가 응답을 생성하고 있습니다...
                   </span>
                 </div>
-              )}
+              )} */}
 
               <div ref={messagesEndRef} />
             </div>
