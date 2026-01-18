@@ -236,7 +236,7 @@ export function ChatPage() {
   ]);
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className="flex h-full">
       {/* 지도 영역 (왼쪽) */}
       <ChatMapSection ref={mapSectionRef} isOpen={isMapOpen} />
 
