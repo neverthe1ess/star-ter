@@ -11,8 +11,8 @@ import { RegionData } from '../repositories/region.repository';
  *
  * 테마별 만점 기준:
  * - office: 직장인 비중 30% 이상
- * - residential: 거주인 비중 40% 이상 + 아파트 보너스
- * - commercial: 유동인구 비중 40% 이상
+ * - residential: 거주인 비중 30% 이상 + 아파트 보너스
+ * - commercial: 유동인구 비중 30% 이상
  * - university: 20대 비중 30% 이상 + 대학 보너스
  * - station: 지하철역 존재 여부 (binary)
  * - tourist: 관광/숙박 시설 5개 이상
@@ -32,8 +32,8 @@ export class RegionScoreCalculator {
   // 테마별 만점 기준 (비중)
   private readonly THRESHOLDS = {
     OFFICE: 0.3, // 직장인 30% 이상이면 만점
-    RESIDENTIAL: 0.4, // 거주인 40% 이상이면 만점
-    COMMERCIAL: 0.4, // 유동인구 40% 이상이면 만점
+    RESIDENTIAL: 0.3, // 거주인 30% 이상이면 만점
+    COMMERCIAL: 0.3, // 유동인구 30% 이상이면 만점
     UNIVERSITY: 0.3, // 20대 30% 이상이면 만점
     TOURIST_FACILITIES: 5, // 관광/숙박 시설 5개 이상이면 만점
   };
@@ -78,7 +78,7 @@ export class RegionScoreCalculator {
       }
 
       case 'residential': {
-        // 거주인 비중: 40% 이상이면 만점
+        // 거주인 비중: 30% 이상이면 만점
         const residentialRatio = data.tot_repop_co / totalPop;
         const baseScore = Math.min(
           residentialRatio / this.THRESHOLDS.RESIDENTIAL,
@@ -94,7 +94,7 @@ export class RegionScoreCalculator {
       }
 
       case 'commercial': {
-        // 유동인구 비중: 40% 이상이면 만점
+        // 유동인구 비중: 30% 이상이면 만점
         // (절대값이 아닌 비중으로 계산 → 소규모 상권도 공정하게 평가)
         const commercialRatio = data.tot_flpop_co / totalPop;
         return Math.min(commercialRatio / this.THRESHOLDS.COMMERCIAL, 1);
