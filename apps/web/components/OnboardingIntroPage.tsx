@@ -2,31 +2,21 @@
 
 import { Button } from './ui/button';
 import { Logo } from './landing/header/Logo';
-import { UserCircle, Store, BarChart3, ArrowLeft } from 'lucide-react';
+import { UserCircle, Store, BarChart3 } from 'lucide-react';
 
 interface OnboardingIntroPageProps {
   onStart: () => void;
-  onBack?: () => void;
+  onSkip: () => void;
 }
 
 export function OnboardingIntroPage({
   onStart,
-  onBack,
+  onSkip,
 }: OnboardingIntroPageProps) {
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
-      <header className="px-4 py-6 flex items-center justify-between shrink-0">
-        {onBack && (
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">뒤로</span>
-          </button>
-        )}
+      <header className="px-4 py-6 flex items-center justify-center shrink-0">
         <Logo className="h-8" />
-        <div className="w-20"></div>
       </header>
 
       <div className="flex-1 flex flex-col justify-center px-[5%] py-[3vh] overflow-y-auto">
@@ -290,7 +280,13 @@ export function OnboardingIntroPage({
       </div>
 
       <div className="px-4 py-4 border-t">
-        <div className="max-w-7xl mx-auto flex justify-end">
+        <div className="max-w-7xl mx-auto flex justify-end items-center gap-4">
+          <button
+            onClick={onSkip}
+            className="px-6 py-3 text-muted-foreground hover:text-foreground font-medium transition-colors"
+          >
+            건너뛰기
+          </button>
           <Button
             onClick={onStart}
             className="bg-primary hover:bg-primary/90 text-white px-8 py-7 rounded-lg text-lg font-medium cursor-pointer"

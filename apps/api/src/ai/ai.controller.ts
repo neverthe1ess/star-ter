@@ -1,13 +1,9 @@
 import { Controller, Logger, Get, Query } from '@nestjs/common';
-import { AiService } from './ai.service';
 import { ToolsRepository } from './tools.repository';
 @Controller('ai')
 export class AiController {
   private readonly logger = new Logger(AiController.name);
-  constructor(
-    private readonly aiService: AiService,
-    private readonly toolsRepository: ToolsRepository,
-  ) {}
+  constructor(private readonly toolsRepository: ToolsRepository) {}
 
   // =========================================
   // 차트 데이터 API 엔드포인트(LLM 안에 들어가는 카드)

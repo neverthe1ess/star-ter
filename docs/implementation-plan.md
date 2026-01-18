@@ -8,7 +8,7 @@
 ### 완료된 작업
 
 - [x] 프론트엔드 Action Dispatcher 패턴 구현
-- [x] 백엔드 프롬프트 중앙화 (`constants/prompts.ts`)
+- [x] 백엔드 프롬프트 중앙화 (`apps/api/src/ai/prompts/openai-prompts.ts`)
 - [x] Vector DB 기반 지역/업종 코드 추출 구현
 - [x] `plan.md` 현재 코드베이스와 정렬
 - [x] 아키텍처 결정: **LLM이 artifacts 직접 생성**
@@ -22,7 +22,7 @@
 | Tool 실행          | `apps/api/src/ai/ai-tools.service.ts`         |
 | Tool 정의          | `apps/api/src/ai/tools/definitions.ts`        |
 | 응답 스키마        | `apps/api/src/ai/schemas/response-schemas.ts` |
-| 프롬프트           | `apps/api/src/ai/constants/prompts.ts`        |
+| 프롬프트           | `apps/api/src/ai/prompts/openai-prompts.ts`   |
 | Vector 검색        | `apps/api/src/ai/ai.repository.ts`            |
 | 프론트 액션 핸들러 | `apps/web/components/chat/actions/`           |
 

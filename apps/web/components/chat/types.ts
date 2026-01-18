@@ -13,6 +13,7 @@ export interface Message {
   timestamp: Date;
   sources?: Source[];
   chartItems?: ChartItem[];
+  isStreaming?: boolean;
 }
 
 export interface Thread {
@@ -25,7 +26,12 @@ export interface Thread {
 export type Coordinate = [number, number];
 
 // 폴리곤 타입
-export interface PolygonData {
-  type: 'Polygon' | 'MultiPolygon';
-  coordinates: Coordinate[][][] | Coordinate[][][][];
-}
+export type PolygonData =
+  | {
+      type: 'Polygon';
+      coordinates: Coordinate[][];
+    }
+  | {
+      type: 'MultiPolygon';
+      coordinates: Coordinate[][][];
+    };

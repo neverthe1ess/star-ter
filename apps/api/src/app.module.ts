@@ -11,7 +11,6 @@ import { RevenueModule } from './revenue/revenue.module';
 import { StoreModule } from './store/store.module';
 import { GeoModule } from './geo/geo.module';
 import { AiModule } from './ai/ai.module';
-import { AssistantModule } from './assistant/assistant.module';
 import { AnalysisModule } from './analysis/analysis.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './user/user.module';
@@ -36,7 +35,6 @@ import { NewsModule } from './news/news.module';
     StoreModule,
     GeoModule,
     AiModule,
-    AssistantModule,
     AnalysisModule,
     AuthModule,
     UsersModule,

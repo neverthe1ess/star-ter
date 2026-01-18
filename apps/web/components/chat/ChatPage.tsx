@@ -11,7 +11,15 @@ import { useChat } from './hooks/useChat';
 import { useActionDispatcher } from './hooks/useActionDispatcher';
 import { getConversationHistory } from '@/services/chat/chat.api';
 import { useChatStore } from '@/store/use-chat-store';
-import { buildMessageFromAiText } from '@/lib/chat/ai-message';
+import {
+  buildMessageFromAiText,
+  parseAiResponseText,
+} from '@/lib/chat/ai-message';
+import {
+  processAiActions,
+  type ChartItemUpdate,
+} from './actions/actionProcessor';
+import { type ActionDispatchPayload, type MapCommand } from './actions/commandTypes';
 
 /**
  * ChatPage 컴포넌트 - AI 챗봇의 메인 페이지
@@ -32,6 +40,7 @@ export function ChatPage() {
     sendMessage,
     handleNewThread,
     loadConversation,
+    applyChartItemUpdate,
   } = useChat(aiProvider);
   const conversationId = useChatStore((state) => state.conversationId);
 
@@ -43,10 +52,27 @@ export function ChatPage() {
   // 스크롤 컨테이너 참조
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // 새 메시지 추가 시 스크롤 맨 아래로 이동
+  // 이전 메시지 개수를 저장하여 새로운 메시지 추가 여부만 감지
+  const prevMessagesLength = useRef(messages.length);
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    // 새 메시지가 추가된 경우에만 스크롤
+    if (messages.length > prevMessagesLength.current) {
+      // 마지막 메시지의 ID를 찾아서 스크롤
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage) {
+        const element = document.getElementById(`msg-${lastMessage.id}`);
+        if (element) {
+          // block: 'start' 옵션으로 해당 요소를 화면 상단에 맞춤
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          // 요소가 아직 DOM에 없으면(그럴 리 적지만) 기존 방식 fallback
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+    }
+    prevMessagesLength.current = messages.length;
+  }, [messages.length, messages]);
 
   // Action Dispatcher Hook 사용
   const { dispatch } = useActionDispatcher(mapSectionRef, setIsMapOpen);
@@ -63,6 +89,7 @@ export function ChatPage() {
 
   // TODO: 메인에서 검색제거 시 반드시 제거
   const hasLoadedHistory = useRef<string | null>(null);
+  const historyRequestId = useRef(0);
   const prevConversationId = useRef<string | null>(null);
 
   useEffect(() => {
@@ -74,23 +101,86 @@ export function ChatPage() {
       hasLoadedHistory.current = null;
       return;
     }
+    if (messages.length > 0 && currentThread.id === conversationId) {
+      return;
+    }
     if (hasLoadedHistory.current === conversationId) return;
 
     let cancelled = false;
-    hasLoadedHistory.current = conversationId;
+    const requestId = historyRequestId.current + 1;
+    historyRequestId.current = requestId;
     prevConversationId.current = conversationId;
 
     getConversationHistory(conversationId)
       .then((history) => {
-        if (cancelled) return;
-        const mapped = history.map((item, index) =>
-          buildMessageFromAiText({
+        if (cancelled || historyRequestId.current !== requestId) return;
+        const chartUpdateQueue: Array<
+          Promise<{ messageId: string; update: ChartItemUpdate }>
+        > = [];
+        let lastMapPayload: ActionDispatchPayload | null = null;
+        const mapCommandUpdates: Promise<MapCommand[]>[] = [];
+
+        const mapped = history.map((item, index) => {
+          const baseMessage = buildMessageFromAiText({
             id: `${conversationId}-${index}`,
             role: item.role,
             content: item.content,
             timestamp: new Date(),
-          }),
-        );
+          });
+
+          if (baseMessage.role !== 'assistant') {
+            return baseMessage;
+          }
+
+          const parsed = parseAiResponseText(item.content);
+          const actions =
+            item.metadata?.actions ??
+            (parsed?.actions && parsed.actions.length > 0
+              ? parsed.actions
+              : []);
+          const sources = item.metadata?.sources;
+
+          if (!actions || actions.length === 0) {
+            return {
+              ...baseMessage,
+              sources: sources ?? undefined,
+            };
+          }
+
+          const actionPlan = processAiActions({
+            reply: baseMessage.content,
+            actions,
+          });
+
+          actionPlan.chartItemUpdates.forEach((updatePromise) => {
+            chartUpdateQueue.push(
+              updatePromise.then((update) => ({
+                messageId: baseMessage.id,
+                update,
+              })),
+            );
+          });
+
+          if (
+            actionPlan.mapCommands.length > 0 ||
+            actionPlan.mapCommandUpdates.length > 0
+          ) {
+            lastMapPayload = {
+              openMapPanel: actionPlan.openMapPanel,
+              mapCommands: actionPlan.mapCommands,
+            };
+            mapCommandUpdates.push(...actionPlan.mapCommandUpdates);
+          }
+
+          return {
+            ...baseMessage,
+            chartItems:
+              actionPlan.chartItems.length > 0
+                ? actionPlan.chartItems
+                : undefined,
+            sources: sources ?? undefined,
+          };
+        });
         const titleFromHistory =
           mapped.find((item) => item.role === 'user')?.content?.slice(0, 50) ||
           'New Thread';
@@ -99,15 +189,45 @@ export function ChatPage() {
           messages: mapped,
           title: titleFromHistory,
         });
+        hasLoadedHistory.current = conversationId;
+
+        chartUpdateQueue.forEach((updatePromise) => {
+          updatePromise.then(({ messageId, update }) => {
+            if (cancelled) return;
+            applyChartItemUpdate(messageId, update);
+          });
+        });
+
+        const finalMapPayload = lastMapPayload as ActionDispatchPayload | null;
+        if (finalMapPayload?.mapCommands && finalMapPayload.mapCommands.length > 0) {
+          dispatch(finalMapPayload);
+        }
+
+        mapCommandUpdates.forEach((commandPromise) => {
+          commandPromise.then((commands) => {
+            if (cancelled || commands.length === 0) return;
+            dispatch({
+              openMapPanel: lastMapPayload?.openMapPanel ?? false,
+              mapCommands: commands,
+            });
+          });
+        });
       })
       .catch((error) => {
+        if (cancelled || historyRequestId.current !== requestId) return;
         console.error('Failed to load conversation history:', error);
-      });
+      })
 
     return () => {
       cancelled = true;
     };
-  }, [conversationId, loadConversation, handleNewThread]);
+  }, [
+    conversationId,
+    loadConversation,
+    handleNewThread,
+    applyChartItemUpdate,
+    dispatch,
+  ]);
 
   return (
     <div className="flex h-full overflow-hidden">
@@ -115,7 +235,7 @@ export function ChatPage() {
       <ChatMapSection ref={mapSectionRef} isOpen={isMapOpen} />
 
       {/* 메인 채팅 영역 */}
-      <div className="flex-1 flex flex-col bg-background rounded-2xl shadow-lg overflow-hidden">
+      <div className="flex-1 flex flex-col bg-background rounded-2xl shadow-lg overflow-hidden border border-border">
         <ChatHeader
           threadTitle={currentThread.title}
           onNewThread={handleNewThread}

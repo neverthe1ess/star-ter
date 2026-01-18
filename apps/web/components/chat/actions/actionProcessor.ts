@@ -366,7 +366,15 @@ function normalizeMarkerType(type: string): MarkerData['type'] {
   return 'default';
 }
 
-function buildPanCommand(payload: Record<string, unknown>): MapCommand | null {
+type PanPayload = {
+  lat?: unknown;
+  lng?: unknown;
+  latitude?: unknown;
+  longitude?: unknown;
+  zoom?: unknown;
+};
+
+function buildPanCommand(payload: PanPayload): MapCommand | null {
   const lat = firstNumber(payload.lat, payload.latitude);
   const lng = firstNumber(payload.lng, payload.longitude);
   if (lat === null || lng === null) return null;

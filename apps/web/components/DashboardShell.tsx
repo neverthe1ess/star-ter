@@ -1,14 +1,16 @@
 'use client';
 
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useMemo, type CSSProperties } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
 import { Sidebar } from './Sidebar';
 
+import { useSidebarStore } from '@/store/use-sidebar-store';
+
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const { isSidebarOpen, setSidebarOpen } = useSidebarStore();
 
   const activeMenu = useMemo(() => {
     if (!pathname) return 'home';
@@ -31,12 +33,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         activeMenu={activeMenu}
         onMenuClick={(id) => {
           if (id === 'home') router.push('/locations');
-          if (id === 'templates') router.push('/locations/search');
+          if (id === 'templates')
+            router.push('/locations/search?tab=맞춤 추천');
           if (id === 'meetings') router.push('/locations/detail');
           if (id === 'chat') router.push('/chat');
         }}
         isOpen={isSidebarOpen}
-        onToggle={setIsSidebarOpen}
+        onToggle={setSidebarOpen}
       />
       <div
         className={`flex-1 h-screen overflow-hidden transition-all duration-300 ease-in-out py-4 pr-4 bg-[#f7f7f8] ${
