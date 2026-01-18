@@ -1542,6 +1542,12 @@ export class ToolsRepository {
     // categoryCode는 params에서 optional로 처리되므로 명시적 추출 안함 (필요 시 destructuring)
 
     try {
+      console.log(
+        `[Debug] calcBreakEvenWithListing listingId=${listingId}, params=${JSON.stringify(
+          params,
+        )}`,
+      );
+
       // 1. 매물 정보 조회 (raw query for convenience with snake_case mapping)
       // Note: listingId comes as string (UUID) from tool
       // const listingIdNum = Number(listingId); // DO NOT CONVERT UUID TO NUMBER
@@ -1563,6 +1569,7 @@ export class ToolsRepository {
       `;
 
       if (!listings || listings.length === 0) {
+        console.warn(`[Debug] Listing not found for id=${listingId}`);
         return {
           summary: '해당 매물 정보를 찾을 수 없습니다.',
           data: null,
@@ -1575,6 +1582,10 @@ export class ToolsRepository {
       const deposit = Number(listing.deposit || 0) / 10;
       const size = Number(listing.size || 0);
 
+      console.log(
+        `[Debug] Found listing: monthlyRent=${monthlyRent}(만원), deposit=${deposit}(만원), size=${size}`,
+      );
+
       // params를 그대로 전달하면서 rent 정보만 덮어씀.
       const newParams = {
         ...params,
@@ -1585,6 +1596,10 @@ export class ToolsRepository {
       };
 
       const result = await this.calcBreakEven(newParams);
+      console.log(
+        `[Debug] calcBreakEven result summary: ${result.summary.slice(0, 100)}...`,
+      );
+
       // listingId를 결과에 포함시켜 AI가 액션을 생성할 때 참조할 수 있게 함
       return {
         ...result,
