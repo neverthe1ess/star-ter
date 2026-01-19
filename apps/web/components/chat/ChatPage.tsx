@@ -100,6 +100,15 @@ export function ChatPage() {
   const historyRequestId = useRef(0);
   const prevConversationId = useRef<string | null>(null);
 
+  // Use refs to access latest state inside effect without adding dependencies
+  const latestMessagesRef = useRef(messages);
+  const latestCurrentThreadRef = useRef(currentThread);
+
+  useEffect(() => {
+    latestMessagesRef.current = messages;
+    latestCurrentThreadRef.current = currentThread;
+  });
+
   useEffect(() => {
     if (!conversationId) {
       if (prevConversationId.current) {
@@ -109,12 +118,17 @@ export function ChatPage() {
       hasLoadedHistory.current = null;
       return;
     }
-    if (messages.length > 0 && currentThread.id === conversationId) {
+    // Check against refs to avoid adding dependencies
+    if (
+      latestMessagesRef.current.length > 0 &&
+      latestCurrentThreadRef.current.id === conversationId
+    ) {
       return;
     }
     if (hasLoadedHistory.current === conversationId) return;
 
     let cancelled = false;
+    const messageCountAtStart = latestMessagesRef.current.length;
     const requestId = historyRequestId.current + 1;
     historyRequestId.current = requestId;
     prevConversationId.current = conversationId;
@@ -122,6 +136,9 @@ export function ChatPage() {
     getConversationHistory(conversationId)
       .then((history) => {
         if (cancelled || historyRequestId.current !== requestId) return;
+        if (latestMessagesRef.current.length !== messageCountAtStart) {
+          return;
+        }
         const chartUpdateQueue: Array<
           Promise<{ messageId: string; update: ChartItemUpdate }>
         > = [];
@@ -238,8 +255,6 @@ export function ChatPage() {
     handleNewThread,
     applyChartItemUpdate,
     dispatch,
-    messages.length,
-    currentThread.id,
   ]);
 
   return (
