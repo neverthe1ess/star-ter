@@ -12,6 +12,7 @@ import {
   useKakaoMap,
   type KakaoCustomOverlay,
   type KakaoPolygon,
+  type KakaoBounds,
 } from '../../hooks/useKakaoMap';
 import { type MapCommand } from './actions/commandTypes';
 import { usePopulationLayer } from '../location-detail/hooks/usePopulationLayer';
@@ -43,6 +44,7 @@ interface ChatMapSectionProps {
 // [설정] 최소/최대 너비 상수
 const MIN_WIDTH = 400;
 const MAX_WIDTH = 800;
+const FIT_BOUNDS_MIN_WIDTH = 320;
 // ----------------------------------------------------------------------
 
 export const ChatMapSection = forwardRef<
@@ -90,6 +92,9 @@ export const ChatMapSection = forwardRef<
   const markersRef = useRef<KakaoCustomOverlay[]>([]);
   const commercialPolygonRef = useRef<KakaoPolygon | null>(null);
   const pendingCommandsRef = useRef<MapCommand[]>([]);
+  const pendingBoundsRef = useRef<{
+    bounds: KakaoBounds;
+  } | null>(null);
 
   // 카카오맵 훅 사용
   const { map, loaded, error } = useKakaoMap(mapRef, {
@@ -373,8 +378,19 @@ export const ChatMapSection = forwardRef<
                 new window.kakao.maps.LatLng(marker.lat, marker.lng),
               );
             });
+            const container = mapRef.current?.getBoundingClientRect();
+            if (
+              container &&
+              Math.round(container.width) < FIT_BOUNDS_MIN_WIDTH
+            ) {
+              pendingBoundsRef.current = { bounds };
+              return;
+            }
+            pendingBoundsRef.current = null;
             map.relayout();
             map.setBounds(bounds);
+          } else {
+            pendingBoundsRef.current = null;
           }
           return;
         }
@@ -425,6 +441,17 @@ export const ChatMapSection = forwardRef<
         map.setCenter(center);
       } catch {
         // ignore
+      }
+      const container = mapRef.current?.getBoundingClientRect();
+      const pending = pendingBoundsRef.current;
+      if (
+        pending &&
+        container &&
+        Math.round(container.width) >= FIT_BOUNDS_MIN_WIDTH
+      ) {
+        pendingBoundsRef.current = null;
+        map.relayout();
+        map.setBounds(pending.bounds);
       }
     });
 
