@@ -1645,6 +1645,8 @@ export class ToolsRepository {
         area_cd: string;
         area_name: string;
         similarity: number;
+        lat: number | null;
+        lng: number | null;
       }
 
       const rows = await this.prisma.$queryRaw<SimilarAreaRow[]>`
@@ -1658,8 +1660,12 @@ export class ToolsRepository {
           t.area_name as target_name,
           cfv.area_cd,
           cfv.area_name,
-          ROUND((1 - (cfv.feature_vector <=> t.feature_vector))::numeric, 4) as similarity
-        FROM commercial_feature_vector cfv, target t
+          ROUND((1 - (cfv.feature_vector <=> t.feature_vector))::numeric, 4) as similarity,
+          ST_X(ST_Transform(ST_Centroid(a.geom), 4326)) as lng,
+          ST_Y(ST_Transform(ST_Centroid(a.geom), 4326)) as lat
+        FROM commercial_feature_vector cfv
+        LEFT JOIN seoul_commercial_area_grid a ON a.trdar_cd = cfv.area_cd,
+        target t
         WHERE cfv.area_cd != t.area_cd
         ORDER BY cfv.feature_vector <=> t.feature_vector
         LIMIT ${limit}
@@ -1673,6 +1679,11 @@ export class ToolsRepository {
       }
 
       const targetName = rows[0]?.target_name || areaCd;
+      const toCoordinate = (value: unknown): number | null => {
+        if (value === null || value === undefined) return null;
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+      };
 
       return {
         summary: `'${targetName}'과(와) 유사한 상권 Top ${rows.length}입니다.`,
@@ -1681,6 +1692,8 @@ export class ToolsRepository {
           areaName: row.area_name,
           similarity: Number(row.similarity),
           similarityPercent: `${Math.round(Number(row.similarity) * 100)}%`,
+          lat: toCoordinate(row.lat),
+          lng: toCoordinate(row.lng),
         })),
         meta: {
           targetAreaCd: areaCd,

@@ -69,6 +69,25 @@ export function processAiActions(params: {
           openMapPanel = true;
         }
       }
+      if (action.type === 'list.similar_areas') {
+        if (Array.isArray(payload.markers)) {
+          const markers = normalizeMarkers(payload.markers);
+          if (markers.length > 0) {
+            const center = getMarkersCenter(markers);
+            if (center) {
+              mapCommands.push({
+                type: 'map.pan_to',
+                payload: { lat: center.lat, lng: center.lng, zoom: 10 },
+              });
+            }
+            mapCommands.push({
+              type: 'map.setMarkers',
+              payload: { markers },
+            });
+            openMapPanel = true;
+          }
+        }
+      }
       continue;
     }
 
@@ -365,6 +384,25 @@ function normalizeMarkerType(type: string): MarkerData['type'] {
   }
   return 'default';
 }
+
+function getMarkersCenter(
+  markers: MarkerData[],
+): { lat: number; lng: number } | null {
+  if (markers.length === 0) return null;
+  const sum = markers.reduce(
+    (acc, marker) => {
+      acc.lat += marker.lat;
+      acc.lng += marker.lng;
+      return acc;
+    },
+    { lat: 0, lng: 0 },
+  );
+  return {
+    lat: sum.lat / markers.length,
+    lng: sum.lng / markers.length,
+  };
+}
+
 
 type PanPayload = {
   lat?: unknown;

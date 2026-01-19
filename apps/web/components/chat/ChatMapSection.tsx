@@ -53,6 +53,7 @@ export const ChatMapSection = forwardRef<
   const mapRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<KakaoCustomOverlay[]>([]);
   const commercialPolygonRef = useRef<KakaoPolygon | null>(null);
+  const pendingCommandsRef = useRef<MapCommand[]>([]);
 
   // 카카오맵 훅 사용
   const { map, loaded, error } = useKakaoMap(mapRef, {
@@ -151,7 +152,6 @@ export const ChatMapSection = forwardRef<
       const funcName = `__chatMarkerClick_${item.id.replace(/[^a-zA-Z0-9]/g, '_')}`;
       globalFunctionNames.push(funcName);
       (window as unknown as Record<string, () => void>)[funcName] = () => {
-        console.log('Marker clicked:', item.id);
         item.onClick?.();
       };
 
@@ -265,15 +265,9 @@ export const ChatMapSection = forwardRef<
     [map, loaded, clearCommercialPolygon],
   );
 
-  // 부모 컴포넌트에 메서드 노출
-  useImperativeHandle(ref, () => ({
-    executeCommand: (command: MapCommand) => {
-      if (!map || !loaded) {
-        console.warn('Map is not ready yet.');
-        return;
-      }
-
-      console.log('[ChatMapSection] Executing command:', command);
+  const runMapCommand = useCallback(
+    (command: MapCommand) => {
+      if (!map || !loaded) return;
 
       try {
         if (command.type === 'map.pan_to') {
@@ -281,10 +275,11 @@ export const ChatMapSection = forwardRef<
             command.payload.lat,
             command.payload.lng,
           );
-          map.panTo(moveLatLon);
-
           if (command.payload.zoom) {
-            map.setLevel(command.payload.zoom);
+            map.setLevel(command.payload.zoom, { animate: false });
+            map.setCenter(moveLatLon);
+          } else {
+            map.panTo(moveLatLon);
           }
           return;
         }
@@ -293,7 +288,6 @@ export const ChatMapSection = forwardRef<
           if (command.payload.layer === 'footTraffic') {
             const visible = command.payload.visible !== false;
             setIsHeatmapVisible(visible);
-            console.log(`Heatmap visibility set to ${visible}`);
           }
           return;
         }
@@ -312,6 +306,26 @@ export const ChatMapSection = forwardRef<
       } catch (e) {
         console.error('Failed to execute map command:', e);
       }
+    },
+    [map, loaded, drawCommercialPolygon],
+  );
+
+  useEffect(() => {
+    if (!map || !loaded || pendingCommandsRef.current.length === 0) return;
+    const queued = [...pendingCommandsRef.current];
+    pendingCommandsRef.current = [];
+    queued.forEach((command) => runMapCommand(command));
+  }, [map, loaded, runMapCommand]);
+
+  // 부모 컴포넌트에 메서드 노출
+  useImperativeHandle(ref, () => ({
+    executeCommand: (command: MapCommand) => {
+      if (!map || !loaded) {
+        pendingCommandsRef.current.push(command);
+        return;
+      }
+
+      runMapCommand(command);
     },
   }));
 
