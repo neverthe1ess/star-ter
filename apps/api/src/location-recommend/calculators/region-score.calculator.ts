@@ -19,9 +19,9 @@ import { RegionData } from '../repositories/region.repository';
  */
 
 const THEME_LABEL_MAP: Record<string, string> = {
-  office: '오피스',
-  residential: '주거지역',
-  commercial: '핫플레이스',
+  office: '오피스 밀집',
+  residential: '주거 밀집',
+  commercial: '상업 지역',
   university: '대학가',
   station: '역세권',
   tourist: '관광지',
