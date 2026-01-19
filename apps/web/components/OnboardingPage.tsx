@@ -196,20 +196,17 @@ export function OnboardingPage({
         </div>
       </div>
 
-      <div className="px-8 py-4 border-t shrink-0">
+      <div className="px-4 py-4 border-t shrink-0">
         <div
-          className={`max-w-4xl mx-auto flex items-center ${
-            step === 5 && onSkip ? 'justify-between' : 'justify-end'
-          }`}
+          className={`max-w-7xl mx-auto flex justify-end items-center gap-4`}
         >
           {step === 5 && onSkip && (
-            <Button
+            <button
               onClick={handleSkip}
-              variant="ghost"
-              className="text-muted-foreground hover:text-foreground text-lg font-medium"
+              className="px-6 py-3 text-muted-foreground hover:text-foreground font-medium transition-colors"
             >
               건너뛰기
-            </Button>
+            </button>
           )}
           <Button
             onClick={handleNext}
