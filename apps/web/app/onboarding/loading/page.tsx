@@ -16,7 +16,7 @@ export default function LoadingPage() {
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
-    // 프로그레스 애니메이션 (1초 동안 0 -> 100%)
+    // 프로그레스 애니메이션 (0.5초 동안 0 -> 100%)
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
@@ -25,7 +25,7 @@ export default function LoadingPage() {
         }
         return prev + 2;
       });
-    }, 20);
+    }, 10);
 
     const fetchAndNavigate = async () => {
       try {
@@ -113,21 +113,6 @@ export default function LoadingPage() {
               style={{ width: `${progress}%`, backgroundColor: '#2C2F6C' }}
             />
           </div>
-
-          {/* Status Loading Text */}
-          <p className="text-body font-bold text-slate-600 text-center animate-pulse tracking-widest">
-            {progress < 30 && '데이터 수집 중 . . .'}
-            {progress >= 30 && progress < 60 && '매출 패턴 분석 중 . . .'}
-            {progress >= 60 && progress < 90 && '경쟁 현황 파악 중 . . .'}
-            {progress >= 90 && '거의 다 됐어요!'}
-          </p>
-        </div>
-
-        {/* Meta Percentage Text */}
-        <div className="mt-4">
-          <span className="text-caption font-bold text-slate-500 tabular-nums">
-            {progress}%
-          </span>
         </div>
       </div>
     </div>
