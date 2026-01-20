@@ -16,25 +16,20 @@ export class RentRepository {
 
   /**
    * 모든 상권의 평균 임대료 데이터 조회
-   * PostGIS를 사용해 상권 폴리곤과 부동산 정보를 공간 조인
+   * process_real_estate 테이블에서 전처리된 데이터 직접 조회
    */
   async getAllCommercialRents(): Promise<CommercialRentData[]> {
     const result = await this.prisma.$queryRaw<CommercialRentData[]>`
-    SELECT ca.trdar_cd,
-          ca.trdar_cd_n,
-          AVG(re.deposit)::float     AS avg_deposit,
-          AVG(re.monthlyrent)::float AS avg_rent,
-          AVG(re.premium)::float     AS avg_premium,
-          COUNT(*)::int              AS building_count
-    FROM seoul_commercial_area_grid ca
-            JOIN real_estate_info re
-                  ON ST_Contains(
-                          ca.geom,
-                          re.geom
-                    )
-    WHERE re.deposit IS NOT NULL
-      AND re.monthlyrent IS NOT NULL
-    GROUP BY ca.trdar_cd, ca.trdar_cd_n;
+      SELECT 
+        trdar_cd,
+        trdar_cd_n,
+        avg_deposit::float AS avg_deposit,
+        avg_rent::float AS avg_rent,
+        avg_premium::float AS avg_premium,
+        building_count::int AS building_count
+      FROM process_real_estate
+      WHERE avg_deposit IS NOT NULL
+        AND avg_rent IS NOT NULL;
     `;
 
     return result;
