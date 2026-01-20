@@ -49,7 +49,7 @@ export function ScoreExplanationPopup({ onClose }: ScoreExplanationPopupProps) {
         {/* 내용 */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6 sm:px-8 sm:py-6">
           {/* 가중치 안내 */}
-          <div className="bg-muted/50 rounded-2xl p-4">
+          <div className="bg-muted rounded-2xl p-4">
             <p className="text-body text-foreground">
               총 100점 만점으로 각 항목별 가중치가 적용됩니다.
             </p>
@@ -88,7 +88,7 @@ export function ScoreExplanationPopup({ onClose }: ScoreExplanationPopupProps) {
               <p className="text-body text-foreground">
                 해당 연령대의 소비가 활발한 상권일수록 높은 점수를 받습니다.
               </p>
-              <div className="bg-muted/30 rounded-lg p-3 text-caption text-foreground">
+              <div className="bg-muted rounded-lg p-3 text-caption text-foreground">
                 ✓ 만점 조건: 해당 연령대 매출 비중 33% 이상
               </div>
             </div>
@@ -108,35 +108,35 @@ export function ScoreExplanationPopup({ onClose }: ScoreExplanationPopupProps) {
                 산정합니다.
               </p>
               <div className="grid grid-cols-2 gap-2 text-caption">
-                <div className="bg-muted/30 rounded-lg p-2.5">
+                <div className="bg-muted rounded-lg p-2.5">
                   <div className="font-medium text-foreground">오피스</div>
                   <div className="text-foreground mt-0.5">
                     직장인구 비율 기준
                   </div>
                 </div>
-                <div className="bg-muted/30 rounded-lg p-2.5">
+                <div className="bg-muted rounded-lg p-2.5">
                   <div className="font-medium text-foreground">주거지역</div>
                   <div className="text-foreground mt-0.5">
                     거주인구 비율 기준
                   </div>
                 </div>
-                <div className="bg-muted/30 rounded-lg p-2.5">
+                <div className="bg-muted rounded-lg p-2.5">
                   <div className="font-medium text-foreground">상업지역</div>
                   <div className="text-foreground mt-0.5">
                     유동인구 비율 기준
                   </div>
                 </div>
-                <div className="bg-muted/30 rounded-lg p-2.5">
+                <div className="bg-muted rounded-lg p-2.5">
                   <div className="font-medium text-foreground">대학가</div>
                   <div className="text-foreground mt-0.5">
                     20대 유동인구 비율 + 대학 유무
                   </div>
                 </div>
-                <div className="bg-muted/30 rounded-lg p-2.5">
+                <div className="bg-muted rounded-lg p-2.5">
                   <div className="font-medium text-foreground">역세권</div>
                   <div className="text-foreground mt-0.5">지하철역 유무</div>
                 </div>
-                <div className="bg-muted/30 rounded-lg p-2.5">
+                <div className="bg-muted rounded-lg p-2.5">
                   <div className="font-medium text-foreground">관광지</div>
                   <div className="text-foreground mt-0.5">집객시설 수 기준</div>
                 </div>
@@ -160,7 +160,7 @@ export function ScoreExplanationPopup({ onClose }: ScoreExplanationPopupProps) {
               <p className="text-body text-foreground">
                 해당 시간대 매출 비중이 높을수록 점수가 올라갑니다.
               </p>
-              <div className="bg-muted/30 rounded-lg p-3 text-caption text-foreground">
+              <div className="bg-muted rounded-lg p-3 text-caption text-foreground">
                 ✓ 만점 조건: 해당 시간대 매출 비중 50% 이상
               </div>
             </div>
@@ -179,7 +179,7 @@ export function ScoreExplanationPopup({ onClose }: ScoreExplanationPopupProps) {
                 입력한 자본금으로 해당 상권의 예상 창업비용을 감당할 수 있는지를
                 기준으로 산정합니다.
               </p>
-              <div className="bg-muted/30 rounded-lg p-3 text-caption text-foreground">
+              <div className="bg-muted rounded-lg p-3 text-caption text-foreground">
                 ✓ 만점 조건: 자본금이 예상 창업비용(보증금 + 1년 임대료) 이상
               </div>
             </div>
@@ -206,24 +206,26 @@ export function ScoreExplanationPopup({ onClose }: ScoreExplanationPopupProps) {
                 받습니다.
               </p>
               <div className="grid grid-cols-1 gap-1.5 text-caption">
-                <div className="bg-muted/30 rounded-lg p-2.5">
+                <div className="bg-muted rounded-lg p-2.5">
                   <span className="font-medium text-foreground">
-                    매출 경쟁도
+                    매출 경쟁도:
                   </span>
                   <span className="text-foreground ml-2">
                     해당 업종의 매출 점유율이 낮을수록 유리
                   </span>
                 </div>
-                <div className="bg-muted/30 rounded-lg p-2.5">
+                <div className="bg-muted rounded-lg p-2.5">
                   <span className="font-medium text-foreground">
-                    밀도 경쟁도
+                    밀도 경쟁도:
                   </span>
                   <span className="text-foreground ml-2">
                     해당 업종의 점포 밀도가 낮을수록 유리
                   </span>
                 </div>
-                <div className="bg-muted/30 rounded-lg p-2.5">
-                  <span className="font-medium text-foreground">수요 점수</span>
+                <div className="bg-muted rounded-lg p-2.5">
+                  <span className="font-medium text-foreground">
+                    수요 점수:
+                  </span>
                   <span className="text-foreground ml-2">
                     서울 평균 대비 매출이 높을수록 유리
                   </span>
