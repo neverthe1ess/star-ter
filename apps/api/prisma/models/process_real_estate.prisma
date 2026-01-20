@@ -1,0 +1,10 @@
+model process_real_estate {
+  trdar_cd       String    @id @db.VarChar(20)
+  trdar_cd_n     String?   @db.VarChar(100)
+  avg_deposit    Decimal?  @db.Decimal(15, 2)
+  avg_rent       Decimal?  @db.Decimal(15, 2)
+  avg_premium    Decimal?  @db.Decimal(15, 2)
+  building_count Int?
+  created_at     DateTime? @default(now()) @db.Timestamp(6)
+  updated_at     DateTime? @default(now()) @db.Timestamp(6)
+}
