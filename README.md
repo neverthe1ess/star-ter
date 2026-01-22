@@ -30,10 +30,10 @@ Alley 서비스의 주요 기능을 담은 시연 영상입니다.
 
 <div align="center">
 
-|                                  **이정훈**                                  |                                  **방은규**                                   |                                  **정민수**                                   |                                  **이태우**                                   |                                  **조희원**                                   |
-| :--------------------------------------------------------------------------: | :---------------------------------------------------------------------------: | :---------------------------------------------------------------------------: | :---------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
-|                    [@Jeongns](https://github.com/Jeongns)                    |                 [@EungyuBang](https://github.com/EungyuBang)                  |                    [@psd0116](https://github.com/psd0116)                     |                [@thisisyello](https://github.com/thisisyello/)                |               [@neverthe1ess](https://github.com/neverthe1ess)                |
-| <img src="https://avatars.githubusercontent.com/u/54650646?v=4" width="200"> | <img src="https://avatars.githubusercontent.com/u/148555523?v=4" width="200"> | <img src="https://avatars.githubusercontent.com/u/191748454?v=4" width="200"> | <img src="https://avatars.githubusercontent.com/u/226054636?v=4" width="200"> | <img src="https://avatars.githubusercontent.com/u/140958504?v=4" width="200"> |
+|                                  **이정훈**                                  |                                  **방은규**                                   |                                  **정민수**                                   |                                  **이태우**                                   |                                  **조희원**                                   |                                  **장봉익**                                   |
+| :--------------------------------------------------------------------------: | :---------------------------------------------------------------------------: | :---------------------------------------------------------------------------: | :---------------------------------------------------------------------------: | :---------------------------------------------------------------------------: | :---------------------------------------------------------------------------: |
+|                    [@Jeongns](https://github.com/Jeongns)                    |                 [@EungyuBang](https://github.com/EungyuBang)                  |                    [@psd0116](https://github.com/psd0116)                     |                [@thisisyello](https://github.com/thisisyello/)                |               [@neverthe1ess](https://github.com/neverthe1ess)                |                       [@sd4y](https://github.com/sd4y)                        |
+| <img src="https://avatars.githubusercontent.com/u/54650646?v=4" width="200"> | <img src="https://avatars.githubusercontent.com/u/148555523?v=4" width="200"> | <img src="https://avatars.githubusercontent.com/u/191748454?v=4" width="200"> | <img src="https://avatars.githubusercontent.com/u/226054636?v=4" width="200"> | <img src="https://avatars.githubusercontent.com/u/140958504?v=4" width="200"> | <img src="https://avatars.githubusercontent.com/u/195297365?v=4" width="200"> |
 
 </div>
 
@@ -115,39 +115,37 @@ sequenceDiagram
 
 - 프로젝트 기획 및 총괄
 - 데이터 수집 및 데이터베이스 적재
-- ㅇㅁㄴㅇㅇㄴㅁㅇㅁㄴㅇㅁㄴㅇㅁㄴㅇ
+- AI 구조 설계
 
 ### 💻 방은규
 
-- 프론트엔드 개발 (Next.js)
-- 상권 상세 대시보드 UI
-- 카카오맵 연동
+- 상권추천 카드 기능과 UI/UX
+- 사용자 온보딩 기반 맞춤 추천 알고리즘
+- 부동산 데이터 테이블 설계 및 데이터 적재
 
 ### 🔧 정민수
 
-- 백엔드 API 개발 (NestJS)
-- 데이터베이스 설계 (Prisma/PostgreSQL)
-- CI/CD 파이프라인 구축
+- 유동인구 파이프라인 구성
+- 시계열 데이터 시각화 기능 구현(히트맵)
+- 실시간 상권 찾기 페이지(랭킹 및 검색 기능) 구현
 
 ### 🔧 이태우
 
-- 백엔드 API 개발 (NestJS)
-- 데이터베이스 설계 (Prisma/PostgreSQL)
-- CI/CD 파이프라인 구축
+- 업종코드 매핑 테이블 설계
+- UI/UX 총괄 및 디자인 시스템 구성
+- 상권 상세 페이지 내 개폐업 데이터 시각화
 
 ### 🔧 조희원
 
-- 백엔드 API 개발 (NestJS)
-- 데이터베이스 설계 (Prisma/PostgreSQL)
+- 상세 페이지 / 메인 페이지 / 랜딩 페이지 UI 디자인 초기 설계
+- LLM + Function Calling 파이프라인 설계
 - CI/CD 파이프라인 구축
 
 ### 🔧 장봉익
 
-- 백엔드 API 개발 (NestJS)
-- 데이터베이스 설계 (Prisma/PostgreSQL)
-- CI/CD 파이프라인 구축
-
-> ⚠️ 위 역할 분담은 예시입니다. 실제 역할로 교체해주세요.
+- LLM UI 초기 설계
+- 로그인 페이지 연동 작업(구글)
+- QA 및 지도 검색 이동 기능 구현
 
 <br>
 
