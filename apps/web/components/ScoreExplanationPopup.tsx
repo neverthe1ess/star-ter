@@ -89,7 +89,7 @@ export function ScoreExplanationPopup({ onClose }: ScoreExplanationPopupProps) {
                 해당 연령대의 소비가 활발한 상권일수록 높은 점수를 받습니다.
               </p>
               <div className="bg-muted rounded-lg p-3 text-caption text-foreground">
-                ✓ 만점 조건: 해당 연령대 매출 비중 33% 이상
+                ✓ 만점 조건 : 해당 연령대 매출 비중 (상위 10% 기준)
               </div>
             </div>
           </section>
@@ -111,19 +111,19 @@ export function ScoreExplanationPopup({ onClose }: ScoreExplanationPopupProps) {
                 <div className="bg-muted rounded-lg p-2.5">
                   <div className="font-medium text-foreground">오피스</div>
                   <div className="text-foreground mt-0.5">
-                    직장인구 비율 기준
+                    상권 면적당 직장인구 수 기준
                   </div>
                 </div>
                 <div className="bg-muted rounded-lg p-2.5">
                   <div className="font-medium text-foreground">주거지역</div>
                   <div className="text-foreground mt-0.5">
-                    거주인구 비율 기준
+                    상권 면적당 거주인구 수 기준
                   </div>
                 </div>
                 <div className="bg-muted rounded-lg p-2.5">
                   <div className="font-medium text-foreground">상업지역</div>
                   <div className="text-foreground mt-0.5">
-                    유동인구 비율 기준
+                    상권 면적당 유동인구 수 기준
                   </div>
                 </div>
                 <div className="bg-muted rounded-lg p-2.5">

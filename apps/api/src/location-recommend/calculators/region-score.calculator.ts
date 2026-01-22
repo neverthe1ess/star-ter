@@ -5,17 +5,17 @@ import { RegionData } from '../repositories/region.repository';
  * 지역 테마 점수 계산
  *
  * 통일된 설계 원칙:
- * - 모든 테마는 "충분하면 만점" 방식 (min(ratio / threshold, 1))
- * - 점수는 "테마 성립 조건 충족도"를 의미
- * - 설명 가능한 만점 기준 적용
+ * - 모든 테마는 "면적당 인구 밀도" 기준으로 점수 계산
+ * - 상위 10% 상권 기준으로 만점 (threshold 방식)
+ * - 점수 = min(density / threshold, 1)
  *
- * 테마별 만점 기준 (실제 데이터 기반: 직장 7.4%, 거주 6.0%, 유동 86.6%):
- * - office: 직장인 비중 10% 이상 (평균 7.4%보다 높은 상권이 만점)
- * - residential: 거주인 비중 8% 이상 (평균 6.0%보다 높은 상권이 만점) + 아파트 보너스
- * - commercial: 유동인구 비중 90% 이상 (평균 86.6%보다 높은 상권이 만점)
+ * 테마별 만점 기준 (실제 데이터 상위 10% 기반):
+ * - office: 면적당 직장인 0.05명 이상 (밀도 기준)
+ * - residential: 면적당 거주자 0.04명 이상 (밀도 기준)
+ * - commercial: 면적당 유동인구 16명 이상 (밀도 기준)
  * - university: 20대 비중 30% 이상 + 대학 보너스
  * - station: 지하철역 존재 여부 (binary)
- * - tourist: 관광/숙박 시설 5개 이상
+ * - tourist: 집객시설 수 40개 이상
  */
 
 const THEME_LABEL_MAP: Record<string, string> = {
@@ -29,14 +29,13 @@ const THEME_LABEL_MAP: Record<string, string> = {
 
 @Injectable()
 export class RegionScoreCalculator {
-  // 테마별 만점 기준 (실제 데이터 분포 기반)
-  // 전체 평균: 직장 7.4%, 거주 6.0%, 유동 86.6%
+  // 테마별 만점 기준 (면적당 인구 밀도, 상위 10% 기준)
   private readonly THRESHOLDS = {
-    OFFICE: 0.15, // 직장인 15% 이상이면 만점 (평균 7.4%)
-    RESIDENTIAL: 0.12, // 거주인 12% 이상이면 만점 (평균 6.0%)
-    COMMERCIAL: 0.9, // 유동인구 90% 이상이면 만점 (평균 86.6%)
+    OFFICE_DENSITY: 0.05, // 면적당 직장인 0.05명 이상이면 만점
+    RESIDENTIAL_DENSITY: 0.04, // 면적당 거주자 0.04명 이상이면 만점
+    COMMERCIAL_DENSITY: 16, // 면적당 유동인구 16명 이상이면 만점
     UNIVERSITY: 0.3, // 20대 30% 이상이면 만점
-    TOURIST_FACILITIES: 40, // 집객시설 40개 이상이면 만점 (평균 20개)
+    TOURIST_FACILITIES: 70, // 집객시설 70개 이상이면 만점
   };
 
   // 가중치 (필수/지배 조건)
@@ -60,30 +59,25 @@ export class RegionScoreCalculator {
   ): number {
     if (!data) return 0.5; // 데이터 없으면 중립 점수
 
-    // 상권 전체 인구 (직장인 + 거주자 + 유동인구)
-    const totalPop =
-      data.tot_wrc_popltn_co + data.tot_repop_co + data.tot_flpop_co;
-
-    if (totalPop === 0) return 0.5;
+    const area = data.relm_ar || 1; // 면적 (0 방지)
 
     switch (theme) {
       case 'office': {
-        // 직장인 비중: 10% 이상이면 만점 (평균 7.4%)
-        const ratio = data.tot_wrc_popltn_co / totalPop;
-        return Math.min(ratio / this.THRESHOLDS.OFFICE, 1);
+        // 면적당 직장인 밀도: 0.05명/㎡ 이상이면 만점
+        const density = data.tot_wrc_popltn_co / area;
+        return Math.min(density / this.THRESHOLDS.OFFICE_DENSITY, 1);
       }
 
       case 'residential': {
-        // 거주인 비중: 12% 이상이면 만점 (평균 6.0%)
-        const residentialRatio = data.tot_repop_co / totalPop;
-        return Math.min(residentialRatio / this.THRESHOLDS.RESIDENTIAL, 1);
+        // 면적당 거주자 밀도: 0.04명/㎡ 이상이면 만점
+        const density = data.tot_repop_co / area;
+        return Math.min(density / this.THRESHOLDS.RESIDENTIAL_DENSITY, 1);
       }
 
       case 'commercial': {
-        // 유동인구 비중: 90% 이상이면 만점 (평균 86.6%)
-        // (절대값이 아닌 비중으로 계산 → 소규모 상권도 공정하게 평가)
-        const commercialRatio = data.tot_flpop_co / totalPop;
-        return Math.min(commercialRatio / this.THRESHOLDS.COMMERCIAL, 1);
+        // 면적당 유동인구 밀도: 16명/㎡ 이상이면 만점
+        const density = data.tot_flpop_co / area;
+        return Math.min(density / this.THRESHOLDS.COMMERCIAL_DENSITY, 1);
       }
 
       case 'university': {
@@ -113,7 +107,7 @@ export class RegionScoreCalculator {
       }
 
       case 'tourist': {
-        // 집객시설 수: 40개 이상이면 만점 (평균 20개)
+        // 집객시설 수: 70개 이상이면 만점
         const facilityCount = data.viatr_fclty_co;
         return Math.min(facilityCount / this.THRESHOLDS.TOURIST_FACILITIES, 1);
       }
@@ -175,47 +169,38 @@ export class RegionScoreCalculator {
       details.mainAgeRatio = twentiesRatio;
     }
 
-    const totalPop =
-      data.tot_wrc_popltn_co + data.tot_repop_co + data.tot_flpop_co;
-
-    if (totalPop === 0) {
-      return {
-        score: 0.5,
-        explanation: `인구 데이터가 없습니다`,
-        details,
-      };
-    }
+    const area = data.relm_ar || 1; // 면적 (0 방지)
 
     switch (theme) {
       case 'office': {
-        const ratio = data.tot_wrc_popltn_co / totalPop;
-        const score = Math.min(ratio / this.THRESHOLDS.OFFICE, 1);
+        const density = data.tot_wrc_popltn_co / area;
+        const score = Math.min(density / this.THRESHOLDS.OFFICE_DENSITY, 1);
         return {
           score,
-          explanation: `직장인 비중 ${(ratio * 100).toFixed(1)}%`,
+          explanation: `면적당 직장인 ${density.toFixed(4)}명/㎡`,
           details,
         };
       }
 
       case 'residential': {
-        const residentialRatio = data.tot_repop_co / totalPop;
+        const density = data.tot_repop_co / area;
         const score = Math.min(
-          residentialRatio / this.THRESHOLDS.RESIDENTIAL,
+          density / this.THRESHOLDS.RESIDENTIAL_DENSITY,
           1,
         );
         return {
           score,
-          explanation: `거주 인구 비중 ${(residentialRatio * 100).toFixed(1)}%`,
+          explanation: `면적당 거주자 ${density.toFixed(4)}명/㎡`,
           details,
         };
       }
 
       case 'commercial': {
-        const commercialRatio = data.tot_flpop_co / totalPop;
-        const score = Math.min(commercialRatio / this.THRESHOLDS.COMMERCIAL, 1);
+        const density = data.tot_flpop_co / area;
+        const score = Math.min(density / this.THRESHOLDS.COMMERCIAL_DENSITY, 1);
         return {
           score,
-          explanation: `유동인구 비중 ${(commercialRatio * 100).toFixed(1)}%`,
+          explanation: `면적당 유동인구 ${density.toFixed(2)}명/㎡`,
           details,
         };
       }
