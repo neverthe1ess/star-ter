@@ -122,9 +122,6 @@ export function SidebarChatHistory({
 
   return (
     <div className="space-y-1">
-      <p className="px-4 text-tiny font-strong text-muted-foreground mb-2">
-        History
-      </p>
       {isLoading ? (
         <div className="px-4 py-2 text-tiny text-muted-foreground">
           불러오는 중...
