@@ -184,7 +184,7 @@ export function SidebarChatHistory({
                   handleDeleteConversation(item.id);
                 }}
                 disabled={isDeleting || isEditing}
-                className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 aria-label="대화 삭제"
                 title="삭제"
               >
