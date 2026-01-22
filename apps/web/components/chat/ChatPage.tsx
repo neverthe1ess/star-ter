@@ -112,7 +112,7 @@ export function ChatPage() {
   useEffect(() => {
     if (!conversationId) {
       if (prevConversationId.current) {
-        handleNewThread();
+        handleNewThread(() => setIsMapOpen(false)); // 지도 닫기
       }
       prevConversationId.current = null;
       hasLoadedHistory.current = null;
@@ -123,9 +123,14 @@ export function ChatPage() {
       latestMessagesRef.current.length > 0 &&
       latestCurrentThreadRef.current.id === conversationId
     ) {
+      // 여기서도 prevConversationId를 저장해야 New Chat이 제대로 작동함
+      prevConversationId.current = conversationId;
       return;
     }
-    if (hasLoadedHistory.current === conversationId) return;
+    if (hasLoadedHistory.current === conversationId) {
+      prevConversationId.current = conversationId;
+      return;
+    }
 
     let cancelled = false;
     const messageCountAtStart = latestMessagesRef.current.length;

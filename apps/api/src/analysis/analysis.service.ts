@@ -216,8 +216,12 @@ export class AnalysisService {
           ),
         };
 
+        const myTotalSales = Number(salesData[0]?.total_revenue || 0);
+        const areaSize = await this.repository.getAreaSize(trdarCd);
+
         const formattedRegionData: RegionData = {
           trdar_cd: trdarCd,
+          relm_ar: areaSize || 1, // 실제 상권 면적 사용
           tot_flpop_co: Number(regionScoreData.tot_flpop_co || 0),
           agrde_20_flpop_co: Number(regionScoreData.agrde_20_flpop_co || 0),
           tot_repop_co: regionScoreData.tot_repop_co || 0,
@@ -234,8 +238,6 @@ export class AnalysisService {
           avg_rent: rentData?.avg_monthly_rent ?? 0,
         };
 
-        const myTotalSales = Number(salesData[0]?.total_revenue || 0);
-        const areaSize = await this.repository.getAreaSize(trdarCd);
         const myDensity = competitorCount / (areaSize || 1);
         const industryData = {
           sales: myTotalSales,

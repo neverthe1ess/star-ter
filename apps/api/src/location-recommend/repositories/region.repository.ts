@@ -3,6 +3,8 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 export interface RegionData {
   trdar_cd: string;
+  // Area (상권 면적)
+  relm_ar: number;
   // Working population
   tot_wrc_popltn_co: number;
   // Resident population
@@ -39,6 +41,10 @@ interface FacilityRow {
   viatr_fclty_co: number;
   stayng_fclty_co: number;
 }
+interface AreaRow {
+  trdar_cd: string;
+  relm_ar: number;
+}
 
 @Injectable()
 export class PopulationRepository {
@@ -49,8 +55,8 @@ export class PopulationRepository {
    * 최신 분기 기준으로 조회
    */
   async getRegionDataByQuarter(quarter: string): Promise<RegionData[]> {
-    // 4개 쿼리 병렬 실행 (SQL GROUP BY)
-    const [working, resident, footTraffic, facility] = await Promise.all([
+    // 5개 쿼리 병렬 실행 (SQL GROUP BY)
+    const [working, resident, footTraffic, facility, area] = await Promise.all([
       this.prisma.$queryRaw<WorkingRow[]>`
         SELECT trdar_cd, COALESCE(SUM(tot_wrc_popltn_co), 0)::int AS tot_wrc_popltn_co
         FROM "working_population_commercial"
@@ -83,6 +89,11 @@ export class PopulationRepository {
         WHERE stdr_yyqu_cd = ${quarter}
         GROUP BY trdar_cd
       `,
+      // 상권 면적 조회
+      this.prisma.$queryRaw<AreaRow[]>`
+        SELECT trdar_cd, COALESCE(relm_ar, 1)::int AS relm_ar
+        FROM "area_commercial"
+      `,
     ]);
 
     // Map으로 변환
@@ -90,6 +101,7 @@ export class PopulationRepository {
     const residentMap = new Map(resident.map((r) => [r.trdar_cd, r]));
     const footTrafficMap = new Map(footTraffic.map((f) => [f.trdar_cd, f]));
     const facilityMap = new Map(facility.map((f) => [f.trdar_cd, f]));
+    const areaMap = new Map(area.map((a) => [a.trdar_cd, a]));
 
     // 모든 상권 코드 수집
     const allCodes = new Set([
@@ -97,6 +109,7 @@ export class PopulationRepository {
       ...residentMap.keys(),
       ...footTrafficMap.keys(),
       ...facilityMap.keys(),
+      ...areaMap.keys(),
     ]);
 
     // 결과 생성
@@ -106,9 +119,11 @@ export class PopulationRepository {
       const r = residentMap.get(code);
       const f = footTrafficMap.get(code);
       const fac = facilityMap.get(code);
+      const ar = areaMap.get(code);
 
       result.push({
         trdar_cd: code,
+        relm_ar: ar?.relm_ar ?? 1, // 면적 (없으면 1로 처리하여 division by zero 방지)
         tot_wrc_popltn_co: w?.tot_wrc_popltn_co ?? 0,
         tot_repop_co: r?.tot_repop_co ?? 0,
         apt_hshld_co: r?.apt_hshld_co ?? 0,

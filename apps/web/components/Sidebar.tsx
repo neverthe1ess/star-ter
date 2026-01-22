@@ -289,88 +289,96 @@ export function Sidebar({
 
           {!useCompactLayout ? (
             <div
-              className={`flex flex-col flex-1 ${isOpen ? '' : 'pointer-events-none'}`}
+              className={`flex flex-col flex-1 min-h-0 ${isOpen ? '' : 'pointer-events-none'}`}
             >
-              <nav className="flex-1 px-4 py-3 overflow-y-auto no-scrollbar">
-                {/* 메인 네비게이션 */}
-                <p className="px-4 text-tiny font-strong text-muted-foreground mb-2">
-                  메인 메뉴
-                </p>
-                <div className="space-y-1">
-                  <button
-                    onClick={() => onMenuClick('home')}
-                    className={`w-full min-w-0 flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
-                      activeMenu === 'home'
-                        ? 'bg-muted text-foreground'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    }`}
-                  >
-                    <Home
-                      className={`w-4 h-4 shrink-0 transition-colors ${
-                        activeMenu === 'home'
-                          ? 'text-foreground'
-                          : 'text-muted-foreground'
-                      }`}
-                    />
-                    <span className="min-w-0 truncate text-caption font-strong">
-                      홈
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => onMenuClick('templates')}
-                    className={`w-full min-w-0 flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
-                      activeMenu === 'templates'
-                        ? 'bg-muted text-foreground'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    }`}
-                  >
-                    <FileText
-                      className={`w-4 h-4 shrink-0 transition-colors ${
-                        activeMenu === 'templates'
-                          ? 'text-foreground'
-                          : 'text-muted-foreground'
-                      }`}
-                    />
-                    <span className="min-w-0 truncate text-caption font-strong">
-                      상권 찾기
-                    </span>
-                  </button>
-                </div>
-
-                {/* 구분선 */}
-                <div className="my-4 border-t border-border" />
-
-                {/* AI 채팅 섹션 */}
-                <div className="mb-3">
+              <nav className="flex-1 flex flex-col px-4 py-3 min-h-0">
+                {/* 메인 네비게이션 - 고정 영역 */}
+                <div className="shrink-0">
                   <p className="px-4 text-tiny font-strong text-muted-foreground mb-2">
-                    AI 분석
+                    메인 메뉴
                   </p>
-                  <button
-                    onClick={() => {
-                      clearConversationId();
-                      onMenuClick('chat');
-                    }}
-                    className="w-full min-w-0 flex items-center gap-3 px-4 py-2.5 rounded-lg text-muted-foreground bg-background border border-primary/20 shadow-sm hover:bg-primary/5 hover:border-primary/40 hover:shadow-md transition-all group"
-                  >
-                    <MessageSquarePlus className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-                    <span className="min-w-0 truncate text-caption font-strong">
-                      New Chat
-                    </span>
-                  </button>
+                  <div className="space-y-1">
+                    <button
+                      onClick={() => onMenuClick('home')}
+                      className={`w-full min-w-0 flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
+                        activeMenu === 'home'
+                          ? 'bg-muted text-foreground'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      }`}
+                    >
+                      <Home
+                        className={`w-4 h-4 shrink-0 transition-colors ${
+                          activeMenu === 'home'
+                            ? 'text-foreground'
+                            : 'text-muted-foreground'
+                        }`}
+                      />
+                      <span className="min-w-0 truncate text-caption font-strong">
+                        홈
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => onMenuClick('templates')}
+                      className={`w-full min-w-0 flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
+                        activeMenu === 'templates'
+                          ? 'bg-muted text-foreground'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      }`}
+                    >
+                      <FileText
+                        className={`w-4 h-4 shrink-0 transition-colors ${
+                          activeMenu === 'templates'
+                            ? 'text-foreground'
+                            : 'text-muted-foreground'
+                        }`}
+                      />
+                      <span className="min-w-0 truncate text-caption font-strong">
+                        상권 찾기
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* 구분선 */}
+                  <div className="my-4 border-t border-border" />
+
+                  {/* AI 채팅 섹션 */}
+                  <div className="mb-3">
+                    <p className="px-4 text-tiny font-strong text-muted-foreground mb-2">
+                      AI 분석
+                    </p>
+                    <button
+                      onClick={() => {
+                        clearConversationId();
+                        onMenuClick('chat');
+                      }}
+                      className="w-full min-w-0 flex items-center gap-3 px-4 py-2.5 rounded-lg text-muted-foreground bg-background border border-primary/20 shadow-sm hover:bg-primary/5 hover:border-primary/40 hover:shadow-md transition-all group"
+                    >
+                      <MessageSquarePlus className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                      <span className="min-w-0 truncate text-caption font-strong">
+                        New Chat
+                      </span>
+                    </button>
+                  </div>
                 </div>
 
-                <SidebarChatHistory
-                  items={chatHistory}
-                  isLoading={isLoadingHistory}
-                  error={historyError}
-                  onSelect={(conversationId) => {
-                    setConversationId(conversationId);
-                    router.push('/chat');
-                  }}
-                  onDelete={handleDeleteConversation}
-                  onUpdateTitle={handleUpdateConversationTitle}
-                  onError={setHistoryError}
-                />
+                {/* 채팅 히스토리 - 스크롤 영역 */}
+                <p className="px-4 text-tiny font-strong text-muted-foreground mb-2">
+                  History
+                </p>
+                <div className="flex-1 overflow-y-auto no-scrollbar min-h-0">
+                  <SidebarChatHistory
+                    items={chatHistory}
+                    isLoading={isLoadingHistory}
+                    error={historyError}
+                    onSelect={(conversationId) => {
+                      setConversationId(conversationId);
+                      router.push('/chat');
+                    }}
+                    onDelete={handleDeleteConversation}
+                    onUpdateTitle={handleUpdateConversationTitle}
+                    onError={setHistoryError}
+                  />
+                </div>
               </nav>
 
               <footer className="px-4 py-2 border-t border-border bg-background">
