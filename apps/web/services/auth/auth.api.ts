@@ -9,7 +9,25 @@ import type {
 
 const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
-export async function regist(params: RegisterParams): Promise<RegisterResponse> {
+export async function checkEmail(email: string): Promise<boolean> {
+  const response = await fetch(`${baseUrl}/auth/check-email?email=${email}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('이메일 중복 확인에 실패했습니다.');
+  }
+
+  const data = await response.json();
+  return data.isAvailable;
+}
+
+export async function regist(
+  params: RegisterParams,
+): Promise<RegisterResponse> {
   const response = await fetch(`${baseUrl}/auth/register`, {
     method: 'POST',
     headers: {
@@ -42,12 +60,16 @@ export async function login(params: LoginParams): Promise<LoginResponse> {
   });
 
   if (!response.ok) {
+    let errorMessage = '로그인에 실패했습니다.';
     try {
       const errorData = (await response.json()) as ErrorResponse;
-      throw new Error(errorData?.message || '로그인에 실패했습니다.');
+      if (errorData?.message) {
+        errorMessage = errorData.message;
+      }
     } catch {
-      throw new Error('로그인에 실패했습니다.');
+      // JSON 파싱 실패 시 기본 메시지 사용
     }
+    throw new Error(errorMessage);
   }
 
   return response.json() as Promise<LoginResponse>;

@@ -479,7 +479,6 @@ export function Sidebar({
                         <ImUser className="w-full h-full text-muted-foreground p-1.5" />
                       )}
                     </div>
-                    <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-success border-2 border-background rounded-full" />
                   </button>
                 ) : (
                   <button

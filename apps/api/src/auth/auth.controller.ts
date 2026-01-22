@@ -7,6 +7,7 @@ import {
   UseGuards,
   Get,
   Req,
+  Query,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
@@ -42,6 +43,12 @@ export class AuthController {
       registerDto.nickname,
       registerDto.password,
     );
+  }
+
+  @Get('check-email')
+  async checkEmail(@Query('email') email: string) {
+    const isAvailable = await this.authService.checkEmailAvailability(email);
+    return { isAvailable };
   }
 
   // 로그인
