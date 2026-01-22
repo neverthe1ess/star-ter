@@ -18,7 +18,6 @@ import { RealEstateDetailPanel } from './location-detail/RealEstateDetailPanel';
 import NewsSection from '@/components/NewsSection';
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Resizable } from 're-resizable';
-import Link from 'next/link';
 import type {
   CommercialBasicInfo,
   MarketAnalytics,
@@ -27,6 +26,7 @@ import type {
 } from './location-detail/types';
 import { addToHistory } from '@/hooks/useLocationHistory';
 import { GenderFilter, AgeFilter } from './location-detail/types';
+import { useRouter } from 'next/navigation';
 
 interface LocationDetailPageProps {
   basicInfo: CommercialBasicInfo;
@@ -209,6 +209,8 @@ export function LocationDetailPage({
     }
   }, [activeTab]);
 
+  const router = useRouter();
+
   return (
     <div className="h-full bg-[#f7f7f8]">
       {/* 사이드바와 맞춤: 상하좌 p-4, 오른쪽만 pr-8 추가 */}
@@ -217,12 +219,12 @@ export function LocationDetailPage({
         <div className="mb-2 shrink-0">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center">
-              <Link
-                href="/locations"
+              <button
+                onClick={() => router.back()}
                 className="flex items-center justify-center w-12 h-12 rounded-full hover:bg-gray-100 transition-colors shrink-0"
               >
                 <ArrowLeft className="w-6 h-6 text-gray-900" />
-              </Link>
+              </button>
               <h1 className="text-display font-bold text-gray-900">
                 {basicInfo.name}
               </h1>
