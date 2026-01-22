@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { regist } from '@/services/auth/auth.api';
+import { regist, checkEmail } from '@/services/auth/auth.api';
 import { AuthLayout } from './AuthLayout';
 
 const API_BASE_URL =
@@ -27,12 +27,58 @@ export function RegisterPage({ onRegister }: RegisterPageProps) {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [isEmailChecked, setIsEmailChecked] = useState(false);
+  const [emailCheckMessage, setEmailCheckMessage] = useState<string | null>(
+    null,
+  );
+  const [isEmailAvailable, setIsEmailAvailable] = useState(false);
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+    setIsEmailChecked(false);
+    setIsEmailAvailable(false);
+    setEmailCheckMessage(null);
+  };
+
+  const ALLOWED_DOMAINS = ['.com', '.net', '.co.kr'];
+
+  const handleCheckEmail = async () => {
+    if (!email) return;
+    if (
+      !email.includes('@') ||
+      !ALLOWED_DOMAINS.some((domain) => email.includes(domain))
+    ) {
+      setEmailCheckMessage('올바른 이메일 형식이 아닙니다.');
+      setIsEmailAvailable(false);
+      return;
+    }
+
+    try {
+      const isAvailable = await checkEmail(email);
+      setIsEmailChecked(true);
+      if (isAvailable) {
+        setIsEmailAvailable(true);
+        setEmailCheckMessage('사용 가능한 이메일입니다.');
+      } else {
+        setIsEmailAvailable(false);
+        setEmailCheckMessage('이미 사용 중인 이메일입니다.');
+      }
+    } catch (err) {
+      console.error(err);
+      setEmailCheckMessage('중복 확인에 실패했습니다.');
+    }
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
+    if (!isEmailChecked || !isEmailAvailable) {
+      setError('이메일 중복 확인을 완료해주세요.');
+      return;
+    }
+
     if (password !== confirmPassword) {
-      setError('비밀번호가 일치하지 않습니다.');
       return;
     }
 
@@ -86,16 +132,37 @@ export function RegisterPage({ onRegister }: RegisterPageProps) {
             </div>
 
             {/* Email */}
-            <div className="relative">
-              <Input
-                id="email"
-                type="email"
-                placeholder="이메일 주소"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="h-12 border border-border bg-background rounded-xl px-4 pl-4 text-body placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/20 focus-visible:border-ring transition-all font-medium"
-              />
+            <div className="space-y-1">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="이메일 주소"
+                    value={email}
+                    onChange={handleEmailChange}
+                    required
+                    className="h-12 border border-border bg-background rounded-xl px-4 pl-4 text-body placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/20 focus-visible:border-ring transition-all font-medium"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCheckEmail}
+                  disabled={!email || isEmailChecked}
+                  className="h-12 px-4 rounded-xl border-border bg-primary text-white text-tiny font-bold hover:bg-primary/70 transition-colors"
+                >
+                  중복 확인
+                </button>
+              </div>
+              {emailCheckMessage && (
+                <p
+                  className={`text-tiny font-medium pl-1 ${
+                    isEmailAvailable ? 'text-primary' : 'text-destructive'
+                  }`}
+                >
+                  {emailCheckMessage}
+                </p>
+              )}
             </div>
 
             {/* Password */}
@@ -123,27 +190,42 @@ export function RegisterPage({ onRegister }: RegisterPageProps) {
             </div>
 
             {/* Confirm Password */}
-            <div className="relative">
-              <Input
-                id="confirmPassword"
-                type={showConfirmPassword ? 'text' : 'password'}
-                placeholder="비밀번호 확인"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                className="h-12 border border-border bg-background rounded-xl px-4 pl-4 pr-12 text-body placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/20 focus-visible:border-ring transition-all font-medium"
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {showConfirmPassword ? (
-                  <EyeOff className="w-5 h-5" />
-                ) : (
-                  <Eye className="w-5 h-5" />
-                )}
-              </button>
+            <div className="space-y-1">
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="비밀번호 확인"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  className="h-12 border border-border bg-background rounded-xl px-4 pl-4 pr-12 text-body placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/20 focus-visible:border-ring transition-all font-medium"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+              {confirmPassword && (
+                <p
+                  className={`text-tiny font-medium pl-1 ${
+                    password === confirmPassword
+                      ? 'text-primary'
+                      : 'text-destructive'
+                  }`}
+                >
+                  {password === confirmPassword
+                    ? '비밀번호가 일치합니다.'
+                    : '비밀번호가 일치하지 않습니다.'}
+                </p>
+              )}
             </div>
           </div>
 
