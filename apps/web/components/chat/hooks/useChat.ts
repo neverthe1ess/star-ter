@@ -113,16 +113,20 @@ export function useChat(aiProvider: AiProvider = 'openai') {
     createdAt: new Date(),
   });
 
-  const handleNewThread = useCallback(() => {
-    setMessages([]);
-    setInputValue('');
-    clearConversationId();
-    setCurrentThread({
-      id: crypto.randomUUID(),
-      title: 'New Thread',
-      createdAt: new Date(),
-    });
-  }, [clearConversationId]);
+  const handleNewThread = useCallback(
+    (onComplete?: () => void) => {
+      setMessages([]);
+      setInputValue('');
+      clearConversationId();
+      setCurrentThread({
+        id: crypto.randomUUID(),
+        title: 'New Thread',
+        createdAt: new Date(),
+      });
+      onComplete?.();
+    },
+    [clearConversationId],
+  );
 
   const loadConversation = useCallback(
     (params: {
