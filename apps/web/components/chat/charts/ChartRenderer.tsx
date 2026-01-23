@@ -18,9 +18,10 @@ import { type ChartItem } from "./types";
 interface ChartRendererProps {
   items?: ChartItem[];
   className?: string;
+  onAreaClick?: (areaCode: string) => void;  // 상권 클릭 시 맵 갱신용 콜백
 }
 
-export function ChartRenderer({ items, className }: ChartRendererProps) {
+export function ChartRenderer({ items, className, onAreaClick }: ChartRendererProps) {
   if (!items || items.length === 0) {
     return null;
   }
@@ -28,13 +29,13 @@ export function ChartRenderer({ items, className }: ChartRendererProps) {
   return (
     <div className={`mt-4 space-y-4 ${className || ""}`}>
       {items.map((item) => (
-        <ChartItemView key={item.id} item={item} />
+        <ChartItemView key={item.id} item={item} onAreaClick={onAreaClick} />
       ))}
     </div>
   );
 }
 
-function ChartItemView({ item }: { item: ChartItem }) {
+function ChartItemView({ item, onAreaClick }: { item: ChartItem; onAreaClick?: (areaCode: string) => void }) {
   if (item.error) {
     return (
       <div className="p-4 bg-red-50 rounded-lg text-red-600 text-caption">
@@ -95,6 +96,7 @@ function ChartItemView({ item }: { item: ChartItem }) {
             item.data as Parameters<typeof SimilarAreasCard>[0]["data"]
           }
           isLoading={item.isLoading}
+          onItemClick={onAreaClick}  // 상권 클릭 시 맵 갱신
         />
       );
 

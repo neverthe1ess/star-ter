@@ -314,6 +314,14 @@ export function ChatPage() {
                     message={message}
                     chartItems={message.chartItems}
                     sources={message.sources}
+                    onAreaClick={(areaCode) => {
+                      // 유사 상권 아이템 클릭 시 맵 폴리곤 + MapInfoPanel 갱신
+                      dispatch({
+                        openMapPanel: true,
+                        mapCommands: [],
+                        areaCodeToFetch: areaCode,  // 맵 섹션에서 처리하도록 전달
+                      });
+                    }}
                   />
                 ))
               )}

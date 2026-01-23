@@ -24,6 +24,7 @@ interface SimilarAreasData {
 interface SimilarAreasCardProps {
   data: SimilarAreasData | null;
   isLoading?: boolean;
+  onItemClick?: (areaCode: string) => void;  // 상권 아이템 클릭 시 호출되는 콜백
 }
 
 // 유사도에 따른 라벨
@@ -34,7 +35,7 @@ const getSimilarityLabel = (similarity: number) => {
   return '비슷함';
 };
 
-export function SimilarAreasCard({ data, isLoading }: SimilarAreasCardProps) {
+export function SimilarAreasCard({ data, isLoading, onItemClick }: SimilarAreasCardProps) {
   if (isLoading) {
     return (
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden animate-pulse">
@@ -89,6 +90,7 @@ export function SimilarAreasCard({ data, isLoading }: SimilarAreasCardProps) {
         {similarAreas.map((area, index) => (
           <div
             key={area.areaCode || index}
+            onClick={() => onItemClick?.(area.areaCode)}  // 클릭 시 상권 코드 전달
             className="flex items-center justify-between px-6 py-4 hover:bg-slate-50 cursor-pointer transition-colors group"
           >
             {/* 지역명 */}
