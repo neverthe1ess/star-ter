@@ -12,6 +12,16 @@ export function useActionDispatcher(
         setIsMapOpen(true);
       }
 
+      // 상권 코드가 있으면 해당 상권 정보 fetch 요청
+      if (payload.areaCodeToFetch && mapSectionRef.current) {
+        // fetchArea 커맨드로 전달 (ChatMapSection에서 처리)
+        mapSectionRef.current.executeCommand({
+          type: 'map.fetchArea',
+          payload: { areaCode: payload.areaCodeToFetch },
+        });
+        return;
+      }
+
       if (!payload.mapCommands || payload.mapCommands.length === 0) {
         return;
       }

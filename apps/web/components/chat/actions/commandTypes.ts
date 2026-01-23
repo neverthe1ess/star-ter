@@ -31,9 +31,16 @@ export type MapCommand =
         area: AreaInfo;
         polygon: PolygonData;
       };
+    }
+  | {
+      type: 'map.fetchArea'; // 상권 정보 fetch 요청 (SimilarAreasCard 클릭 시)
+      payload: {
+        areaCode: string;
+      };
     };
 
 export interface ActionDispatchPayload {
   mapCommands?: MapCommand[];
   openMapPanel?: boolean;
+  areaCodeToFetch?: string; // 상권 클릭 시 폴리곤 + 정보 가져오기용
 }

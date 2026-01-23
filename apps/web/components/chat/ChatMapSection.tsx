@@ -376,13 +376,47 @@ export const ChatMapSection = forwardRef<
 
         const polygonData = await polygonResponse.json();
 
-        // 2. 폴리곤 그리기
+        // 2. 폴리곤 그리기 + 해당 영역으로 줌/이동
         if (polygonData?.polygons) {
           const polygon: PolygonData = {
             type: polygonData.polygons.type,
             coordinates: polygonData.polygons.coordinates,
           };
           drawCommercialPolygon(polygon);
+
+          // 폴리곤 중심점 계산 후 줌 + 이동 (마커 클릭과 동일한 UX)
+          if (map && polygon.coordinates && polygon.coordinates.length > 0) {
+            // MultiPolygon 구조: coordinates[0] = 첫 번째 폴리곤, coordinates[0][0] = outer ring
+            let coords: [number, number][] = [];
+            const firstPolygon = polygon.coordinates[0];
+            
+            if (Array.isArray(firstPolygon) && firstPolygon.length > 0) {
+              // MultiPolygon인 경우: firstPolygon[0]이 실제 좌표 배열
+              if (Array.isArray(firstPolygon[0]) && Array.isArray(firstPolygon[0][0])) {
+                coords = firstPolygon[0] as [number, number][];
+              } else {
+                // Polygon인 경우: firstPolygon이 바로 좌표 배열
+                coords = firstPolygon as [number, number][];
+              }
+            }
+            
+            if (coords && coords.length > 0) {
+              let sumLat = 0, sumLng = 0;
+              coords.forEach((coord) => {
+                sumLng += coord[0];
+                sumLat += coord[1];
+              });
+              const centerLat = sumLat / coords.length;
+              const centerLng = sumLng / coords.length;
+              
+              const focusLevel = 4;
+              const position = new window.kakao.maps.LatLng(centerLat, centerLng);
+              if (map.getLevel() >= focusLevel) {
+                map.setLevel(focusLevel, { animate: true });
+              }
+              map.panTo(position);
+            }
+          }
         }
 
         // 3. 상권 요약 정보 가져오기
@@ -424,7 +458,7 @@ export const ChatMapSection = forwardRef<
         setIsInfoLoading(false);
       }
     },
-    [drawCommercialPolygon, clearCommercialPolygon],
+    [drawCommercialPolygon, clearCommercialPolygon, map],
   );
 
   // ref에 함수 할당 (마커 클릭 핸들러에서 사용)
@@ -488,12 +522,19 @@ export const ChatMapSection = forwardRef<
           setSelectedBuilding(null);
           setSelectedArea(command.payload.area);
           setIsInfoLoading(false);
+          return;
+        }
+
+        // SimilarAreasCard 아이템 클릭 시 상권 정보 fetch
+        if (command.type === 'map.fetchArea') {
+          fetchAreaForMarker(command.payload.areaCode);
+          return;
         }
       } catch (e) {
         console.error('Failed to execute map command:', e);
       }
     },
-    [map, loaded, drawCommercialPolygon],
+    [map, loaded, drawCommercialPolygon, fetchAreaForMarker],
   );
 
   useEffect(() => {

@@ -30,9 +30,10 @@ interface ChatMessageProps {
   message: Message;
   chartItems?: ChartItem[];
   sources?: Source[]; // 데이터 출처 정보
+  onAreaClick?: (areaCode: string) => void;  // 상권 클릭 시 맵 갱신용
 }
 
-export function ChatMessage({ message, chartItems, sources }: ChatMessageProps) {
+export function ChatMessage({ message, chartItems, sources, onAreaClick }: ChatMessageProps) {
   const isUser = message.role === 'user';
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -201,7 +202,7 @@ export function ChatMessage({ message, chartItems, sources }: ChatMessageProps) 
 
         {/* 차트 렌더링 (AI 메시지만, 말풍선 안) */}
         {!isUser && chartItems && chartItems.length > 0 && (
-          <ChartRenderer items={chartItems} className="mt-4 -mx-2" />
+          <ChartRenderer items={chartItems} className="mt-4 -mx-2" onAreaClick={onAreaClick} />
         )}
 
         {/* 데이터 출처 (AI 메시지만, 말풍선 안) */}
