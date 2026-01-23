@@ -162,11 +162,21 @@ export class RegionScoreCalculator {
     details.nearbySubways = data.subway_statn_co;
     details.footTraffic = data.tot_flpop_co;
 
-    // 주요 연령층 계산 (유동인구 기준 20대 비중)
+    // 주요 연령층 계산 (가장 비중이 높은 연령대 찾기)
     if (data.tot_flpop_co > 0) {
-      const twentiesRatio = (data.agrde_20_flpop_co / data.tot_flpop_co) * 100;
-      details.mainAgeGroup = '20대';
-      details.mainAgeRatio = twentiesRatio;
+      const ageGroups = [
+        { name: '10대', value: data.agrde_10_flpop_co },
+        { name: '20대', value: data.agrde_20_flpop_co },
+        { name: '30대', value: data.agrde_30_flpop_co },
+        { name: '40대', value: data.agrde_40_flpop_co },
+        { name: '50대', value: data.agrde_50_flpop_co },
+        { name: '60대+', value: data.agrde_60_above_flpop_co },
+      ];
+      const maxGroup = ageGroups.reduce((max, group) =>
+        group.value > max.value ? group : max,
+      );
+      details.mainAgeGroup = maxGroup.name;
+      details.mainAgeRatio = (maxGroup.value / data.tot_flpop_co) * 100;
     }
 
     const area = data.relm_ar || 1; // 면적 (0 방지)

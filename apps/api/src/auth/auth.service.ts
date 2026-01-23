@@ -31,18 +31,23 @@ export class AuthService {
   async validateUser(
     email: string,
     password: string,
-  ): Promise<AuthenticatedUser | null> {
+  ): Promise<AuthenticatedUser> {
     const user = await this.authRepository.findOneByEmail(email);
 
-    if (user && (await bcrypt.compare(password, user.password))) {
-      return {
-        id: user.id,
-        nickname: user.nickname,
-        on_boarding_completed: user.on_boarding_completed ?? false,
-      };
+    if (!user) {
+      throw new BadRequestException('존재하지 않는 계정입니다.');
     }
 
-    return null;
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new BadRequestException('비밀번호가 틀립니다.');
+    }
+
+    return {
+      id: user.id,
+      nickname: user.nickname,
+      on_boarding_completed: user.on_boarding_completed ?? false,
+    };
   }
 
   getJwtToken(user: AuthenticatedUser) {
@@ -58,5 +63,10 @@ export class AuthService {
 
   async findOrCreateGoogleUser(email: string, name: string) {
     return this.authRepository.findOrCreateGoogleUser(email, name);
+  }
+
+  async checkEmailAvailability(email: string): Promise<boolean> {
+    const user = await this.authRepository.findOneByEmail(email);
+    return !user;
   }
 }

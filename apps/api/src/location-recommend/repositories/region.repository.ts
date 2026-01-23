@@ -10,9 +10,14 @@ export interface RegionData {
   // Resident population
   tot_repop_co: number;
   apt_hshld_co: number;
-  // Foot traffic
+  // Foot traffic (all age groups)
   tot_flpop_co: number;
+  agrde_10_flpop_co: number;
   agrde_20_flpop_co: number;
+  agrde_30_flpop_co: number;
+  agrde_40_flpop_co: number;
+  agrde_50_flpop_co: number;
+  agrde_60_above_flpop_co: number;
   // Facility
   univ_co: number;
   subway_statn_co: number;
@@ -32,7 +37,12 @@ interface ResidentRow {
 interface FootTrafficRow {
   trdar_cd: string;
   tot_flpop_co: bigint;
+  agrde_10_flpop_co: bigint;
   agrde_20_flpop_co: bigint;
+  agrde_30_flpop_co: bigint;
+  agrde_40_flpop_co: bigint;
+  agrde_50_flpop_co: bigint;
+  agrde_60_above_flpop_co: bigint;
 }
 interface FacilityRow {
   trdar_cd: string;
@@ -74,7 +84,12 @@ export class PopulationRepository {
       this.prisma.$queryRaw<FootTrafficRow[]>`
         SELECT trdar_cd,
           COALESCE(SUM(tot_flpop_co), 0) AS tot_flpop_co,
-          COALESCE(SUM(agrde_20_flpop_co), 0) AS agrde_20_flpop_co
+          COALESCE(SUM(agrde_10_flpop_co), 0) AS agrde_10_flpop_co,
+          COALESCE(SUM(agrde_20_flpop_co), 0) AS agrde_20_flpop_co,
+          COALESCE(SUM(agrde_30_flpop_co), 0) AS agrde_30_flpop_co,
+          COALESCE(SUM(agrde_40_flpop_co), 0) AS agrde_40_flpop_co,
+          COALESCE(SUM(agrde_50_flpop_co), 0) AS agrde_50_flpop_co,
+          COALESCE(SUM(agrde_60_above_flpop_co), 0) AS agrde_60_above_flpop_co
         FROM "foot_traffic_commercial"
         WHERE stdr_yyqu_cd = ${quarter}
         GROUP BY trdar_cd
@@ -128,7 +143,12 @@ export class PopulationRepository {
         tot_repop_co: r?.tot_repop_co ?? 0,
         apt_hshld_co: r?.apt_hshld_co ?? 0,
         tot_flpop_co: Number(f?.tot_flpop_co ?? 0),
+        agrde_10_flpop_co: Number(f?.agrde_10_flpop_co ?? 0),
         agrde_20_flpop_co: Number(f?.agrde_20_flpop_co ?? 0),
+        agrde_30_flpop_co: Number(f?.agrde_30_flpop_co ?? 0),
+        agrde_40_flpop_co: Number(f?.agrde_40_flpop_co ?? 0),
+        agrde_50_flpop_co: Number(f?.agrde_50_flpop_co ?? 0),
+        agrde_60_above_flpop_co: Number(f?.agrde_60_above_flpop_co ?? 0),
         univ_co: fac?.univ_co ?? 0,
         subway_statn_co: fac?.subway_statn_co ?? 0,
         viatr_fclty_co: fac?.viatr_fclty_co ?? 0,

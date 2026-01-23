@@ -223,7 +223,12 @@ export class AnalysisService {
           trdar_cd: trdarCd,
           relm_ar: areaSize || 1, // 실제 상권 면적 사용
           tot_flpop_co: Number(regionScoreData.tot_flpop_co || 0),
+          agrde_10_flpop_co: 0, // analysis에서는 연령대별 유동인구 미사용
           agrde_20_flpop_co: Number(regionScoreData.agrde_20_flpop_co || 0),
+          agrde_30_flpop_co: 0,
+          agrde_40_flpop_co: 0,
+          agrde_50_flpop_co: 0,
+          agrde_60_above_flpop_co: 0,
           tot_repop_co: regionScoreData.tot_repop_co || 0,
           tot_wrc_popltn_co: regionScoreData.tot_wrc_popltn_co || 0,
           apt_hshld_co: regionScoreData.apt_hshld_co || 0,
