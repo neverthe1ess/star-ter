@@ -95,6 +95,9 @@ export const ChatMapSection = forwardRef<
   const pendingBoundsRef = useRef<{
     bounds: KakaoBounds;
   } | null>(null);
+  
+  // fetchAreaForMarker 함수 참조 (선언 순서 문제 해결용)
+  const fetchAreaForMarkerRef = useRef<((areaCode: string) => void) | null>(null);
 
   // 카카오맵 훅 사용
   const { map, loaded, error } = useKakaoMap(mapRef, {
@@ -198,6 +201,13 @@ export const ChatMapSection = forwardRef<
           map.setLevel(focusLevel, { animate: true });
           map.panTo(position, { animate: true });
         }
+        
+        // 유사 상권 마커(default 타입)인 경우 상권 정보 fetch + 폴리곤 표시
+        // item.id에 areaCode가 저장되어 있음
+        if (item.type === 'default' || item.type === undefined) {
+          fetchAreaForMarkerRef.current?.(item.id);
+        }
+        
         item.onClick?.();
       };
 
@@ -341,6 +351,84 @@ export const ChatMapSection = forwardRef<
     },
     [map, loaded, clearCommercialPolygon],
   );
+
+  /**
+   * 마커 클릭 시 상권 정보를 가져와서 MapInfoPanel 갱신 + 폴리곤 표시
+   * - 유사 상권 마커를 클릭했을 때 호출됨
+   * - item.id가 areaCode로 사용됨
+   */
+  const fetchAreaForMarker = useCallback(
+    async (areaCode: string) => {
+      setIsInfoLoading(true);
+      setSelectedBuilding(null); // 건물 선택 해제
+
+      clearCommercialPolygon();
+
+      try {
+        // 1. 상권 폴리곤 가져오기
+        const polygonResponse = await fetch(
+          `${API_BASE_URL}/polygon/commercial/code?code=${encodeURIComponent(areaCode)}`,
+        );
+
+        if (!polygonResponse.ok) {
+          throw new Error('Failed to fetch polygon');
+        }
+
+        const polygonData = await polygonResponse.json();
+
+        // 2. 폴리곤 그리기
+        if (polygonData?.polygons) {
+          const polygon: PolygonData = {
+            type: polygonData.polygons.type,
+            coordinates: polygonData.polygons.coordinates,
+          };
+          drawCommercialPolygon(polygon);
+        }
+
+        // 3. 상권 요약 정보 가져오기
+        const summaryResponse = await fetch(
+          `${API_BASE_URL}/ai/area/summary?areaCd=${encodeURIComponent(areaCode)}`,
+        );
+        const summaryData = await summaryResponse.json();
+
+        // 4. AreaInfo 구성 및 MapInfoPanel 갱신
+        const areaName =
+          polygonData?.properties?.commercialName ??
+          polygonData?.properties?.commercialname ??
+          areaCode;
+
+        const areaInfo: AreaInfo = {
+          code: areaCode,
+          name: areaName,
+          type: 'commercial',
+        };
+
+        // 요약 데이터가 있으면 추가
+        if (summaryData?.success && summaryData?.data) {
+          areaInfo.name = summaryData.data.areaName || areaInfo.name;
+          areaInfo.revenue = summaryData.data.revenue;
+          areaInfo.floatingPopulation = summaryData.data.floatingPopulation;
+          areaInfo.storeCount = summaryData.data.storeCount;
+        }
+
+        setSelectedArea(areaInfo);
+      } catch (error) {
+        console.error('[ChatMapSection] Failed to fetch area info:', error);
+        // 에러 시에도 기본 정보라도 표시
+        setSelectedArea({
+          code: areaCode,
+          name: areaCode,
+          type: 'commercial',
+        });
+      } finally {
+        setIsInfoLoading(false);
+      }
+    },
+    [drawCommercialPolygon, clearCommercialPolygon],
+  );
+
+  // ref에 함수 할당 (마커 클릭 핸들러에서 사용)
+  fetchAreaForMarkerRef.current = fetchAreaForMarker;
 
   const runMapCommand = useCallback(
     (command: MapCommand) => {
