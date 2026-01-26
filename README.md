@@ -22,7 +22,7 @@
 Alley 서비스의 주요 기능을 담은 시연 영상입니다.  
 상권 분석부터 AI 챗 분석까지 한눈에 확인해보세요!
 
-- 시연 영상: https://youtu.be/MOCK_VIDEO_ID _(mock)_
+- 시연 영상: https://www.youtube.com/watch?v=WQJ41tTqtSc
 
 <br>
 
