@@ -3,7 +3,7 @@
 <!-- TODO: 실제 프로젝트 메인 스크린샷으로 교체 -->
 <img width="1478" height="806" alt="Alley 메인 화면" src="https://github.com/user-attachments/assets/4cdd15ae-d940-4adb-aa24-fc6a5e961d19" />
 
-> **상권을 묻고, 데이터로 답한다.**  
+> **거리 위 데이터를 전략적 가치로**  
 > 상권/업종 데이터를 기반으로 "어디에 창업할지"를 탐색하고, AI 챗으로 분석을 대화형으로 풀어내는 서비스입니다.
 
 - 배포 URL: https://star-ter.shop
