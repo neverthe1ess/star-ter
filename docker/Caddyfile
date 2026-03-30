@@ -1,0 +1,3 @@
+star-ter.shop {
+	reverse_proxy web:3000
+}

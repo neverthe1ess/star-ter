@@ -1,0 +1,39 @@
+name: Deploy to Lightsail
+
+on:
+  push:
+    branches: ['main']
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.LIGHTSAIL_HOST }}
+          username: ${{ secrets.LIGHTSAIL_USER }}
+          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            cd ~/star-ter
+
+            echo "==> [1/4] 배포 전 DB 백업"
+            ./scripts/db-backup.sh
+
+            echo "==> [2/4] 최신 코드 pull"
+            git pull origin main
+
+            echo "==> [3/4] 빌드 & 재시작"
+            cd docker
+            docker compose -f docker-compose.prod.yml build --parallel
+            docker compose -f docker-compose.prod.yml up -d
+
+            echo "==> [4/4] 헬스체크"
+            sleep 10
+            curl -sf http://localhost:3000 > /dev/null && echo "web: OK" || echo "web: FAIL"
+            curl -sf http://localhost:4000 > /dev/null && echo "api: OK" || echo "api: FAIL"
+
+            echo "==> 배포 완료!"
