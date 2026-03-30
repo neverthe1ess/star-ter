@@ -1,3 +1,6 @@
 star-ter.shop {
+	@api path /auth/* /store/* /revenue/* /polygon/* /news/* /report/* /real-estate-bookmark/* /market/* /geo/* /chat/* /location-recommend/* /ai/* /floating-population/* /rent/* /real-estate/* /image/* /users/* /analysis/* /bookmark/* /health/*
+
+	reverse_proxy @api api:4000
 	reverse_proxy web:3000
 }
