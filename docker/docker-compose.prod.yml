@@ -1,7 +1,3 @@
-# .env.production에서 ${} 변수 치환용으로 로드
-env_file:
-  - .env.production
-
 services:
   postgres:
     build:
