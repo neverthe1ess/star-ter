@@ -182,12 +182,7 @@ export function LocationDetailPage({
       label: '업종 / 매출 분석',
       icon: BarChart3,
     },
-    {
-      id: 'realestate' as const,
-      label: '부동산',
-      icon: Building2,
-    },
-    {
+{
       id: 'news' as const,
       label: '뉴스',
       icon: Newspaper,
@@ -342,12 +337,6 @@ export function LocationDetailPage({
                         analytics={analytics}
                         regionCode={basicInfo.code}
                         onCategoryChange={setSelectedAnalysisCategory}
-                      />
-                    )}
-                    {activeTab === 'realestate' && (
-                      <RealEstateContent
-                        items={filteredItems}
-                        onItemClick={handleMarkerClick}
                       />
                     )}
                     {activeTab === 'news' && (
