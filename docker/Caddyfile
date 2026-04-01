@@ -1,4 +1,4 @@
-star-ter.shop {
+alleyai.shop {
 	@api path /auth /auth/* /store /store/* /revenue /revenue/* /polygon /polygon/* /news /news/* /report /report/* /real-estate-bookmark /real-estate-bookmark/* /market /market/* /geo /geo/* /chat/* /location-recommend /location-recommend/* /ai /ai/* /floating-population /floating-population/* /rent /rent/* /real-estate /real-estate/* /image /image/* /users /users/* /analysis /analysis/* /bookmark /bookmark/* /health /health/*
 
 	reverse_proxy @api api:4000
